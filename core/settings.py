@@ -10,7 +10,13 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
+import os, environ
 from pathlib import Path
+
+# Initialize environment variables
+env = environ.Env()
+# Read .env file
+environ.Env.read_env(os.path.join(Path(__file__).resolve().parent.parent, '.env'))
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,7 +26,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-^3i6u26j_#r!(dqzmqhccfi8zegzs6imr1b8+-zjkegc$heuq9'
+SECRET_KEY = env('SECRET_KEY', default='S#perS3crEt_007')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -48,7 +54,7 @@ REST_FRAMEWORK = {
     ),
 }
 OAUTH2_PROVIDER = {
-    'ACCESS_TOKEN_EXPIRE_SECONDS': 36000,
+    'ACCESS_TOKEN_EXPIRE_SECONDS': 360000,
     'REFRESH_TOKEN_EXPIRE_SECONDS': 1209600,
 }
 OAUTH2_PROVIDER = {
