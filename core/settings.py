@@ -53,11 +53,13 @@ REST_FRAMEWORK = {
         'oauth2_provider.contrib.rest_framework.OAuth2Authentication',
     ),
 }
+OAUTH2_PROVIDER_URL = 'http://localhost:5005'
+# Cấu hình OAuth2
+OAUTH2_CLIENT_ID = env('OAUTH2_CLIENT_ID')
+OAUTH2_CLIENT_SECRET = env('OAUTH2_CLIENT_SECRET')
 OAUTH2_PROVIDER = {
     'ACCESS_TOKEN_EXPIRE_SECONDS': 360000,
     'REFRESH_TOKEN_EXPIRE_SECONDS': 1209600,
-}
-OAUTH2_PROVIDER = {
     'SCOPES': {
         'read': 'Read access',
         'write': 'Write access',
@@ -89,7 +91,10 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'core.urls'
-
+AUTHENTICATION_BACKENDS = [
+    'app.authentication.ZaloBackend',
+    'django.contrib.auth.backends.ModelBackend',  # Cho phép đăng nhập bằng username như bình thường
+]
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
