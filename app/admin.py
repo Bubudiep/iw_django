@@ -1,6 +1,12 @@
 from django.contrib import admin
 from .models import *
 
+@admin.register(Album)
+class AlbumAdmin(admin.ModelAdmin):
+    list_display = ('name', 'user', 'created_at')
+    search_fields = ('user',)
+    list_filter = ('user',)
+
 @admin.register(Photos)
 class PhotosAdmin(admin.ModelAdmin):
     list_display = ('filename', 'is_active', 'user', 'created_at')
@@ -46,3 +52,12 @@ class WorkRecordAdmin(admin.ModelAdmin):
                     'work_date', 'is_working', 'created_at')
     search_fields = ('work_sheet__Company',)
     list_filter = ('leave_type', 'is_working', 'created_at')
+    
+admin.site.register(Company)
+admin.site.register(CompanyWokingday)
+admin.site.register(CompanyWorkshift)
+admin.site.register(CompanyWorkshiftFreetime)
+admin.site.register(CompanySalaryRule)
+admin.site.register(CompanyEmployee)
+admin.site.register(CompanyPosition)
+admin.site.register(CompanyDepartment)
