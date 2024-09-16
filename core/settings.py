@@ -67,6 +67,13 @@ OAUTH2_PROVIDER = {
 }
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:6500",  # Thay đổi theo URL frontend của bạn
+    "http://192.168.110.120",
+]
+ALLOWED_HOSTS = [
+    "localhost",  # Thay đổi theo URL frontend của bạn
+    "localhost:6500",  # Thay đổi theo URL frontend của bạn
+    "192.168.110.120",  # Thay đổi theo URL frontend của bạn
+    "192.168.110.120:5005",
 ]
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_METHODS = [
