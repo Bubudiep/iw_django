@@ -36,6 +36,7 @@ class Photos(models.Model):
     filename = models.CharField(max_length=150, null=True, blank=True)
     filesize = models.CharField(max_length=150, null=True, blank=True)
     data = models.TextField(null=True, blank=True)  # Lưu ảnh dưới dạng base64
+    data_mini = models.TextField(null=True, blank=True)  # Lưu ảnh dưới dạng base64
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='photos')
     album = models.ForeignKey(Album, on_delete=models.CASCADE, related_name='photos', null=True, blank=True)
     created_at = models.DateTimeField(default=timezone.now)
@@ -110,3 +111,153 @@ class WorkRecord(models.Model):
 
     def __str__(self):
         return f"WorkRecord for {self.worksheet.user}"
+
+class Company(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE,null=True, blank=True) # Người đăng ký
+    name = models.CharField(max_length=255)
+    sorted_name = models.CharField(max_length=255,null=True, blank=True)
+    masothue = models.CharField(max_length=255,unique=True)
+    description = models.TextField(null=True,blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+    def __str__(self):
+        return self.companyName
+    
+class CompanyWokingday(models.Model): # Hệ số các ngày trong tuần
+    company = models.OneToOneField(Company, on_delete=models.CASCADE,null=True, blank=True)
+    workDay = models.CharField(max_length=255,null=True,blank=True) # T2, T3, T4, T5, T6, T7, CN
+    rate = models.FloatField(default=100,null=True, blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+    def __str__(self):
+        return self.companyName
+    
+class CompanyWorkshift(models.Model): # Các ca làm việc và hệ số chung của ca làm việc
+    workDay = models.ForeignKey(CompanyWokingday, on_delete=models.CASCADE,null=True, blank=True)
+    name = models.CharField(max_length=255,null=True,blank=True)
+    startTime = models.TimeField(default="08:00:00")
+    finishTime = models.TimeField(default="17:00:00")
+
+    rate = models.FloatField(default=100,null=True, blank=True)
+    description = models.TextField(null=True,blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+    def __str__(self):
+        return self.name
+    
+class CompanyWorkshiftFreetime(models.Model): # Giờ nghỉ giải lao của các ca làm việc
+    workshift = models.ForeignKey(CompanyWorkshift, on_delete=models.CASCADE,null=True, blank=True)
+    name = models.CharField(max_length=255) # nghỉ giữa giờ, nghỉ ăn trưa
+    startTime = models.TimeField(default="10:00:00")
+    finishTime = models.TimeField(default="10:15:00")
+    isPay = models.BooleanField(default=False) # được tính tiền hay không
+    description = models.TextField(null=True,blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+    def __str__(self):
+        return self.name
+
+class CompanyWorkrate(models.Model):
+    workshift = models.ForeignKey(CompanyWorkshift, on_delete=models.CASCADE,null=True, blank=True)
+    name = models.CharField(max_length=255,null=True,blank=True)
+    startTime = models.TimeField(default="08:00:00")
+    finishTime = models.TimeField(default="17:00:00")
+
+    rate = models.FloatField(default=100,null=True, blank=True)
+    description = models.TextField(null=True,blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+    def __str__(self):
+        return self.name
+    
+class CompanySalaryFormat(models.Model): # Format lương cụ thể của công ty
+    company = models.ForeignKey(Company, on_delete=models.CASCADE,null=True, blank=True)
+    name = models.CharField(max_length=255) # Tên của lương (lương cơ bản, phụ cấp,....)
+    is_Overtime = models.BooleanField(default=True) # Có được tính vào tăng ca hay không
+    default_value = models.FloatField(default=0, null=True, blank=True) # Mức lương mặc định của tên lương đấy
+    user = models.ForeignKey(User, on_delete=models.CASCADE,null=True, blank=True) # Người thêm
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+    def __str__(self):
+        return f"{self.salaryRule.name}_{self.name}"
+    
+class CompanySalaryFormatConditional(models.Model): # Điều kiện tính lương
+    salaryFormat = models.ForeignKey(CompanySalaryFormat, on_delete=models.CASCADE,null=True, blank=True)
+    workDay = models.IntegerField(default=0)
+    rate = models.FloatField(default=0, null=True, blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+    def __str__(self):
+        return f"{self.salaryFormat.name}_{self.workDay}"
+    
+class CompanySalaryRule(models.Model): # Rule lương của công ty cho cá nhân hoặc tập thể
+    name = models.CharField(max_length=255)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE,null=True, blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+    def __str__(self):
+        return f"{self.company.companyName}_{self.name}"
+    
+class CompanySalaryDetails(models.Model): # Chi tiết lương của cái rule đó
+    salaryRule = models.ForeignKey(CompanySalaryRule, on_delete=models.CASCADE,null=True, blank=True)
+    salaryFormat = models.ForeignKey(CompanySalaryFormat, on_delete=models.CASCADE,null=True, blank=True)
+    value = models.FloatField(default=0, null=True, blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+    def __str__(self):
+        return f"{self.salaryRule.name}_{self.name}"
+    
+class CompanyDepartment(models.Model):
+    company = models.ForeignKey(Company, on_delete=models.CASCADE,null=True, blank=True)
+    name = models.CharField(max_length=100, unique=True)  # Tên phòng ban
+    description = models.TextField(null=True, blank=True)  # Mô tả phòng ban
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.company.name}_{self.name}"
+# Model Chức vụ
+class CompanyPosition(models.Model):
+    department = models.ForeignKey(CompanyDepartment, on_delete=models.CASCADE,null=True, blank=True)
+    title = models.CharField(max_length=100, unique=True)  # Tên chức vụ
+    description = models.TextField(null=True, blank=True)  # Mô tả chức vụ
+    salary = models.ForeignKey(CompanySalaryRule, on_delete=models.SET_NULL, null=True)  # Liên kết đến mức lương
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.title
+    
+# Model Nhân viên
+class CompanyEmployee(models.Model):
+    app_level_CHOICES = (
+        ['admin', 'admin'],
+        ['staff', 'staff'],
+        ['normal', 'normal']
+    )
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="CompanyEmployee_bind")
+    full_name = models.CharField(max_length=50)  # Tên nhân viên
+    is_active = models.BooleanField(default=True)  # Trạng thái làm việc
+    is_online = models.BooleanField(default=True)  # Trạng thái đi làm
+    email = models.EmailField(unique=True)  # Email nhân viên
+    address = models.TextField(null=True, blank=True)  # Địa chỉ nhân viên
+    position = models.ForeignKey(CompanyPosition, on_delete=models.SET_NULL, null=True)  # Chức vụ
+    phone_number = models.CharField(max_length=15, null=True, blank=True)  # Số điện thoại
+    bank_name = models.CharField(max_length=200, null=True, blank=True)  # tên ngân hàng
+    bank_code = models.CharField(max_length=30, null=True, blank=True)  # code ngân hàng
+    bank_number = models.CharField(max_length=20, null=True, blank=True)  # tài khoản ngân hàng
+    hire_date = models.DateField()  # Ngày tuyển dụng
+    app_level = models.CharField(max_length=255, choices=app_level_CHOICES, default='normal', null=True, blank=True)
+    personal_salary = models.ForeignKey(CompanySalaryRule, on_delete=models.SET_NULL, null=True)  # Liên kết đến mức lương
+
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name="CompanyEmployee_created")  # Liên kết đến tài khoản của nhân viên
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+    def get_final_salary(self):
+        if self.personal_salary:
+            return self.personal_salary
+        if self.position and self.position.salary:
+            return self.position.salary
+        return None  # Nếu không có thông tin lương, trả về 0
+    def __str__(self):
+        return f"{self.first_name} {self.last_name}"

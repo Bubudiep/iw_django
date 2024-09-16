@@ -156,8 +156,10 @@ class ProfileViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        # Chỉ trả về Profile của người dùng hiện tại
-        return Profile.objects.filter(user=self.request.user)
+        user = self.request.user
+        if user.is_superuser:
+            return Profile.objects.all()  # Admin có thể xem tất cả ảnh
+        return Profile.objects.filter(user=user)
 
 class PhotosViewSet(viewsets.ModelViewSet):
     serializer_class = PhotosSerializer
@@ -168,12 +170,12 @@ class PhotosViewSet(viewsets.ModelViewSet):
     filterset_class = PhotosFilter
 
     def get_queryset(self):
+        user = self.request.user
+        if user.is_superuser:
+            return Photos.objects.all()  # Admin có thể xem tất cả ảnh
         return Photos.objects.filter(user=self.request.user)
 
     def list(self, request, *args, **kwargs):
-        """
-        Override the default `list` method to apply custom filtering and pagination.
-        """
         queryset = self.get_queryset()
         filterset = self.filterset_class(request.GET, queryset=queryset)
         if filterset.is_valid():
@@ -197,7 +199,9 @@ class WorkSheetViewSet(viewsets.ModelViewSet):
     pagination_class = StandardResultsSetPagination
 
     def get_queryset(self):
-        # Chỉ trả về WorkSheet của người dùng hiện tại
+        user = self.request.user
+        if user.is_superuser:
+            return WorkSheet.objects.all()
         return WorkSheet.objects.filter(user=self.request.user)
 
 # WorkSalary ViewSet
@@ -208,10 +212,11 @@ class WorkSalaryViewSet(viewsets.ModelViewSet):
     pagination_class = StandardResultsSetPagination
 
     def get_queryset(self):
-        # Chỉ trả về WorkSalary của WorkSheet thuộc về người dùng hiện tại
+        user = self.request.user
+        if user.is_superuser:
+            return WorkSalary.objects.all()
         return WorkSalary.objects.filter(worksheet__user=self.request.user)
 
-# WorkRecord ViewSet
 class WorkRecordViewSet(viewsets.ModelViewSet):
     serializer_class = WorkRecordSerializer
     authentication_classes = [OAuth2Authentication]
@@ -219,5 +224,7 @@ class WorkRecordViewSet(viewsets.ModelViewSet):
     pagination_class = StandardResultsSetPagination
 
     def get_queryset(self):
-        # Chỉ trả về WorkRecord của WorkSheet thuộc về người dùng hiện tại
+        user = self.request.user
+        if user.is_superuser:
+            return WorkRecord.objects.all()
         return WorkRecord.objects.filter(worksheet__user=self.request.user)

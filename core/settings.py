@@ -74,6 +74,8 @@ ALLOWED_HOSTS = [
     "localhost:6500",  # Thay đổi theo URL frontend của bạn
     "192.168.110.120",  # Thay đổi theo URL frontend của bạn
     "192.168.110.120:5005",
+    "https://h5.zdn.vn", 
+    "zbrowser://h5.zdn.vn", 
 ]
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_METHODS = [
