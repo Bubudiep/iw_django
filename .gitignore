@@ -25,3 +25,4 @@ dist-ssr
 *.sqlite3
 setting
 .env
+*.pyc
