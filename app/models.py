@@ -71,6 +71,104 @@ class WorkSheet(models.Model):
     def __str__(self):
         return f"WorkSheet for {self.user}"
 
+class CongTy(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='user_congty')
+    tencongty = models.CharField(max_length=255, null=True, blank=True)
+    bophan = models.CharField(max_length=255, null=True, blank=True)
+    chucvu = models.CharField(max_length=255, null=True, blank=True)
+    batdau_dilam = models.DateTimeField(default=timezone.now, null=True, blank=True)
+    ketthuc_dilam = models.DateTimeField(default=None, null=True, blank=True)
+    condilam = models.BooleanField(default=True)
+    qr_code = models.CharField(max_length=20, null=True, blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+    def __str__(self):
+        return f"{self.user} - {self.tencongty}"
+
+class Quydinh(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='user_quydinh')
+    congty = models.ForeignKey(CongTy, on_delete=models.CASCADE, related_name='congty_quydinh')
+    tenquydinh = models.CharField(max_length=255, null=True, blank=True)
+    online = models.BooleanField(default=True)
+    qr_code = models.CharField(max_length=20, null=True, blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+    def __str__(self):
+        return f"{self.nguoitao} - {self.tenquydinh}"
+
+class PhanloaiNgay(models.Model):
+    quydinh = models.ForeignKey(Quydinh, on_delete=models.CASCADE, related_name='quydinh_phanloaingay')
+    tenloaingay = models.CharField(max_length=255, null=True, blank=True)
+    uutien = models.IntegerField(default=0, null=True, blank=True)
+    heso = models.FloatField(default=0, null=True, blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+    def __str__(self):
+        return f"{self.nguoitao} - {self.tenloaingay}"
+    
+class ChitietNgay(models.Model):
+    loaingay = models.ForeignKey(PhanloaiNgay, on_delete=models.CASCADE)
+    theongaycuthe = models.BooleanField(default=True) # true thì sẽ theo trường ngày cụ thể / theo ngay trong tuan
+    ngaycuthe = models.DateField(default=timezone.now, null=True, blank=True)
+    ngaytrongtuan = models.TextField(default=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+    def __str__(self):
+        return f"{self.id}"
+
+class PhanloaiCa(models.Model):
+    quydinh = models.ForeignKey(Quydinh, on_delete=models.CASCADE)
+    tenca = models.CharField(max_length=255, null=True, blank=True)
+    ghichu = models.TextField(default=0, null=True, blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+    def __str__(self):
+        return f"{self.nguoitao} - {self.tenca}"
+
+class Calamviec(models.Model):
+    loaingay = models.ForeignKey(PhanloaiNgay, on_delete=models.CASCADE)
+    loaica = models.ForeignKey(PhanloaiCa, on_delete=models.CASCADE)
+    batdau = models.DateTimeField(default=timezone.now, null=True, blank=True)
+    ketthuc = models.DateTimeField(default=timezone.now, null=True, blank=True)
+    heso = models.FloatField(default=0, null=True, blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+    def __str__(self):
+        return f"{self.user} - {self.tencongty}"
+
+class ChitietCalamviec(models.Model):
+    calamviec = models.ForeignKey(Calamviec, on_delete=models.CASCADE, related_name='chitiet_calamviec')
+    batdau = models.DateTimeField(default=timezone.now, null=True, blank=True)
+    ketthuc = models.DateTimeField(default=timezone.now, null=True, blank=True)
+    heso = models.FloatField(default=0, null=True, blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+    def __str__(self):
+        return f"{self.calamviec} - {self.heso}"
+
+class Bangluong(models.Model):
+    congty = models.ForeignKey(CongTy, on_delete=models.CASCADE, related_name='congty_bangluong')
+    tenbangluong = models.CharField(max_length=255, null=True, blank=True)
+    ngaychotcong = models.IntegerField(default=1, null=True, blank=True)
+    ghichu = models.CharField(max_length=255, null=True, blank=True)
+    online = models.BooleanField(default=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+    def __str__(self):
+        return f"{self.user} - {self.tencongty}"
+
+class BangluongChitiet(models.Model):
+    bangluong = models.ForeignKey(Bangluong, on_delete=models.CASCADE, related_name='bangluong_chitiet')
+    tenluong = models.CharField(max_length=255, null=True, blank=True)
+    mucluong = models.FloatField(default=0,max_length=255, null=True, blank=True)
+    tinhvaotangca = models.BooleanField(default=True)
+    batbuocdilamdusongay = models.BooleanField(default=True)
+    songayphaidilamdu = models.IntegerField(default=0, null=True, blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+    def __str__(self):
+        return f"{self.user} - {self.tencongty}"
+
 class WorkSalary(models.Model):
     worksheet = models.ForeignKey(WorkSheet, on_delete=models.CASCADE, related_name='work_salaries')
     salary_name = models.CharField(max_length=255, null=True, blank=True)
