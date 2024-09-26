@@ -5,10 +5,15 @@ from . import api
 router = routers.DefaultRouter()
 router.register(r'user', api.UserViewSet, basename='user_')
 router.register(r'profiles', api.ProfileViewSet, basename='profile')
+router.register(r'albums', api.AlbumViewSet, basename='albums')
 router.register(r'photos', api.PhotosViewSet, basename='photos')
-router.register(r'worksheets', api.WorkSheetViewSet, basename='worksheet')
-router.register(r'work_salaries', api.WorkSalaryViewSet, basename='work_salary')
-router.register(r'work_records', api.WorkRecordViewSet, basename='work_record')
+router.register(r'tuchamcong', api.TuchamcongViewSet, basename='tuchamcong')
+router.register(r'tutinhluong', api.TutinhluongViewSet, basename='tutinhluong')
+router.register(r'tutinhchuyencan', api.TutinhChuyencanViewSet, basename='tutinhchuyencan')
+router.register(r'tuchamcongtay', api.TuchamcongtayViewSet, basename='tuchamcongtay')
+router.register(r'kieungay', api.KieungayViewSet, basename='kieungay')
+router.register(r'kieuca', api.KieucaViewSet, basename='kieuca')
+router.register(r'heso', api.HesoViewSet, basename='heso')
 
 urlpatterns = [
     path('zlogin/', api.ZaloLoginAPIView.as_view(), name='zalo_login'),

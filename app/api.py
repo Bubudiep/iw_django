@@ -1,5 +1,6 @@
 import json
 import sys
+import os
 import requests
 import secrets
 from rest_framework import viewsets
@@ -161,19 +162,19 @@ class ProfileViewSet(viewsets.ModelViewSet):
             return Profile.objects.all()  # Admin có thể xem tất cả ảnh
         return Profile.objects.filter(user=user)
 
-class PhotosViewSet(viewsets.ModelViewSet):
-    serializer_class = PhotosSerializer
+class AlbumViewSet(viewsets.ModelViewSet):
+    serializer_class = AlbumSerializer
     authentication_classes = [OAuth2Authentication]
     permission_classes = [IsAuthenticated]
     pagination_class = StandardResultsSetPagination
     filter_backends = (DjangoFilterBackend,)
-    filterset_class = PhotosFilter
+    filterset_class = AlbumFilter
 
     def get_queryset(self):
         user = self.request.user
         if user.is_superuser:
-            return Photos.objects.all()  # Admin có thể xem tất cả ảnh
-        return Photos.objects.filter(user=self.request.user)
+            return Album.objects.all()  # Admin có thể xem tất cả ảnh
+        return Album.objects.filter(user=self.request.user)
 
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
@@ -191,40 +192,210 @@ class PhotosViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
     
-# WorkSheet ViewSet
-class WorkSheetViewSet(viewsets.ModelViewSet):
-    serializer_class = WorkSheetSerializer
+class PhotosViewSet(viewsets.ModelViewSet):
+    serializer_class = PhotosSerializer
     authentication_classes = [OAuth2Authentication]
     permission_classes = [IsAuthenticated]
     pagination_class = StandardResultsSetPagination
+    filter_backends = (DjangoFilterBackend,)
+    filterset_class = PhotosFilter
 
     def get_queryset(self):
         user = self.request.user
         if user.is_superuser:
-            return WorkSheet.objects.all()
-        return WorkSheet.objects.filter(user=self.request.user)
+            return Photos.objects.all()  # Admin có thể xem tất cả ảnh
+        return Photos.objects.filter(user=self.request.user,is_active=True)
 
-# WorkSalary ViewSet
-class WorkSalaryViewSet(viewsets.ModelViewSet):
-    serializer_class = WorkSalarySerializer
+    def create(self, request, *args, **kwargs):
+        # Set the user to the authenticated user
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(user=request.user)  # Set the user field
+            return Response(serializer.data, status=201)
+        return Response(serializer.errors, status=400)
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        filterset = self.filterset_class(request.GET, queryset=queryset)
+        if filterset.is_valid():
+            queryset = filterset.qs
+        else:
+            return Response({'errors': filterset.errors}, status=400)
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+    
+class TuchamcongViewSet(viewsets.ModelViewSet):
+    serializer_class = TuchamcongSerializer
     authentication_classes = [OAuth2Authentication]
     permission_classes = [IsAuthenticated]
+    filter_backends = (DjangoFilterBackend,)
     pagination_class = StandardResultsSetPagination
+    filter_backends = (DjangoFilterBackend,)
+    filterset_class = TuchamcongFilter
+    
+    def create(self, request, *args, **kwargs):
+        # Set the user to the authenticated user
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(user=request.user)  # Set the user field
+            return Response(serializer.data, status=201)
+        return Response(serializer.errors, status=400)
 
     def get_queryset(self):
         user = self.request.user
         if user.is_superuser:
-            return WorkSalary.objects.all()
-        return WorkSalary.objects.filter(worksheet__user=self.request.user)
+            return Tuchamcong.objects.all()
+        return Tuchamcong.objects.filter(user=user)
 
-class WorkRecordViewSet(viewsets.ModelViewSet):
-    serializer_class = WorkRecordSerializer
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+class TutinhluongViewSet(viewsets.ModelViewSet):
+    serializer_class = TutinhluongSerializer
     authentication_classes = [OAuth2Authentication]
     permission_classes = [IsAuthenticated]
-    pagination_class = StandardResultsSetPagination
+    filter_backends = (DjangoFilterBackend,)
 
     def get_queryset(self):
         user = self.request.user
         if user.is_superuser:
-            return WorkRecord.objects.all()
-        return WorkRecord.objects.filter(worksheet__user=self.request.user)
+            return Tutinhluong.objects.all()
+        return Tutinhluong.objects.filter(tuchamcong__user=user)
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+
+class TutinhChuyencanViewSet(viewsets.ModelViewSet):
+    serializer_class = TutinhChuyencanSerializer
+    authentication_classes = [OAuth2Authentication]
+    permission_classes = [IsAuthenticated]
+    filter_backends = (DjangoFilterBackend,)
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_superuser:
+            return TutinhChuyencan.objects.all()
+        return TutinhChuyencan.objects.filter(tuchamcong__user=user)
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+
+class TuchamcongtayViewSet(viewsets.ModelViewSet):
+    serializer_class = TuchamcongtaySerializer
+    authentication_classes = [OAuth2Authentication]
+    permission_classes = [IsAuthenticated]
+    filter_backends = (DjangoFilterBackend,)
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_superuser:
+            return Tuchamcongtay.objects.all()
+        return Tuchamcongtay.objects.filter(tuchamcong__user=user)
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+
+class KieungayViewSet(viewsets.ModelViewSet):
+    serializer_class = KieungaySerializer
+    authentication_classes = [OAuth2Authentication]
+    permission_classes = [IsAuthenticated]
+    filter_backends = (DjangoFilterBackend,)
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_superuser:
+            return Kieungay.objects.all()
+        return Kieungay.objects.filter(tuchamcong__user=user)
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+
+class KieucaViewSet(viewsets.ModelViewSet):
+    serializer_class = KieucaSerializer
+    authentication_classes = [OAuth2Authentication]
+    permission_classes = [IsAuthenticated]
+    filter_backends = (DjangoFilterBackend,)
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_superuser:
+            return Kieuca.objects.all()
+        return Kieuca.objects.filter(tuchamcong__user=user)
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+
+class HesoViewSet(viewsets.ModelViewSet):
+    serializer_class = HesoSerializer
+    authentication_classes = [OAuth2Authentication]
+    permission_classes = [IsAuthenticated]
+    filter_backends = (DjangoFilterBackend,)
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_superuser:
+            return Heso.objects.all()
+        return Heso.objects.filter(tuchamcong__user=user)
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)

@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from .models import *
+from django.db import transaction
 
 class RegisterSerializer(serializers.ModelSerializer):
     # Bạn có thể thêm các trường zalo_name và zalo_id vào đây
@@ -49,22 +50,191 @@ class UserSerializer(serializers.ModelSerializer):
             'password': {'write_only': True}
         }
         
+class AlbumSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Album
+        fields = '__all__'
+        
 class PhotosSerializer(serializers.ModelSerializer):
     class Meta:
         model = Photos
+        fields = ["id","filename","filesize","data_mini","created_at","updated_at"]
+        read_only_fields = ['user']  # Make the user field read-only
+    def update(self, instance, validated_data):
+        instance.album = validated_data.get('album', instance.album)
+        instance.is_active = validated_data.get('is_active', instance.is_active)
+        instance.is_public = validated_data.get('is_public', instance.is_public)
+        instance.save()
+        return instance
+    
+        
+class KieungaySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Kieungay
+        fields = ['id','tenloaingay','ghichu','ngaycuthe','ngaytrongtuan','cochuyencan']
+
+class KieucaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Kieuca
+        fields = ['id','tenca','ghichu']
+
+class HesoSerializer(serializers.ModelSerializer):
+    loaingay = serializers.CharField(source='kieungay.tenloaingay',read_only=True)
+    loaica = serializers.CharField(source='kieuca.tenca',read_only=True)
+    class Meta:
+        model = Heso
+        fields = ['id','loaingay','loaica','batdau','ketthuc','heso']
+    
+class TutinhluongSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Tutinhluong
         fields = '__all__'
 
-class WorkSheetSerializer(serializers.ModelSerializer):
+class TutinhChuyencanSerializer(serializers.ModelSerializer):
     class Meta:
-        model = WorkSheet
+        model = TutinhChuyencan
         fields = '__all__'
-
-class WorkSalarySerializer(serializers.ModelSerializer):
+    
+class TuchamcongSerializer(serializers.ModelSerializer):
+    hesos = serializers.SerializerMethodField(read_only=True)
+    kieungays = serializers.SerializerMethodField(read_only=True)
+    kieucas = serializers.SerializerMethodField(read_only=True)
+    chuyencan = serializers.SerializerMethodField(read_only=True)
+    bangluong = serializers.SerializerMethodField(read_only=True)
+    def get_bangluong(self,qs_data):
+        try:
+            qs=Tutinhluong.objects.filter(tuchamcong=qs_data)
+            return TutinhluongSerializer(qs,many=True).data
+        except Exception as e:
+            return []
+    def get_chuyencan(self,qs_data):
+        try:
+            qs=TutinhChuyencan.objects.filter(tuchamcong=qs_data)
+            return TutinhChuyencanSerializer(qs,many=True).data
+        except Exception as e:
+            return []
+    def get_kieungays(self,qs_data):
+        try:
+            qs=Kieungay.objects.filter(tuchamcong=qs_data)
+            return KieungaySerializer(qs,many=True).data
+        except Exception as e:
+            return []
+    def get_kieucas(self,qs_data):
+        try:
+            qs=Kieuca.objects.filter(tuchamcong=qs_data)
+            return KieucaSerializer(qs,many=True).data
+        except Exception as e:
+            return []
+    def get_hesos(self,qs_data):
+        try:
+            qs=Heso.objects.filter(tuchamcong=qs_data)
+            return HesoSerializer(qs,many=True).data
+        except Exception as e:
+            return []
+        
     class Meta:
-        model = WorkSalary
-        fields = '__all__'
+        model = Tuchamcong
+        fields = [
+            "id","tencongty","ngaybatdau","bophan","chucvu",
+            "hesos","kieungays","kieucas","chuyencan","bangluong",
+        ]
+        read_only_fields = ['user', 'hesos', 'kieungays', 'kieucas']  # Make nested fields read-only
 
-class WorkRecordSerializer(serializers.ModelSerializer):
+    def create(self, validated_data):
+        with transaction.atomic():
+            tuchamcong = Tuchamcong.objects.create(**validated_data)
+
+            # Create default salary
+            Tutinhluong.objects.create(
+                tuchamcong=tuchamcong,
+                tenluong="Lương cơ bản",
+                tinhvaotangca=True,
+                luong=5000000
+            )
+
+            # Create attendance bonus
+            TutinhChuyencan.objects.create(
+                tuchamcong=tuchamcong,
+                socongyeucau=26,
+                tienchuyencan=500000,
+                nghi1ngay=90
+            )
+
+            # Create Kieungay instances
+            kieungay_list = Kieungay.objects.bulk_create([
+                Kieungay(
+                    tuchamcong=tuchamcong,
+                    tenloaingay="Ngày thường",
+                    ghichu="Ngày đi làm bình thường",
+                    ngaytrongtuan="[1,2,3,4,5,6]"
+                ),
+                Kieungay(
+                    tuchamcong=tuchamcong,
+                    tenloaingay="Ngày nghỉ",
+                    ghichu="Ngày nghỉ hưởng 200%",
+                    ngaytrongtuan="[0]"
+                ),
+                Kieungay(
+                    tuchamcong=tuchamcong,
+                    tenloaingay="Ngày lễ",
+                    ghichu="Ngày lễ hưởng 300%",
+                    ngaycuthe="""["01/01","02/01","03/01","04/01","10/03","30/04","01/05","02/09"]""",
+                    cochuyencan=True
+                )
+            ])
+
+            # Create a Kieuca instance
+            kieuca = Kieuca.objects.create(
+                tuchamcong=tuchamcong,
+                tenca="Hành chính",
+                ghichu="Đi làm hành chính"
+            )
+
+            # Automatically create Heso entries for each Kieungay
+            for kieungay in kieungay_list:
+                print(f"{kieungay.tenloaingay}")
+                if kieungay.tenloaingay == "Ngày thường":
+                    taoheso=Heso.objects.bulk_create([
+                        Heso(
+                            tuchamcong=tuchamcong,
+                            kieungay=kieungay,
+                            kieuca=kieuca,
+                            batdau="08:00:00",
+                            ketthuc="17:00:00",
+                            heso=1.0  # 100%
+                        ),
+                        Heso(
+                            tuchamcong=tuchamcong,
+                            kieungay=kieungay,
+                            kieuca=kieuca,
+                            batdau="17:00:00",
+                            ketthuc="22:00:00",
+                            heso=1.5  # 150%
+                        )
+                    ])
+                elif kieungay.tenloaingay == "Ngày nghỉ":
+                    taoheso=Heso.objects.create(
+                        tuchamcong=tuchamcong,
+                        kieungay=kieungay,
+                        kieuca=kieuca,
+                        batdau="08:00:00",
+                        ketthuc="22:00:00",
+                        heso=2.0  # 200%
+                    )
+                elif kieungay.tenloaingay == "Ngày lễ":
+                    taoheso=Heso.objects.create(
+                        tuchamcong=tuchamcong,
+                        kieungay=kieungay,
+                        kieuca=kieuca,
+                        batdau="08:00:00",
+                        ketthuc="22:00:00",
+                        heso=3.0  # 300%
+                    )
+
+            # Return the serialized instance
+            return tuchamcong
+    
+class TuchamcongtaySerializer(serializers.ModelSerializer):
     class Meta:
-        model = WorkRecord
+        model = Tuchamcongtay
         fields = '__all__'
