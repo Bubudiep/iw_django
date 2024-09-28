@@ -271,6 +271,7 @@ class TuchamcongViewSet(viewsets.ModelViewSet):
 
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
+        queryset = self.filter_queryset(queryset)  # Áp dụng bộ lọc cho queryset
         page = self.paginate_queryset(queryset)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
@@ -284,6 +285,7 @@ class TutinhluongViewSet(viewsets.ModelViewSet):
     authentication_classes = [OAuth2Authentication]
     permission_classes = [IsAuthenticated]
     filter_backends = (DjangoFilterBackend,)
+    filterset_class = TutinhluongFilter
 
     def get_queryset(self):
         user = self.request.user
@@ -293,6 +295,7 @@ class TutinhluongViewSet(viewsets.ModelViewSet):
 
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
+        queryset = self.filter_queryset(queryset)  # Áp dụng bộ lọc cho queryset
         page = self.paginate_queryset(queryset)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
@@ -341,6 +344,7 @@ class TuchamcongtayViewSet(viewsets.ModelViewSet):
 
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
+        queryset = self.filter_queryset(queryset)  # Áp dụng bộ lọc cho queryset
         page = self.paginate_queryset(queryset)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
@@ -354,6 +358,7 @@ class KieungayViewSet(viewsets.ModelViewSet):
     authentication_classes = [OAuth2Authentication]
     permission_classes = [IsAuthenticated]
     filter_backends = (DjangoFilterBackend,)
+    filterset_class = KieungayFilter
 
     def get_queryset(self):
         user = self.request.user
@@ -363,6 +368,7 @@ class KieungayViewSet(viewsets.ModelViewSet):
 
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
+        queryset = self.filter_queryset(queryset)  # Áp dụng bộ lọc cho queryset
         page = self.paginate_queryset(queryset)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
@@ -377,6 +383,7 @@ class KieucaViewSet(viewsets.ModelViewSet):
     authentication_classes = [OAuth2Authentication]
     permission_classes = [IsAuthenticated]
     filter_backends = (DjangoFilterBackend,)
+    filterset_class = KieucaFilter
 
     def get_queryset(self):
         user = self.request.user
@@ -386,6 +393,7 @@ class KieucaViewSet(viewsets.ModelViewSet):
 
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
+        queryset = self.filter_queryset(queryset)  # Áp dụng bộ lọc cho queryset
         page = self.paginate_queryset(queryset)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
@@ -400,6 +408,7 @@ class HesoViewSet(viewsets.ModelViewSet):
     authentication_classes = [OAuth2Authentication]
     permission_classes = [IsAuthenticated]
     filter_backends = (DjangoFilterBackend,)
+    filterset_class = HesoFilter
 
     def get_queryset(self):
         user = self.request.user
@@ -409,6 +418,7 @@ class HesoViewSet(viewsets.ModelViewSet):
 
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
+        queryset = self.filter_queryset(queryset)  # Áp dụng bộ lọc cho queryset
         page = self.paginate_queryset(queryset)
         if page is not None:
             serializer = self.get_serializer(page, many=True)

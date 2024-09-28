@@ -51,13 +51,12 @@ class TutinhChuyencanFilter(django_filters.FilterSet):
 
 class TuchamcongtayFilter(django_filters.FilterSet):
     tuchamcong = django_filters.ModelChoiceFilter(queryset=Tuchamcong.objects.all())
-    ngay = django_filters.DateFilter()
+    ngay = django_filters.DateFromToRangeFilter()
     created_at = django_filters.DateFromToRangeFilter()
 
     class Meta:
         model = Tuchamcongtay
         fields = ['tuchamcong', 'ngay', 'created_at']
-
 
 class KieungayFilter(django_filters.FilterSet):
     tuchamcong = django_filters.ModelChoiceFilter(queryset=Tuchamcong.objects.all())
