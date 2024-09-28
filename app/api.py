@@ -120,11 +120,29 @@ class RegisterView(APIView):
         serializer = RegisterSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
-            refresh = RefreshToken.for_user(user)
-            return Response({
-                'refresh': str(refresh),
-                'access': str(refresh.access_token),
-            }, status=status.HTTP_201_CREATED)
+            qs_app = Application.objects.first()
+            expires_in_seconds = settings.OAUTH2_PROVIDER.get('ACCESS_TOKEN_EXPIRE_SECONDS', 3600)
+            expires_at = timezone.now() + timedelta(seconds=expires_in_seconds)
+            access_token_str = generate_short_token(length=32)  # Token ngắn
+            refresh_token_str = generate_refresh_token(length=32)  # Refresh token ngắn
+            try:
+                token = AccessToken.objects.create(
+                    user=user,
+                    application=qs_app,
+                    token=access_token_str,
+                    expires=expires_at
+                )
+                # Trả về token
+                return JsonResponse({
+                    'access_token': access_token_str,
+                    'expires_in': expires_in_seconds,
+                    'token_type': 'Bearer',
+                    'scope': 'read write',
+                    'refresh_token': refresh_token_str,
+                })
+            except Exception as e:
+                return Response({'detail': 'Internal server error'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 class UserViewSet(viewsets.ModelViewSet):
