@@ -31,9 +31,6 @@ SECRET_KEY = env('SECRET_KEY', default='S#perS3crEt_007')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['ipays.vn', 'www.ipays.vn']
-
-
 # Application definition
 
 INSTALLED_APPS = [
@@ -70,6 +67,8 @@ CORS_ALLOWED_ORIGINS = [
     "http://192.168.110.120",
 ]
 ALLOWED_HOSTS = [
+    'ipays.vn', 
+    'www.ipays.vn'
     "localhost",  # Thay đổi theo URL frontend của bạn
     "localhost:6500",  # Thay đổi theo URL frontend của bạn
     "192.168.110.120",  # Thay đổi theo URL frontend của bạn
