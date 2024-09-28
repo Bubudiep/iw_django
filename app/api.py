@@ -253,7 +253,6 @@ class TuchamcongViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     filter_backends = (DjangoFilterBackend,)
     pagination_class = StandardResultsSetPagination
-    filter_backends = (DjangoFilterBackend,)
     filterset_class = TuchamcongFilter
     
     def create(self, request, *args, **kwargs):
@@ -331,6 +330,8 @@ class TuchamcongtayViewSet(viewsets.ModelViewSet):
     authentication_classes = [OAuth2Authentication]
     permission_classes = [IsAuthenticated]
     filter_backends = (DjangoFilterBackend,)
+    pagination_class = StandardResultsSetPagination
+    filterset_class = TuchamcongtayFilter
 
     def get_queryset(self):
         user = self.request.user
@@ -347,7 +348,6 @@ class TuchamcongtayViewSet(viewsets.ModelViewSet):
 
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
-
 
 class KieungayViewSet(viewsets.ModelViewSet):
     serializer_class = KieungaySerializer
