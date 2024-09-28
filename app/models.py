@@ -4,6 +4,9 @@ from django.contrib.auth.models import User
 import datetime
 from datetime import time
 
+def get_current_date():
+    return timezone.now().date()
+
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
     avatar = models.ForeignKey('Photos', on_delete=models.SET_NULL, null=True, blank=True, related_name='avatar_profiles')
@@ -53,7 +56,7 @@ class Tuchamcong(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     is_active = models.BooleanField(default=True)
     tencongty = models.CharField(max_length=150, null=True, blank=True)
-    ngaybatdau = models.DateField(default=lambda: timezone.now().date())
+    ngaybatdau = models.DateField(default=get_current_date)
     bophan = models.CharField(max_length=150, null=True, blank=True)
     chucvu = models.CharField(max_length=150, null=True, blank=True)
     
