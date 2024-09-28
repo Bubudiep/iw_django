@@ -146,9 +146,10 @@ class TuchamcongSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         with transaction.atomic():
+            # Tạo đối tượng Tuchamcong
             tuchamcong = Tuchamcong.objects.create(**validated_data)
 
-            # Create default salary
+            # Tạo lương cơ bản
             Tutinhluong.objects.create(
                 tuchamcong=tuchamcong,
                 tenluong="Lương cơ bản",
@@ -156,7 +157,7 @@ class TuchamcongSerializer(serializers.ModelSerializer):
                 luong=5000000
             )
 
-            # Create attendance bonus
+            # Tạo thưởng chuyên cần
             TutinhChuyencan.objects.create(
                 tuchamcong=tuchamcong,
                 socongyeucau=26,
@@ -164,8 +165,8 @@ class TuchamcongSerializer(serializers.ModelSerializer):
                 nghi1ngay=90
             )
 
-            # Create Kieungay instances
-            kieungay_list = Kieungay.objects.bulk_create([
+            # Tạo các kiểu ngày và lưu từng đối tượng
+            kieungay_list = [
                 Kieungay(
                     tuchamcong=tuchamcong,
                     tenloaingay="Ngày thường",
@@ -185,20 +186,23 @@ class TuchamcongSerializer(serializers.ModelSerializer):
                     ngaycuthe="""["01/01","02/01","03/01","04/01","10/03","30/04","01/05","02/09"]""",
                     cochuyencan=True
                 )
-            ])
+            ]
 
-            # Create a Kieuca instance
+            # Lưu từng đối tượng kieungay
+            for kieungay in kieungay_list:
+                kieungay.save()
+
+            # Tạo kiểu ca
             kieuca = Kieuca.objects.create(
                 tuchamcong=tuchamcong,
                 tenca="Hành chính",
                 ghichu="Đi làm hành chính"
             )
 
-            # Automatically create Heso entries for each Kieungay
+            # Tự động tạo các hệ số cho mỗi kiểu ngày
             for kieungay in kieungay_list:
-                print(f"{kieungay.tenloaingay}")
                 if kieungay.tenloaingay == "Ngày thường":
-                    taoheso=Heso.objects.bulk_create([
+                    Heso.objects.bulk_create([
                         Heso(
                             tuchamcong=tuchamcong,
                             kieungay=kieungay,
@@ -217,7 +221,7 @@ class TuchamcongSerializer(serializers.ModelSerializer):
                         )
                     ])
                 elif kieungay.tenloaingay == "Ngày nghỉ":
-                    taoheso=Heso.objects.create(
+                    Heso.objects.create(
                         tuchamcong=tuchamcong,
                         kieungay=kieungay,
                         kieuca=kieuca,
@@ -226,7 +230,7 @@ class TuchamcongSerializer(serializers.ModelSerializer):
                         heso=2.0  # 200%
                     )
                 elif kieungay.tenloaingay == "Ngày lễ":
-                    taoheso=Heso.objects.create(
+                    Heso.objects.create(
                         tuchamcong=tuchamcong,
                         kieungay=kieungay,
                         kieuca=kieuca,
@@ -235,9 +239,9 @@ class TuchamcongSerializer(serializers.ModelSerializer):
                         heso=3.0  # 300%
                     )
 
-            # Return the serialized instance
+            # Trả về đối tượng Tuchamcong đã tạo
             return tuchamcong
-    
+
 class TuchamcongtaySerializer(serializers.ModelSerializer):
     class Meta:
         model = Tuchamcongtay
