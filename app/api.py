@@ -142,7 +142,6 @@ class RegisterView(APIView):
                 })
             except Exception as e:
                 return Response({'detail': 'Internal server error'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 class UserViewSet(viewsets.ModelViewSet):
