@@ -19,6 +19,9 @@ class RegisterSerializer(serializers.ModelSerializer):
         if zalo_id is not None:
             qs_zalo_id=Profile.objects.filter(zalo_id=zalo_id).count()
             if qs_zalo_id==0:
+                user = User.objects.create_user(username=validated_data['username'],
+                                                password=validated_data['password'],
+                                                email=validated_data['email'])
                 Profile.objects.create(
                     user=user,
                     zalo_name=zalo_name,
@@ -28,9 +31,6 @@ class RegisterSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({
                     'zalo_id': f"Zalo ID {zalo_id} đã tồn tại!"
                 })
-        user = User.objects.create_user(username=validated_data['username'],
-                                        password=validated_data['password'],
-                                        email=validated_data['email'])
         return user
     
 class ProfileSerializer(serializers.ModelSerializer):
