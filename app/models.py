@@ -160,3 +160,282 @@ class Heso(models.Model):
     def __str__(self):
         return f"{self.heso}_{self.tuchamcong.tencongty}"
     
+## Doanh nghiệp
+class Congty(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    QRcode = models.CharField(max_length=200, null=True, blank=True)
+    
+    tencongty = models.CharField(max_length=200, null=True, blank=True)
+    tendaydu = models.TextField(null=True, blank=True)
+    diachi = models.CharField(max_length=200, null=True, blank=True)
+    hotline = models.CharField(max_length=200, null=True, blank=True)
+    loaihinhkinhdoanh = models.CharField(max_length=200, null=True, blank=True)
+    danhmuc = models.CharField(max_length=200, null=True, blank=True)
+    daxacminh = models.BooleanField(default=False, null=True, blank=True)
+    doitac = models.BooleanField(default=False, null=True, blank=True)
+    avatar = models.TextField(null=True, blank=True)
+    wallpaper = models.TextField(null=True, blank=True)
+    
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.tencongty}"
+    
+class Quydinh(models.Model):
+    congty = models.ForeignKey(Congty, on_delete=models.CASCADE)
+    
+    tenquydinh = models.CharField(max_length=200, null=True, blank=True)
+    isActive = models.BooleanField(default=True, null=True, blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.tenquydinh}"
+    
+class Chiaca(models.Model):
+    quydinh = models.ForeignKey(Quydinh, on_delete=models.CASCADE)
+    
+    tenca = models.CharField(max_length=200, null=True, blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.tenca}"
+    
+class Chiangay(models.Model):
+    quydinh = models.ForeignKey(Quydinh, on_delete=models.CASCADE)
+    
+    tenngay = models.CharField(max_length=200, null=True, blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.tenngay}"
+    
+class Phanloaingay(models.Model):
+    ngaylamviec = models.ForeignKey(Chiangay, on_delete=models.CASCADE)
+    
+    ngaycuthe = models.TextField(null=True, blank=True) # [YYYY-MM-DD,date,date,date]
+    ngaytrongtuan = models.TextField(null=True, blank=True) # [T2,T3,T4,T5,T6,T7,CN]
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.tenngay}"
+    
+class Chiacatheongay(models.Model):
+    ngaylamviec = models.ForeignKey(Chiangay, on_delete=models.CASCADE)
+    calamviec = models.ForeignKey(Chiaca, on_delete=models.CASCADE)
+    
+    batdau = models.TimeField(max_length=200, null=True, blank=True)
+    ketthuc = models.TimeField(max_length=200, null=True, blank=True)
+    ketthucvaongayhomsau=models.BooleanField(default=False, null=True,blank=True)
+    heso = models.FloatField(default=1, null=True, blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.ngaylamviec.tenngay}_{self.calamviec.tenca}"
+    
+class ChitieChiacatheongay(models.Model):
+    Chiacatheongay = models.ForeignKey(Chiacatheongay, on_delete=models.CASCADE)
+    batdau = models.TimeField(max_length=200, null=True, blank=True)
+    ketthuc = models.TimeField(max_length=200, null=True, blank=True)
+    ketthucvaongayhomsau=models.BooleanField(default=False, null=True,blank=True)
+    heso = models.FloatField(default=1, null=True, blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+    def __str__(self):
+        return f"{self.Chiacatheongay.ngaylamviec.tenngay}_{self.Chiacatheongay.calamviec.tenca}_{self.id}"
+
+class Bophan(models.Model):
+    congty = models.ForeignKey(Congty, on_delete=models.CASCADE)
+    bophancha = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True)
+    
+    tenbophan = models.CharField(max_length=200, null=True, blank=True)
+    ghichu = models.TextField(null=True, blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+    def __str__(self):
+        return f"{self.tenbophan}"
+
+class Capbac(models.Model):
+    congty = models.ForeignKey(Congty, on_delete=models.CASCADE)
+    heso = models.IntegerField(default=0, null=True, blank=True)
+    
+    tencapbac = models.CharField(max_length=200, null=True, blank=True)
+    codecapbac = models.CharField(max_length=200, null=True, blank=True)
+    mucluongthapnhat = models.IntegerField(default=0, null=True, blank=True)
+    mucluongcaonhat = models.IntegerField(default=0, null=True, blank=True)
+    ghichu = models.TextField(null=True, blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+    def __str__(self):
+        return f"{self.tencapbac}"
+
+class Chucvu(models.Model):
+    bophan = models.ForeignKey(Bophan, on_delete=models.CASCADE)
+    capbac = models.ForeignKey(Capbac, on_delete=models.CASCADE, null=True, blank=True)
+    
+    tenchucvu = models.CharField(max_length=200, null=True, blank=True)
+    chucvucha = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True)
+    ghichu = models.TextField(null=True, blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+    def __str__(self):
+        return f"{self.tenchucvu}"
+
+class BangluongTheochucvu(models.Model):
+    chucvu = models.ForeignKey(Chucvu, on_delete=models.CASCADE)
+    tenluong = models.CharField(max_length=200, null=True, blank=True)
+    mucluong = models.IntegerField(null=True, blank=True)
+    tinhvaotangca = models.BooleanField(default=False, null=True, blank=True)
+    tinhthue = models.BooleanField(default=False, null=True, blank=True)
+    tinhbaohiem = models.BooleanField(default=False, null=True, blank=True)
+    ghichu = models.TextField(null=True, blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+    def __str__(self):
+        return f"{self.tenluong}"
+
+class ThuongtheoChucvu(models.Model):
+    chucvu = models.ForeignKey(Chucvu, on_delete=models.CASCADE)
+    tenthuong = models.CharField(max_length=200, null=True, blank=True)
+    mucthuong = models.IntegerField(null=True, blank=True)
+    tinhvaotangca = models.BooleanField(default=False, null=True, blank=True)
+    tinhthue = models.BooleanField(default=False, null=True, blank=True)
+    tinhbaohiem = models.BooleanField(default=False, null=True, blank=True)
+    ghichu = models.TextField(null=True, blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+    def __str__(self):
+        return f"{self.tenthuong}"
+    
+class Nhanvien(models.Model):
+    congty = models.ForeignKey(Congty, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True) # cho phép người dùng liên kết;
+    manhanvien = models.CharField(max_length=200, null=True, blank=True)
+    chucvu = models.ForeignKey(Chucvu, on_delete=models.SET_NULL, null=True, blank=True)
+    capbac = models.ForeignKey(Capbac, on_delete=models.SET_NULL, null=True, blank=True)
+
+    condilam = models.BooleanField(default=True, null=True, blank=True)
+    ngaybatdau = models.DateField(null=True, blank=True)
+    ngayketthuc = models.DateField(null=True, blank=True)
+    macccd = models.CharField(max_length=200, null=True, blank=True)
+    hovaten = models.CharField(max_length=200, null=True, blank=True)
+    ngaysinh = models.DateField(null=True, blank=True)
+    hovaten = models.CharField(max_length=200, null=True, blank=True)
+    diachi = models.CharField(max_length=200, null=True, blank=True)
+    isMale = models.BooleanField(default=True, null=True, blank=True)
+    dakethon = models.BooleanField(default=True, null=True, blank=True)
+    key = models.CharField(max_length=200, null=True, blank=True)
+
+    ghichu = models.TextField(null=True, blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+    def __str__(self):
+        return f"{self.manhanvien}"
+    
+class Thumuc(models.Model):
+    congty = models.ForeignKey(Congty, on_delete=models.CASCADE)
+    thumucgoc = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True)
+    
+    tenthumuc = models.CharField(max_length=200, null=True, blank=True)
+    isPublic = models.BooleanField(default=False, null=True, blank=True)
+    isLock = models.BooleanField(default=False, null=True, blank=True)
+    minLevel = models.ForeignKey(Capbac, on_delete=models.SET_NULL, null=True, blank=True)
+    mota = models.TextField(null=True, blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+    def __str__(self):
+        return f"{self.tenthumuc}"
+    
+class Tailieu(models.Model):
+    congty = models.ForeignKey(Congty, on_delete=models.CASCADE)
+    thumucgoc = models.ForeignKey(Thumuc, on_delete=models.CASCADE)
+    
+    tenfile = models.CharField(max_length=200, null=True, blank=True)
+    tenfilefull = models.CharField(max_length=200, null=True, blank=True)
+    filetype = models.CharField(max_length=200, null=True, blank=True)
+    filesize = models.CharField(max_length=200, null=True, blank=True)
+    filelink = models.CharField(max_length=200, null=True, blank=True)
+    base64data = models.CharField(max_length=200, null=True, blank=True)
+    isTrash = models.BooleanField(default=False, null=True, blank=True)
+    isLock = models.BooleanField(default=False, null=True, blank=True)
+    minLevel = models.ForeignKey(Capbac, on_delete=models.SET_NULL, null=True, blank=True)
+    mota = models.TextField(null=True, blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+    def __str__(self):
+        return f"{self.tenfile}"
+    
+class DateMark(models.Model):
+    congty = models.ForeignKey(Congty, on_delete=models.CASCADE)
+    markname = models.CharField(max_length=250,unique=True)
+    ghichu = models.TextField(null=True, blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+    def __str__(self):
+        return f"{self.markname}"
+    
+class MarkConfig(models.Model):
+    mark = models.ForeignKey(DateMark,on_delete=models.CASCADE)
+    ngaycong = models.FloatField(default=0,null=True,blank=True)
+    checkgiocong = models.BooleanField(default=True,null=True)
+    giocongcongthem = models.FloatField(default=0,null=True,blank=True)
+    cochuyencan = models.BooleanField(default=False,null=True)
+    cophep = models.BooleanField(default=False,null=True)
+    heso = models.FloatField(default=1,null=True, blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+    def __str__(self):
+        return f"{self.mark.markname}_config"
+
+class Chamcong(models.Model):
+    mark = models.ForeignKey(DateMark,on_delete=models.SET_NULL, null=True, blank=True)
+    nhanvien = models.ForeignKey(Nhanvien,on_delete=models.CASCADE)
+    calamviec = models.CharField(max_length=100, null=True, blank=True)
+    ngaylamviec = models.DateField(null=True, blank=True)
+    gioBatdau = models.DateTimeField(null=True, blank=True)
+    gioKetthuc = models.DateTimeField(null=True, blank=True)
+    giolamviecHC = models.FloatField(default=8,null=True, blank=True) # số giờ được tính, max 8
+    giolamviecTC = models.FloatField(default=0,null=True, blank=True) # số giờ tăng ca
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+    def __str__(self):
+        return f"{self.nhanvien.manhanvien}"
+    
+class PhanloaiBatthuong(models.Model):
+    user = models.ForeignKey(User,on_delete=models.SET_NULL, null=True, blank=True) # người tạo
+    congty = models.ForeignKey(Congty, on_delete=models.CASCADE)
+    tenloai = models.CharField(max_length=200,null=True, blank=True)
+    codeloai = models.CharField(max_length=200,null=True, blank=True)
+    ghichu = models.TextField(null=True, blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+    def __str__(self):
+        return f"{self.tenloai}"
+    
+class Batthuong(models.Model):
+    user = models.ForeignKey(User,on_delete=models.SET_NULL, null=True, blank=True) # người tạo
+    isChonguoikhac = models.BooleanField(default=False, null=True, blank=True)
+    nhanvien = models.ForeignKey(Nhanvien,on_delete=models.SET_NULL, null=True, blank=True)
+    loaibatthuong = models.ForeignKey(PhanloaiBatthuong, on_delete=models.SET_NULL, null=True, blank=True)
+    tieude = models.CharField(max_length=200, null=True, blank=True)
+    noidung = models.TextField(null=True, blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+    def __str__(self):
+        return f"{self.nhanvien}"
+    
+class BathuongHistory(models.Model):
+    batthuong = models.ForeignKey(Batthuong,on_delete=models.SET_NULL, null=True, blank=True) # người tạo
+    user = models.ForeignKey(User,on_delete=models.SET_NULL, null=True, blank=True) # người tạo
+    action = models.CharField(max_length=200, null=True, blank=True)
+    old_data = models.TextField(null=True, blank=True)
+    new_data = models.TextField(null=True, blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+    def __str__(self):
+        return f"{self.batthuong.nhanvien}"
