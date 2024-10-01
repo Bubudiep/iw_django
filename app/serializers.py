@@ -246,3 +246,33 @@ class TuchamcongtaySerializer(serializers.ModelSerializer):
     class Meta:
         model = Tuchamcongtay
         fields = '__all__'
+
+class KieungaySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Kieungay
+        fields = '__all__'
+
+class KieucaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Kieuca
+        fields = '__all__'
+
+class HesoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Heso
+        fields = '__all__'
+
+class CongtySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Congty
+        fields = '__all__'
+
+class QuydinhSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Quydinh
+        fields = '__all__'
+
+class ChiacaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Chiaca
+        fields = '__all__'
