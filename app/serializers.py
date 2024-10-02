@@ -147,6 +147,11 @@ class TuchamcongSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         with transaction.atomic():
             # Tạo đối tượng Tuchamcong
+            qs_old=Tuchamcong.objects.filter(user=validated_data.get("user"))
+            if len(qs_old)>=1:
+                raise  serializers.ValidationError({
+                    'Lỗi': f"Đã có dữ liệu!"
+                })
             tuchamcong = Tuchamcong.objects.create(**validated_data)
 
             # Tạo lương cơ bản
