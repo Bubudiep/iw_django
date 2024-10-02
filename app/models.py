@@ -102,25 +102,6 @@ def default_giora():
     today = timezone.now().date()
     return timezone.make_aware(datetime.combine(today, time(17, 0, 0)))
 
-class Tuchamcongtay(models.Model):
-    tuchamcong = models.ForeignKey(Tuchamcong, on_delete=models.CASCADE)
-    ngay = models.DateField(default=timezone.now)
-    giovao = models.DateTimeField(default=default_giovao)  # Set default to 08:00:00
-    giora = models.DateTimeField(default=default_giora)  # Set default to 17:00:00
-    tangca = models.FloatField(default=0)
-    vaomuon = models.FloatField(default=0)
-    giolam = models.FloatField(default=0)
-    dilam = models.BooleanField(default=True, null=True, blank=True)
-    nghicoluong = models.BooleanField(default=True, null=True, blank=True)
-    nghicochuyencan = models.BooleanField(default=True, null=True, blank=True)
-    ghichu = models.TextField(default=None, null=True, blank=True)
-    
-    created_at = models.DateTimeField(default=timezone.now)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return f"{self.ngay}_{self.tuchamcong.tencongty}"
-    
 class Kieungay(models.Model):
     tuchamcong = models.ForeignKey(Tuchamcong, on_delete=models.CASCADE)
     tenloaingay = models.CharField(max_length=200, null=True, blank=True)
@@ -145,6 +126,27 @@ class Kieuca(models.Model):
 
     def __str__(self):
         return f"{self.tenca}_{self.tuchamcong.tencongty}"
+    
+class Tuchamcongtay(models.Model):
+    tuchamcong = models.ForeignKey(Tuchamcong, on_delete=models.CASCADE)
+    ca = models.ForeignKey(Kieuca, on_delete=models.SET_NULL, null=True, blank=True)
+    kieungay = models.ForeignKey(Kieungay, on_delete=models.SET_NULL, null=True, blank=True)
+    ngay = models.DateField(default=timezone.now)
+    giovao = models.DateTimeField(default=default_giovao)  # Set default to 08:00:00
+    giora = models.DateTimeField(default=default_giora)  # Set default to 17:00:00
+    tangca = models.FloatField(default=0)
+    vaomuon = models.FloatField(default=0)
+    giolam = models.FloatField(default=0)
+    dilam = models.BooleanField(default=True, null=True, blank=True)
+    nghicoluong = models.BooleanField(default=True, null=True, blank=True)
+    nghicochuyencan = models.BooleanField(default=True, null=True, blank=True)
+    ghichu = models.TextField(default=None, null=True, blank=True)
+    
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.ngay}_{self.tuchamcong.tencongty}"
     
 class Heso(models.Model):
     tuchamcong = models.ForeignKey(Tuchamcong, on_delete=models.CASCADE)
