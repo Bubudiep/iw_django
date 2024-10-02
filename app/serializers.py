@@ -141,6 +141,7 @@ class TuchamcongSerializer(serializers.ModelSerializer):
         fields = [
             "id","tencongty","ngaybatdau","bophan","chucvu",
             "hesos","kieungays","kieucas","chuyencan","bangluong",
+            "created_at","updated_at"
         ]
         read_only_fields = ['user', 'hesos', 'kieungays', 'kieucas']  # Make nested fields read-only
 
@@ -270,7 +271,42 @@ class HesoSerializer(serializers.ModelSerializer):
 class CongtySerializer(serializers.ModelSerializer):
     class Meta:
         model = Congty
-        fields = '__all__'
+        fields = [
+            "id","tencongty","diachi","hotline",
+            "loaihinhkinhdoanh","danhmuc",
+            "created_at","updated_at"
+        ]
+        read_only_fields = ['user', 'daxacminh', 'doitac']  # Make nested fields read-only
+    def create(self, validated_data):
+        with transaction.atomic():
+            # Tạo đối tượng Tuchamcong
+            if validated_data.get("tencongty",None) is None:
+                raise  serializers.ValidationError({
+                    'Lỗi': f"Tên công ty không được để trống!"
+                })
+            if validated_data.get("diachi",None) is None:
+                raise  serializers.ValidationError({
+                    'Lỗi': f"Tên công ty không được để trống!"
+                })
+            if validated_data.get("hotline",None) is None:
+                raise  serializers.ValidationError({
+                    'Lỗi': f"Tên công ty không được để trống!"
+                })
+            if validated_data.get("loaihinhkinhdoanh",None) is None:
+                raise  serializers.ValidationError({
+                    'Lỗi': f"Tên công ty không được để trống!"
+                })
+            if validated_data.get("danhmuc",None) is None:
+                raise  serializers.ValidationError({
+                    'Lỗi': f"Tên công ty không được để trống!"
+                })
+            qs_old=Congty.objects.filter(user=validated_data.get("user"))
+            if len(qs_old)>=1:
+                raise  serializers.ValidationError({
+                    'Lỗi': f"Đã có dữ liệu!"
+                })
+            congty = Congty.objects.create(**validated_data)
+            return congty
 
 class QuydinhSerializer(serializers.ModelSerializer):
     class Meta:
