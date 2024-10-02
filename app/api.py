@@ -71,8 +71,8 @@ class ZaloLoginAPIView(APIView):
     def post(self, request):
         # Check the referer
         # referer = request.META.get('HTTP_REFERER')
-        # allowed_domain = 'ipays.vn'
-        # if referer is None or not referer.startswith(f'http://{allowed_domain}') and not referer.startswith(f'https://{allowed_domain}'):
+        # allowed_domains = ['ipays.vn', 'example.com', 'anotherdomain.com']  # Thêm các domain hợp lệ vào đây
+        # if referer is None or not any(referer.startswith(f'http://{domain}') or referer.startswith(f'https://{domain}') for domain in allowed_domains):
         #     return Response({'detail': 'Invalid referer'}, status=status.HTTP_403_FORBIDDEN)
 
         zalo_id = request.data.get('zalo_id')
