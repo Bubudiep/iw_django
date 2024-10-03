@@ -90,3 +90,10 @@ class HesoFilter(django_filters.FilterSet):
         model = Heso
         fields = ['tuchamcong', 'kieungay', 'kieuca', 'batdau', 'ketthuc', 'created_at']
 
+
+class CongtyFilter(django_filters.FilterSet):
+    created_at = django_filters.DateFromToRangeFilter()
+
+    class Meta:
+        model = Congty
+        fields = ['created_at']

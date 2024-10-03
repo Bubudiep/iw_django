@@ -65,6 +65,7 @@ OAUTH2_PROVIDER = {
 CORS_ALLOWED_ORIGINS = [
     'https://ipays.vn',
     'http://localhost:3001',
+    'http://localhost:3000',
     "http://localhost:6500",  # Thay đổi theo URL frontend của bạn
     "http://192.168.110.120",
     'https://h5.zdn.vn',
@@ -77,6 +78,7 @@ ALLOWED_HOSTS = [
     'localhost',  # Thay đổi theo URL frontend của bạn
     'localhost:6500',  # Thay đổi theo URL frontend của bạn
     'localhost:3001',
+    'localhost:3000',
     '192.168.110.120',  # Thay đổi theo URL frontend của bạn
     '192.168.110.120:5005',
     'https://h5.zdn.vn',
