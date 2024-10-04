@@ -317,3 +317,8 @@ class ChiacaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Chiaca
         fields = '__all__'
+
+class NhatroSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Nhatro
+        fields = '__all__'

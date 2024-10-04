@@ -67,3 +67,8 @@ class HesoAdmin(admin.ModelAdmin):
     search_fields = ('tuchamcong__tencongty', 'kieungay__tenloaingay', 'kieuca__tenca')
     list_filter = ('created_at',)
     ordering = ('-created_at',)
+
+@admin.register(Nhatro)
+class HesoAdmin(admin.ModelAdmin):
+    list_filter = ('created_at',)
+    ordering = ('-created_at',)

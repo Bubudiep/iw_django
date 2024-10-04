@@ -441,3 +441,45 @@ class BathuongHistory(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     def __str__(self):
         return f"{self.batthuong.nhanvien}"
+
+
+
+
+
+
+class Nhatro(models.Model):
+    user = models.ForeignKey(User,on_delete=models.SET_NULL, null=True, blank=True) # người tạo
+    tenTro = models.CharField(max_length=200, null=True, blank=True)
+    anhDaidien = models.ForeignKey(Photos,on_delete=models.SET_NULL, null=True, blank=True) # người tạo
+    isActive = models.BooleanField(default=True, blank=True)
+    isLock = models.BooleanField(default=True, blank=True)
+    isBand = models.BooleanField(default=True, blank=True)
+    giaphongThapnhat = models.FloatField(default=0, null=True, blank=True)
+    giaphongCaonhat = models.FloatField(default=0, null=True, blank=True)
+    chungchu = models.BooleanField(default=0, null=True, blank=True) # có chung chủ hay không
+    wifi = models.BooleanField(default=0, null=True, blank=True)
+    dieuhoa = models.BooleanField(default=0, null=True, blank=True)
+    nonglanh = models.BooleanField(default=0, null=True, blank=True)
+    hotline = models.CharField(max_length=200, null=True, blank=True)
+    diachi = models.CharField(max_length=200, null=True, blank=True)
+    mota = models.TextField(null=True, blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+    def __str__(self):
+        return f"{self.tenTro}"
+    
+class NhatroThongtin(models.Model):
+    nhaTro = models.ForeignKey(Nhatro,on_delete=models.SET_NULL, null=True, blank=True) # người tạo
+    tienKhac = models.FloatField(default=0, null=True, blank=True)
+    tienRac = models.FloatField(default=0, null=True, blank=True)
+    tienDien = models.FloatField(default=0, null=True, blank=True)
+    tienNuoctheothang = models.FloatField(default=0, null=True, blank=True)
+    tienNuoc = models.FloatField(default=0, null=True, blank=True)
+    lat_post = models.CharField(max_length=200, null=True, blank=True)
+    long_post = models.CharField(max_length=200, null=True, blank=True)
+    mota = models.TextField(null=True, blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+    def __str__(self):
+        return f"{self.nhaTro.tenTro}"
+    

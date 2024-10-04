@@ -15,6 +15,7 @@ router.register(r'kieungay', api.KieungayViewSet, basename='kieungay')
 router.register(r'kieuca', api.KieucaViewSet, basename='kieuca')
 router.register(r'heso', api.HesoViewSet, basename='heso')
 router.register(r'congty', api.CongtyViewSet, basename='congty')
+router.register(r'nhatro', api.NhatroViewSet, basename='nhatro')
 
 urlpatterns = [
     path('zlogin/', api.ZaloLoginAPIView.as_view(), name='zalo_login'),

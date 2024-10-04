@@ -97,3 +97,10 @@ class CongtyFilter(django_filters.FilterSet):
     class Meta:
         model = Congty
         fields = ['created_at']
+
+class NhatroFilter(django_filters.FilterSet):
+    created_at = django_filters.DateFromToRangeFilter()
+
+    class Meta:
+        model = Nhatro
+        fields = ['created_at']

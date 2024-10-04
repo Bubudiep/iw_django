@@ -462,3 +462,36 @@ class CongtyViewSet(viewsets.ModelViewSet):
 
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
+    
+class NhatroViewSet(viewsets.ModelViewSet):
+    serializer_class = NhatroSerializer
+    authentication_classes = [OAuth2Authentication]
+    permission_classes = [IsAuthenticated]
+    filter_backends = (DjangoFilterBackend,)
+    filterset_class = NhatroFilter
+    pagination_class = StandardResultsSetPagination
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_superuser:
+            return Nhatro.objects.all()
+        return Nhatro.objects.filter(user=user)
+
+    def create(self, request, *args, **kwargs):
+        # Set the user to the authenticated user
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(user=request.user)  # Set the user field
+            return Response(serializer.data, status=201)
+        return Response(serializer.errors, status=400)
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        queryset = self.filter_queryset(queryset)  # Áp dụng bộ lọc cho queryset
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
