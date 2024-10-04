@@ -68,6 +68,8 @@ CORS_ALLOWED_ORIGINS = [
     'http://localhost:3000',
     "http://localhost:6500",  # Thay đổi theo URL frontend của bạn
     "http://192.168.110.120",
+    'https://h5.zdn.vn',
+    'zbrowser://h5.zdn.vn',
 ]
 ALLOWED_HOSTS = [
     'ipays.vn',
