@@ -69,6 +69,23 @@ class HesoAdmin(admin.ModelAdmin):
     ordering = ('-created_at',)
 
 @admin.register(Nhatro)
-class HesoAdmin(admin.ModelAdmin):
+class NhatroAdmin(admin.ModelAdmin):
+    list_filter = ('created_at',)
+    ordering = ('-created_at',)
+    
+@admin.register(DanhsachCongty)
+class DanhsachCongtyAdmin(admin.ModelAdmin):
+    list_filter = ('created_at',)
+    ordering = ('-created_at',)
+@admin.register(DanhsachAdmin)
+class DanhsachAdminAdmin(admin.ModelAdmin):
+    list_filter = ('created_at',)
+    ordering = ('-created_at',)
+@admin.register(DanhsachNhanvien)
+class DanhsachNhanvienAdmin(admin.ModelAdmin):
+    list_filter = ('created_at',)
+    ordering = ('-created_at',)
+@admin.register(DanhsachnhanvienDilam)
+class DanhsachnhanvienDilamAdmin(admin.ModelAdmin):
     list_filter = ('created_at',)
     ordering = ('-created_at',)
