@@ -573,3 +573,51 @@ class ChiTietThanhToan(models.Model):
 
     def __str__(self):
         return f"{self.so_tien} VND"
+
+
+
+#### chấm công đi làm
+class DanhsachCongty(models.Model):
+    congty =  models.CharField(max_length=200, null=True, blank=True)
+    isActive =  models.BooleanField(default=True, null=True, blank=True)
+    isBaned =  models.BooleanField(default=True, null=True, blank=True)
+    ghichu =  models.CharField(max_length=200, null=True, blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.congty}"
+
+class DanhsachAdmin(models.Model):
+    congty = models.ForeignKey(DanhsachCongty, on_delete=models.CASCADE)
+    zalo_id = models.CharField(max_length=200, null=True, blank=True)
+    isAdmin =  models.BooleanField(default=True, null=True, blank=True)
+    isStaff =  models.BooleanField(default=True, null=True, blank=True)
+    ghichu =  models.CharField(max_length=200, null=True, blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.congty}_{self.zalo_id}"
+
+class DanhsachNhanvien(models.Model):
+    congty = models.ForeignKey(DanhsachCongty, on_delete=models.SET_NULL, null=True, blank=True)
+    manhanvien = models.CharField(max_length=200, null=True, blank=True)
+    nguoituyen =  models.CharField(max_length=200, null=True, blank=True)
+    ghichu =  models.CharField(max_length=200, null=True, blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.congty}_{self.manhanvien}"
+
+class DanhsachnhanvienDilam(models.Model):
+    manhanvien = models.ForeignKey(DanhsachNhanvien, on_delete=models.CASCADE)
+    chamcongdi =  models.BooleanField(default=True, null=True, blank=True) # True là đi làm, False là đi về
+    ngaydilam =  models.DateField(max_length=200, null=True, blank=True)
+    giochamcong =  models.DateTimeField(max_length=200, null=True, blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.manhanvien.manhanvien}_{self.ngaydilam}"

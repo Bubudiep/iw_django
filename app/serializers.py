@@ -322,3 +322,28 @@ class NhatroSerializer(serializers.ModelSerializer):
     class Meta:
         model = Nhatro
         fields = '__all__'
+
+class DanhsachNhanvienSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DanhsachNhanvien
+        fields = '__all__'
+
+class DanhsachCongtySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DanhsachCongty
+        fields = '__all__'
+
+class DanhsachAdminSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DanhsachAdmin
+        fields = '__all__'
+
+class DanhsachNhanvienSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DanhsachNhanvien
+        fields = '__all__'
+
+class DanhsachnhanvienDilamSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DanhsachnhanvienDilam
+        fields = '__all__'

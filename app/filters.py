@@ -154,3 +154,38 @@ class LichsuThanhToanFilter(django_filters.FilterSet):
     class Meta:
         model = LichsuThanhToan
         fields = ['ngayThanhToan', 'tongTien']
+        
+class DanhsachCongtyFilter(django_filters.FilterSet):
+    congty = django_filters.CharFilter(ield_name='congty',lookup_expr='icontains')
+
+    class Meta:
+        model = DanhsachCongty
+        fields = ['congty']
+        
+class DanhsachAdminFilter(django_filters.FilterSet):
+    congty = django_filters.CharFilter(ield_name='congty__congty',lookup_expr='icontains')
+    zalo_id = django_filters.CharFilter(lookup_expr='icontains')
+    isAdmin = django_filters.BooleanFilter()
+    isStaff = django_filters.BooleanFilter()
+
+    class Meta:
+        model = DanhsachAdmin
+        fields = ['congty', 'zalo_id', 'isAdmin', 'isStaff']
+        
+class DanhsachNhanvienFilter(django_filters.FilterSet):
+    congty = django_filters.CharFilter(ield_name='congty__congty',lookup_expr='icontains')
+    manhanvien = django_filters.CharFilter(lookup_expr='icontains')
+    nguoituyen = django_filters.CharFilter(lookup_expr='icontains')
+
+    class Meta:
+        model = DanhsachNhanvien
+        fields = ['congty', 'manhanvien', 'nguoituyen']
+        
+class DanhsachnhanvienDilamFilter(django_filters.FilterSet):
+    manhanvien = django_filters.CharFilter(field_name='manhanvien__manhanvien', lookup_expr='icontains')
+    chamcongdi = django_filters.BooleanFilter()
+    ngaydilam = django_filters.DateFromToRangeFilter()
+
+    class Meta:
+        model = DanhsachnhanvienDilam
+        fields = ['manhanvien', 'chamcongdi', 'ngaydilam']
