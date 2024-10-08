@@ -144,6 +144,20 @@ class RegisterView(APIView):
                 return Response({'detail': 'Internal server error'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
+
+class NhaTroCreateView(APIView):
+    def post(self, request):
+        try:
+            data= request.data 
+        
+        except Exception as e:
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            lineno = exc_tb.tb_lineno
+            file_path = exc_tb.tb_frame.f_code.co_filename
+            file_name = os.path.basename(file_path)
+            res_data = generate_response_json("FAIL", f"[{file_name}_{lineno}] {str(e)}")
+            return Response(data=res_data, status=status.HTTP_400_BAD_REQUEST)
+    
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer

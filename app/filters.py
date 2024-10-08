@@ -98,9 +98,59 @@ class CongtyFilter(django_filters.FilterSet):
         model = Congty
         fields = ['created_at']
 
-class NhatroFilter(django_filters.FilterSet):
+class TangFilter(django_filters.FilterSet):
     created_at = django_filters.DateFromToRangeFilter()
 
     class Meta:
-        model = Nhatro
+        model = Tang
         fields = ['created_at']
+
+class LichsuNguoitroFilter(django_filters.FilterSet):
+    created_at = django_filters.DateFromToRangeFilter()
+
+    class Meta:
+        model = LichsuNguoitro
+        fields = ['created_at']
+
+class LichsuTieuThuFilter(django_filters.FilterSet):
+    created_at = django_filters.DateFromToRangeFilter()
+
+    class Meta:
+        model = LichsuTieuThu
+        fields = ['created_at']
+
+class NhatroFilter(django_filters.FilterSet):
+    created_at = django_filters.DateFromToRangeFilter()
+    giaphongThapnhat = django_filters.RangeFilter()
+    giaphongCaonhat = django_filters.RangeFilter()
+    isActive = django_filters.BooleanFilter()
+
+    class Meta:
+        model = Nhatro
+        fields = ['created_at', 'giaphongThapnhat', 'giaphongCaonhat', 'isActive']
+
+class NguoitroFilter(django_filters.FilterSet):
+    hoTen = django_filters.CharFilter(lookup_expr='icontains')
+    sdt = django_filters.CharFilter(lookup_expr='icontains')
+    cccd = django_filters.CharFilter(lookup_expr='icontains')
+    isActive = django_filters.BooleanFilter()
+
+    class Meta:
+        model = Nguoitro
+        fields = ['hoTen', 'sdt', 'cccd', 'isActive']
+
+class PhongFilter(django_filters.FilterSet):
+    giaPhong = django_filters.RangeFilter()
+    soNguoiToida = django_filters.RangeFilter()
+
+    class Meta:
+        model = Phong
+        fields = ['giaPhong', 'soNguoiToida']
+
+class LichsuThanhToanFilter(django_filters.FilterSet):
+    ngayThanhToan = django_filters.DateFromToRangeFilter()
+    tongTien = django_filters.RangeFilter()
+
+    class Meta:
+        model = LichsuThanhToan
+        fields = ['ngayThanhToan', 'tongTien']

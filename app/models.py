@@ -483,3 +483,93 @@ class NhatroThongtin(models.Model):
     def __str__(self):
         return f"{self.nhaTro.tenTro}"
     
+class Tang(models.Model):
+    nhaTro = models.ForeignKey(Nhatro, on_delete=models.CASCADE, related_name='tangs')  # Nhà trọ
+    soTang = models.IntegerField()  # Số thứ tự của tầng
+    mota = models.TextField(null=True, blank=True)  # Mô tả tầng
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Tầng {self.soTang} - {self.nhaTro.tenTro}"
+
+class Phong(models.Model):
+    tang = models.ForeignKey(Tang, on_delete=models.CASCADE, related_name='phongs')  # Tầng chứa phòng
+    soPhong = models.CharField(max_length=10)  # Số phòng
+    giaPhong = models.FloatField(default=0, null=True, blank=True)  # Giá phòng
+    soNguoiToida = models.IntegerField(default=1)  # Số người ở tối đa
+    mota = models.TextField(null=True, blank=True)  # Mô tả phòng
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Phòng {self.soPhong} - Tầng {self.tang.soTang} - {self.tang.nhaTro.tenTro}"
+
+class Nguoitro(models.Model):
+    user = models.OneToOneField(User, on_delete=models.SET_NULL,null=True, blank=True)  # Liên kết với tài khoản người dùng
+    hoTen = models.CharField(max_length=200, null=True, blank=True)
+    sdt = models.CharField(max_length=15, null=True, blank=True)  # Số điện thoại
+    cccd = models.CharField(max_length=12, null=True, blank=True)  # Căn cước công dân
+    isActive = models.BooleanField(default=True)  # Trạng thái người dùng
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.user.username} - {self.hoTen}"
+
+class LichsuNguoitro(models.Model):
+    nguoiTro = models.ForeignKey(Nguoitro, on_delete=models.SET_NULL,null=True, blank=True)  # Người ở trọ
+    phong = models.ForeignKey(Phong, on_delete=models.SET_NULL,null=True, blank=True)  # Phòng trọ đang ở
+    ngayBatdauO = models.DateField(null=True, blank=True)  # Ngày bắt đầu ở trọ
+    ngayKetthucO = models.DateField(null=True, blank=True)  # Ngày kết thúc ở trọ
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.nguoiTro.hoTen} - Phòng {self.phong.soPhong} ({self.ngayBatdauO} - {self.ngayKetthucO})"
+    
+class LichsuTieuThu(models.Model):
+    phong = models.ForeignKey(Phong, on_delete=models.SET_NULL, null=True, blank=True)  # Phòng trọ liên quan
+    nguoiTro = models.ForeignKey(Nguoitro, on_delete=models.SET_NULL, null=True, blank=True)  # Người tiêu thụ điện, nước
+    soDienTieuThu = models.FloatField(default=0, null=True, blank=True)  # Số điện tiêu thụ trong tháng
+    soNuocTieuThu = models.FloatField(default=0, null=True, blank=True)  # Số nước tiêu thụ trong tháng
+    thang = models.DateField()  # Tháng của bản ghi tiêu thụ
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Tiêu thụ: {self.nguoiTro.hoTen} - Phòng {self.phong.soPhong} - Tháng {self.thang}"
+
+class LichsuThanhToan(models.Model):
+    phong = models.ForeignKey(Phong, on_delete=models.SET_NULL, null=True, blank=True)
+    nguoiTro = models.ForeignKey(Nguoitro, on_delete=models.SET_NULL, null=True, blank=True)
+    soTienPhong = models.FloatField(default=0, null=True, blank=True)
+    soTienDien = models.FloatField(default=0, null=True, blank=True)
+    soTienNuoc = models.FloatField(default=0, null=True, blank=True)
+    soTienWifi = models.FloatField(default=0, null=True, blank=True)
+    soTienRac = models.FloatField(default=0, null=True, blank=True)
+    soTienKhac = models.FloatField(default=0, null=True, blank=True)
+    tongTien = models.FloatField(default=0, null=True, blank=True)
+    ngayThanhToan = models.DateTimeField(null=True, blank=True)  # Ngày thanh toán
+    isPaid = models.BooleanField(default=False)  # Trạng thái thanh toán
+    ghichu = models.TextField(null=True, blank=True)  # Ghi chú
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def mark_as_paid(self):
+        self.isPaid = True
+        self.ngayThanhToan = timezone.now()
+        self.save()
+
+    def __str__(self):
+        return f"{self.nguoiTro.hoTen} {self.ngayThanhToan if self.isPaid else 'Chưa thanh toán'}"
+
+class ChiTietThanhToan(models.Model):
+    lichsu_thanh_toan = models.ForeignKey(LichsuThanhToan, on_delete=models.CASCADE, related_name='chi_tiet_thanh_toan')
+    so_tien = models.FloatField(default=0)  # Số tiền thanh toán cho hạng mục
+    ghichu = models.TextField(null=True, blank=True)  # Ghi chú
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.so_tien} VND"

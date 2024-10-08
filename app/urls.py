@@ -18,6 +18,7 @@ router.register(r'congty', api.CongtyViewSet, basename='congty')
 router.register(r'nhatro', api.NhatroViewSet, basename='nhatro')
 
 urlpatterns = [
+    path('nha-tro/', api.NhaTroCreateView.as_view(), name='nha_tro_create'),
     path('zlogin/', api.ZaloLoginAPIView.as_view(), name='zalo_login'),
     path('login/', api.CustomTokenView.as_view(), name='login'),
     path('register/', api.RegisterView.as_view(), name='register'),
