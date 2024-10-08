@@ -156,14 +156,14 @@ class LichsuThanhToanFilter(django_filters.FilterSet):
         fields = ['ngayThanhToan', 'tongTien']
         
 class DanhsachCongtyFilter(django_filters.FilterSet):
-    congty = django_filters.CharFilter(ield_name='congty',lookup_expr='icontains')
+    congty = django_filters.CharFilter(field_name='congty',lookup_expr='icontains')
 
     class Meta:
         model = DanhsachCongty
         fields = ['congty']
         
 class DanhsachAdminFilter(django_filters.FilterSet):
-    congty = django_filters.CharFilter(ield_name='congty__congty',lookup_expr='icontains')
+    congty = django_filters.CharFilter(field_name='congty__congty',lookup_expr='icontains')
     zalo_id = django_filters.CharFilter(lookup_expr='icontains')
     isAdmin = django_filters.BooleanFilter()
     isStaff = django_filters.BooleanFilter()
@@ -173,7 +173,7 @@ class DanhsachAdminFilter(django_filters.FilterSet):
         fields = ['congty', 'zalo_id', 'isAdmin', 'isStaff']
         
 class DanhsachNhanvienFilter(django_filters.FilterSet):
-    congty = django_filters.CharFilter(ield_name='congty__congty',lookup_expr='icontains')
+    congty = django_filters.CharFilter(field_name='congty__congty',lookup_expr='icontains')
     manhanvien = django_filters.CharFilter(lookup_expr='icontains')
     nguoituyen = django_filters.CharFilter(lookup_expr='icontains')
 

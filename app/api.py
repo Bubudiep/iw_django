@@ -25,6 +25,7 @@ from datetime import datetime, timedelta
 import string
 from .filters import *
 from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.exceptions import AuthenticationFailed
   
 class StandardResultsSetPagination(PageNumberPagination):
     page_size = 10  # Số lượng đối tượng trên mỗi trang
@@ -66,7 +67,6 @@ def generate_refresh_token(length=32):
     """Tạo refresh token ngắn với độ dài cụ thể."""
     characters = string.ascii_letters + string.digits
     return ''.join(secrets.choice(characters) for _ in range(length))
-
 class ZaloLoginAPIView(APIView):
     def post(self, request):
         # Check the referer
@@ -586,7 +586,12 @@ class DanhsachNhanvienViewSet(viewsets.ModelViewSet):
         user = self.request.user
         if user.is_superuser:
             return DanhsachNhanvien.objects.all()
-        return DanhsachNhanvien.objects.filter(user=user)
+        #
+        qs_profile=Profile.objects.get(user=user)
+        print(f"{qs_profile.zalo_id}")
+        qs_admin=DanhsachAdmin.objects.get(zalo_id=qs_profile.zalo_id)
+        print(f"{qs_admin}")
+        return DanhsachNhanvien.objects.filter(congty=qs_admin.congty)
 
     def create(self, request, *args, **kwargs):
         # Set the user to the authenticated user
@@ -606,3 +611,93 @@ class DanhsachNhanvienViewSet(viewsets.ModelViewSet):
 
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
+    
+class DanhsachAdminViewSet(viewsets.ModelViewSet):
+    serializer_class = DanhsachAdminSerializer
+    authentication_classes = [OAuth2Authentication]
+    permission_classes = [IsAuthenticated]
+    filter_backends = (DjangoFilterBackend,)
+    filterset_class = DanhsachAdminFilter
+    pagination_class = StandardResultsSetPagination
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_superuser:
+            return DanhsachAdmin.objects.all()
+        #
+        qs_profile=Profile.objects.get(user=user)
+        return DanhsachAdmin.objects.filter(zalo_id=qs_profile.zalo_id)
+
+    def create(self, request, *args, **kwargs):
+        # Set the user to the authenticated user
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(user=request.user)  # Set the user field
+            return Response(serializer.data, status=201)
+        return Response(serializer.errors, status=400)
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        queryset = self.filter_queryset(queryset)  # Áp dụng bộ lọc cho queryset
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+    
+class DilamAPIView(APIView):
+    def get_permissions(self):
+        if self.request.method == 'GET' or self.request.method == 'POST':
+            return [permissions.AllowAny()]
+        return [permissions.IsAuthenticated()]
+
+    def get(self, request):
+        data = request.query_params
+        auth_header = request.META.get('HTTP_AUTHORIZATION')
+        token = None
+        # Extract the token from the Authorization header
+        if auth_header is not None:
+            parts = auth_header.split()
+            if len(parts) == 2 and parts[0] == 'Bearer':
+                token = parts[1]
+        
+        # Handle case where token is not provided
+        if token is None:
+            return Response({'detail': 'Authorization token is missing.'}, status=status.HTTP_401_UNAUTHORIZED)
+        
+        try:
+            # Validate the token
+            vaolam=False
+            if data.get("chamcongdi",None)=="true":
+                vaolam=True
+            qs_token = AccessToken.objects.get(token=token)
+            qs_profile=Profile.objects.get(user=qs_token.user)
+            qs_admin=DanhsachAdmin.objects.get(zalo_id=qs_profile.zalo_id,congty__congty=data.get("congty"))
+            qs_nv=DanhsachNhanvien.objects.get(manhanvien=data.get("manhanvien"),congty=qs_admin.congty)
+            dilam=DanhsachnhanvienDilam.objects.create(manhanvien=qs_nv,chamcongdi=vaolam,ngaydilam=data.get("ngaylam",None))
+            print(f"{qs_nv}")
+            return Response(DanhsachnhanvienDilamDetailsSerializer(dilam,many=False).data)
+        except AccessToken.DoesNotExist:
+            raise AuthenticationFailed('Invalid token')
+
+        # Proceed with processing if the token is valid
+        return Response(data={'params': data, 'token': token})
+    
+    def post(self, request):
+        res_data = dict()
+        res_status = status.HTTP_200_OK
+        try:
+            client_data = request.data
+            rmItems=client_data.get("rm_item",None)
+            send_mail=client_data.get("send_mail",None)
+            
+        except Exception as e:
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            lineno = exc_tb.tb_lineno
+            file_path = exc_tb.tb_frame.f_code.co_filename
+            file_name = os.path.basename(file_path)
+            res_data = generate_response_json("FAIL", f"[{file_name}_{lineno}] {str(e)}")
+
+        return Response(data=res_data, status=res_status)   

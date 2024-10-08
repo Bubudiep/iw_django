@@ -16,11 +16,14 @@ router.register(r'kieuca', api.KieucaViewSet, basename='kieuca')
 router.register(r'heso', api.HesoViewSet, basename='heso')
 router.register(r'congty', api.CongtyViewSet, basename='congty')
 router.register(r'nhatro', api.NhatroViewSet, basename='nhatro')
+router.register(r'danhsachnhanvien', api.DanhsachNhanvienViewSet, basename='danhsachnhanvien')
+router.register(r'danhsachadmin', api.DanhsachAdminViewSet, basename='danhsachadmin')
 
 urlpatterns = [
     path('nha-tro/', api.NhaTroCreateView.as_view(), name='nha_tro_create'),
     path('zlogin/', api.ZaloLoginAPIView.as_view(), name='zalo_login'),
     path('login/', api.CustomTokenView.as_view(), name='login'),
     path('register/', api.RegisterView.as_view(), name='register'),
+    path('dilam/', api.DilamAPIView.as_view(), name='dilam'),
     path('', include(router.urls)),  # Thêm router vào urlpatterns
 ]

@@ -334,16 +334,23 @@ class DanhsachCongtySerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class DanhsachAdminSerializer(serializers.ModelSerializer):
+    congty = DanhsachCongtySerializer()  # Changed to serialize a single instance
     class Meta:
         model = DanhsachAdmin
         fields = '__all__'
-
+        
 class DanhsachNhanvienSerializer(serializers.ModelSerializer):
     class Meta:
         model = DanhsachNhanvien
         fields = '__all__'
 
 class DanhsachnhanvienDilamSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DanhsachnhanvienDilam
+        fields = '__all__'
+
+class DanhsachnhanvienDilamDetailsSerializer(serializers.ModelSerializer):
+    manhanvien=DanhsachNhanvienSerializer()
     class Meta:
         model = DanhsachnhanvienDilam
         fields = '__all__'
