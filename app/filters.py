@@ -185,6 +185,8 @@ class DanhsachnhanvienDilamFilter(django_filters.FilterSet):
     manhanvien = django_filters.CharFilter(field_name='manhanvien__manhanvien', lookup_expr='icontains')
     chamcongdi = django_filters.BooleanFilter()
     ngaydilam = django_filters.DateFromToRangeFilter()
+    ngaydilam = django_filters.CharFilter()
+    chamcongdi = django_filters.BooleanFilter()
 
     class Meta:
         model = DanhsachnhanvienDilam

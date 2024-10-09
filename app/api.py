@@ -542,38 +542,7 @@ class DanhsachCongtyViewSet(viewsets.ModelViewSet):
 
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
-class DanhsachNhanvienViewSet(viewsets.ModelViewSet):
-    serializer_class = DanhsachNhanvienSerializer
-    authentication_classes = [OAuth2Authentication]
-    permission_classes = [IsAuthenticated]
-    filter_backends = (DjangoFilterBackend,)
-    filterset_class = DanhsachNhanvienFilter
-    pagination_class = StandardResultsSetPagination
-
-    def get_queryset(self):
-        user = self.request.user
-        if user.is_superuser:
-            return DanhsachNhanvien.objects.all()
-        return DanhsachNhanvien.objects.filter(user=user)
-
-    def create(self, request, *args, **kwargs):
-        # Set the user to the authenticated user
-        serializer = self.get_serializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save(user=request.user)  # Set the user field
-            return Response(serializer.data, status=201)
-        return Response(serializer.errors, status=400)
-
-    def list(self, request, *args, **kwargs):
-        queryset = self.get_queryset()
-        queryset = self.filter_queryset(queryset)  # Áp dụng bộ lọc cho queryset
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
-
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
+    
 class DanhsachNhanvienViewSet(viewsets.ModelViewSet):
     serializer_class = DanhsachNhanvienSerializer
     authentication_classes = [OAuth2Authentication]
@@ -588,9 +557,7 @@ class DanhsachNhanvienViewSet(viewsets.ModelViewSet):
             return DanhsachNhanvien.objects.all()
         #
         qs_profile=Profile.objects.get(user=user)
-        print(f"{qs_profile.zalo_id}")
         qs_admin=DanhsachAdmin.objects.get(zalo_id=qs_profile.zalo_id)
-        print(f"{qs_admin}")
         return DanhsachNhanvien.objects.filter(congty=qs_admin.congty)
 
     def create(self, request, *args, **kwargs):
@@ -639,6 +606,50 @@ class DanhsachAdminViewSet(viewsets.ModelViewSet):
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
         queryset = self.filter_queryset(queryset)  # Áp dụng bộ lọc cho queryset
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+    
+class DanhsachnhanvienDilamViewSet(viewsets.ModelViewSet):
+    serializer_class = DanhsachnhanvienDilamDetailsSerializer
+    authentication_classes = [OAuth2Authentication]
+    permission_classes = [IsAuthenticated]
+    filter_backends = (DjangoFilterBackend,)
+    filterset_class = DanhsachnhanvienDilamFilter
+    pagination_class = StandardResultsSetPagination
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_superuser:
+            return DanhsachnhanvienDilam.objects.all()
+        #
+        qs_profile=Profile.objects.get(user=user)
+        print(f"{qs_profile}")
+        qs_admin=DanhsachAdmin.objects.filter(zalo_id=qs_profile.zalo_id).values_list("congty__id",flat=True)
+        print(f"{qs_admin}")
+        qs_nhanvien=DanhsachNhanvien.objects.filter(congty__in=qs_admin).values_list("id",flat=True)
+        return DanhsachnhanvienDilam.objects.filter(manhanvien__in=qs_nhanvien)
+
+    def create(self, request, *args, **kwargs):
+        # Set the user to the authenticated user
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(user=request.user)  # Set the user field
+            return Response(serializer.data, status=201)
+        return Response(serializer.errors, status=400)
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        queryset = self.filter_queryset(queryset)  # Áp dụng bộ lọc cho queryset
+        
+        page_size = self.request.query_params.get('page_size')
+        if page_size is not None:
+            self.pagination_class.page_size = int(page_size)
+            
         page = self.paginate_queryset(queryset)
         if page is not None:
             serializer = self.get_serializer(page, many=True)

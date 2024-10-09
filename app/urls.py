@@ -17,6 +17,7 @@ router.register(r'heso', api.HesoViewSet, basename='heso')
 router.register(r'congty', api.CongtyViewSet, basename='congty')
 router.register(r'nhatro', api.NhatroViewSet, basename='nhatro')
 router.register(r'danhsachnhanvien', api.DanhsachNhanvienViewSet, basename='danhsachnhanvien')
+router.register(r'danhsachdilam', api.DanhsachnhanvienDilamViewSet, basename='danhsachdilam')
 router.register(r'danhsachadmin', api.DanhsachAdminViewSet, basename='danhsachadmin')
 
 urlpatterns = [
