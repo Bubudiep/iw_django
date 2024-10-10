@@ -602,7 +602,7 @@ class DanhsachAdmin(models.Model):
 
 class DanhsachNhanvien(models.Model):
     congty = models.ForeignKey(DanhsachCongty, on_delete=models.SET_NULL, null=True, blank=True)
-    manhanvien = models.CharField(max_length=200, null=True, blank=True)
+    manhanvien = models.CharField(max_length=200, unique=True, null=True, blank=True)
     HovaTen =  models.CharField(max_length=200, null=True, blank=True)
     nguoituyen =  models.CharField(max_length=200, null=True, blank=True)
     ghichu =  models.CharField(max_length=200, null=True, blank=True)
