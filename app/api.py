@@ -621,16 +621,15 @@ class DanhsachnhanvienDilamViewSet(viewsets.ModelViewSet):
     filter_backends = (DjangoFilterBackend,)
     filterset_class = DanhsachnhanvienDilamFilter
     pagination_class = StandardResultsSetPagination
-
+    # Chỉ cho phép GET
+    http_method_names = ['get']
     def get_queryset(self):
         user = self.request.user
         if user.is_superuser:
             return DanhsachnhanvienDilam.objects.all()
         #
         qs_profile=Profile.objects.get(user=user)
-        print(f"{qs_profile}")
         qs_admin=DanhsachAdmin.objects.filter(zalo_id=qs_profile.zalo_id).values_list("congty__id",flat=True)
-        print(f"{qs_admin}")
         qs_nhanvien=DanhsachNhanvien.objects.filter(congty__in=qs_admin).values_list("id",flat=True)
         return DanhsachnhanvienDilam.objects.filter(manhanvien__in=qs_nhanvien)
 
