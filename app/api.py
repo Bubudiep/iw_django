@@ -84,7 +84,7 @@ class ZaloLoginAPIView(APIView):
         profile = get_object_or_404(Profile, zalo_id=zalo_id)
         user = profile.user
         qs_app = Application.objects.first()
-        expires_in_seconds = settings.OAUTH2_PROVIDER.get('ACCESS_TOKEN_EXPIRE_SECONDS', 3600)
+        expires_in_seconds = settings.OAUTH2_PROVIDER.get('ACCESS_TOKEN_EXPIRE_SECONDS', 360000)
         
         # Tính toán thời gian hết hạn
         expires_at = timezone.now() + timedelta(seconds=expires_in_seconds)
@@ -560,14 +560,25 @@ class DanhsachNhanvienViewSet(viewsets.ModelViewSet):
         qs_admin=DanhsachAdmin.objects.get(zalo_id=qs_profile.zalo_id)
         return DanhsachNhanvien.objects.filter(congty=qs_admin.congty)
 
+    
     def create(self, request, *args, **kwargs):
         # Set the user to the authenticated user
+        user = self.request.user
         serializer = self.get_serializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save(user=request.user)  # Set the user field
-            return Response(serializer.data, status=201)
+        if user.is_superuser:
+            if serializer.is_valid():
+                serializer.save()
+        else:
+            if serializer.is_valid():
+                qs_profile=Profile.objects.get(user=user)
+                qs_admin=DanhsachAdmin.objects.filter(zalo_id=qs_profile.zalo_id,congty=request.data.get("congty", None))
+                if len(qs_admin)>0:
+                    serializer.save()  # Set the user field
+                    return Response(serializer.data, status=201)
+                else:
+                    return Response(data={"Lỗi":"Bạn không phải nhân viên của công ty này!"}, status=400)
         return Response(serializer.errors, status=400)
-
+    
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
         queryset = self.filter_queryset(queryset)  # Áp dụng bộ lọc cho queryset
