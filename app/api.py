@@ -67,14 +67,9 @@ def generate_refresh_token(length=32):
     """Tạo refresh token ngắn với độ dài cụ thể."""
     characters = string.ascii_letters + string.digits
     return ''.join(secrets.choice(characters) for _ in range(length))
+
 class ZaloLoginAPIView(APIView):
     def post(self, request):
-        # Check the referer
-        # referer = request.META.get('HTTP_REFERER')
-        # allowed_domains = ['ipays.vn', 'example.com', 'anotherdomain.com']  # Thêm các domain hợp lệ vào đây
-        # if referer is None or not any(referer.startswith(f'http://{domain}') or referer.startswith(f'https://{domain}') for domain in allowed_domains):
-        #     return Response({'detail': 'Invalid referer'}, status=status.HTTP_403_FORBIDDEN)
-
         zalo_id = request.data.get('zalo_id')
 
         if not zalo_id:
@@ -86,14 +81,35 @@ class ZaloLoginAPIView(APIView):
         qs_app = Application.objects.first()
         expires_in_seconds = settings.OAUTH2_PROVIDER.get('ACCESS_TOKEN_EXPIRE_SECONDS', 360000)
         
-        # Tính toán thời gian hết hạn
-        expires_at = timezone.now() + timedelta(seconds=expires_in_seconds)
+        # Lấy thời gian hiện tại
+        now = timezone.now()
 
-        # Tạo token và refresh token
+        # Kiểm tra xem có token nào còn hạn không
+        existing_tokens = AccessToken.objects.filter(user=user, application=qs_app)
+
+        # Xóa token nào đã hết hạn
+        for token in existing_tokens:
+            if token.expires < now:
+                token.delete()
+
+        # Nếu còn token hợp lệ, trả về token đó
+        valid_token = existing_tokens.filter(expires__gt=now).first()
+        if valid_token:
+            return JsonResponse({
+                'access_token': valid_token.token,
+                'expires_in': int((valid_token.expires - now).total_seconds()),
+                'token_type': 'Bearer',
+                'scope': valid_token.scope,
+                'refresh_token': 'existing_refresh_token',  # Add your logic to handle refresh tokens
+            })
+
+        # Nếu không có token hợp lệ, tạo token mới
+        expires_at = now + timedelta(seconds=expires_in_seconds)
+
+        # Tạo token mới cho người dùng
         access_token_str = generate_short_token(length=32)  # Token ngắn
         refresh_token_str = generate_refresh_token(length=32)  # Refresh token ngắn
 
-        # Tạo token mới cho người dùng
         try:
             token = AccessToken.objects.create(
                 user=user,
@@ -104,7 +120,7 @@ class ZaloLoginAPIView(APIView):
         except Exception as e:
             return Response({'detail': 'Internal server error'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        # Trả về token
+        # Trả về token mới
         return JsonResponse({
             'access_token': access_token_str,
             'expires_in': expires_in_seconds,
@@ -112,7 +128,7 @@ class ZaloLoginAPIView(APIView):
             'scope': 'read write',
             'refresh_token': refresh_token_str,
         })
-        
+     
 class RegisterView(APIView):
     permission_classes = [AllowAny]
 
@@ -457,6 +473,39 @@ class CongtyViewSet(viewsets.ModelViewSet):
         if user.is_superuser:
             return Congty.objects.all()
         return Congty.objects.filter(user=user)
+
+    def create(self, request, *args, **kwargs):
+        # Set the user to the authenticated user
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(user=request.user)  # Set the user field
+            return Response(serializer.data, status=201)
+        return Response(serializer.errors, status=400)
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        queryset = self.filter_queryset(queryset)  # Áp dụng bộ lọc cho queryset
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+    
+class DanhsachNhatroViewSet(viewsets.ModelViewSet):
+    serializer_class = NhatroDetailsSerializer
+    authentication_classes = [OAuth2Authentication]
+    permission_classes = [IsAuthenticated]
+    filter_backends = (DjangoFilterBackend,)
+    filterset_class = NhatroFilter
+    pagination_class = StandardResultsSetPagination
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_superuser:
+            return Nhatro.objects.all()
+        return Nhatro.objects.filter(user=user)
 
     def create(self, request, *args, **kwargs):
         # Set the user to the authenticated user

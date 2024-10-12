@@ -323,6 +323,30 @@ class NhatroSerializer(serializers.ModelSerializer):
         model = Nhatro
         fields = '__all__'
 
+
+class PhongSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Phong
+        fields = '__all__'
+
+class TangPhongSerializer(serializers.ModelSerializer):
+    Chitiet = serializers.SerializerMethodField(read_only=True)
+    def get_Chitiet(self, qs):
+        qs_Phong=Phong.objects.filter(tang=qs)
+        return PhongSerializer(qs_Phong,many=True).data
+    class Meta:
+        model = Tang
+        fields = '__all__'
+
+class NhatroDetailsSerializer(serializers.ModelSerializer):
+    Thongtin = serializers.SerializerMethodField(read_only=True)
+    def get_Thongtin(self, qs):
+        qs_tang=Tang.objects.filter(nhaTro=qs)
+        return TangPhongSerializer(qs_tang,many=True).data
+    class Meta:
+        model = Nhatro
+        fields = '__all__'
+
 class DanhsachNhanvienSerializer(serializers.ModelSerializer):
     class Meta:
         model = DanhsachNhanvien
