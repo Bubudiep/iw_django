@@ -68,6 +68,40 @@ def generate_refresh_token(length=32):
     characters = string.ascii_letters + string.digits
     return ''.join(secrets.choice(characters) for _ in range(length))
 
+class ThemtangAPIView(APIView):
+    authentication_classes = [OAuth2Authentication]  # Kiểm tra xác thực OAuth2
+    permission_classes = [IsAuthenticated]  # Đảm bảo người dùng phải đăng nhập (token hợp lệ)
+
+    def post(self, request):
+        data = request.data
+        # Kiểm tra token đã xác thực
+        if request.user.is_authenticated:
+            data = request.data
+        try:
+            nhaTro=data.get("nhaTro",None)
+            if nhaTro is None:
+                return Response({'Lỗi': "Chưa chọn nhà trọ"}, status=status.HTTP_400_BAD_REQUEST)
+            soPhong=data.get("soPhong",None)
+            if soPhong is None:
+                return Response({'Lỗi': "Chưa nhập số phòng"}, status=status.HTTP_400_BAD_REQUEST)
+            tenTang=data.get("soTang",None)
+            if tenTang is None:
+                return Response({'Lỗi': "Chưa nhập tên tầng"}, status=status.HTTP_400_BAD_REQUEST)
+            taoPhong=data.get("taoPhong",None)
+            if taoPhong is None:
+                return Response({'Lỗi': "Bạn đang sử dụng phiên bản khác"}, status=status.HTTP_400_BAD_REQUEST)
+            qs_nhatro=Nhatro.objects.get(id=nhaTro,user=request.user)
+            qs_tang=Tang.objects.create(tenTang=tenTang,nhaTro=qs_nhatro)
+            if taoPhong:
+                for tao in range(0,int(soPhong)):
+                    Phong.objects.create(tang=qs_tang,soPhong=f"Phòng {tao+1}")
+            # Trả về phản hồi thành công
+            return Response(NhatroDetailsSerializer(qs_nhatro,many=False).data, status=status.HTTP_201_CREATED)
+        except Nhatro.DoesNotExist:
+            return Response({'Lỗi': "Không tìm thấy nhà trọ"}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({'Lỗi': f"{e}"}, status=status.HTTP_400_BAD_REQUEST)
+
 class ZaloLoginAPIView(APIView):
     def post(self, request):
         zalo_id = request.data.get('zalo_id')

@@ -551,7 +551,7 @@ class NhatroThongtin(models.Model):
     
 class Tang(models.Model):
     nhaTro = models.ForeignKey(Nhatro, on_delete=models.CASCADE, related_name='tangs')  # Nhà trọ
-    soTang = models.IntegerField()  # Số thứ tự của tầng
+    tenTang = models.CharField(max_length=10)  # Số tầng
     mota = models.TextField(null=True, blank=True)  # Mô tả tầng
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
@@ -566,6 +566,7 @@ class Phong(models.Model):
     soPhong = models.CharField(max_length=10)  # Số phòng
     giaPhong = models.FloatField(default=0, null=True, blank=True)  # Giá phòng
     soNguoiToida = models.IntegerField(default=1)  # Số người ở tối đa
+    isActive = models.BooleanField(default=True, blank=True)
     mota = models.TextField(null=True, blank=True)  # Mô tả phòng
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)

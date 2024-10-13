@@ -323,7 +323,6 @@ class NhatroSerializer(serializers.ModelSerializer):
         model = Nhatro
         fields = '__all__'
 
-
 class PhongSerializer(serializers.ModelSerializer):
     class Meta:
         model = Phong
