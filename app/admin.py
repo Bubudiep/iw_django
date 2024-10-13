@@ -96,6 +96,8 @@ class DanhsachAdminAdmin(admin.ModelAdmin):
     ordering = ('-created_at',)
 @admin.register(DanhsachNhanvien)
 class DanhsachNhanvienAdmin(admin.ModelAdmin):
+    list_display = ('congty', 'manhanvien', 'HovaTen', 'nguoituyen', 'created_at')
+    search_fields = ('congty__tencongty', 'manhanvien')
     save_as = True  # Kích hoạt Save as new
     list_filter = ('created_at',)
     ordering = ('-created_at',)
