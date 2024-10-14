@@ -593,6 +593,7 @@ class Nguoitro(models.Model):
 class LichsuNguoitro(models.Model):
     nguoiTro = models.ForeignKey(Nguoitro, on_delete=models.SET_NULL,null=True, blank=True)  # Người ở trọ
     phong = models.ForeignKey(Phong, on_delete=models.SET_NULL,null=True, blank=True)  # Phòng trọ đang ở
+    isOnline = models.BooleanField(default=True)
     ngayBatdauO = models.DateField(null=True, blank=True)  # Ngày bắt đầu ở trọ
     ngayKetthucO = models.DateField(null=True, blank=True)  # Ngày kết thúc ở trọ
     created_at = models.DateTimeField(default=timezone.now)

@@ -80,17 +80,20 @@ class ThemtangAPIView(APIView):
         try:
             nhaTro=data.get("nhaTro",None)
             if nhaTro is None:
-                return Response({'Lỗi': "Chưa chọn nhà trọ"}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'Error': "Chưa chọn nhà trọ"}, status=status.HTTP_400_BAD_REQUEST)
             soPhong=data.get("soPhong",None)
             if soPhong is None:
-                return Response({'Lỗi': "Chưa nhập số phòng"}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'Error': "Chưa nhập số phòng"}, status=status.HTTP_400_BAD_REQUEST)
             tenTang=data.get("soTang",None)
             if tenTang is None:
-                return Response({'Lỗi': "Chưa nhập tên tầng"}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'Error': "Chưa nhập tên tầng"}, status=status.HTTP_400_BAD_REQUEST)
             taoPhong=data.get("taoPhong",None)
             if taoPhong is None:
-                return Response({'Lỗi': "Bạn đang sử dụng phiên bản khác"}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'Error': "Bạn đang sử dụng phiên bản khác"}, status=status.HTTP_400_BAD_REQUEST)
             qs_nhatro=Nhatro.objects.get(id=nhaTro,user=request.user)
+            qs_old_tang=Tang.objects.filter(tenTang=tenTang,nhaTro=qs_nhatro)
+            if len(qs_old_tang)>0:
+                return Response({'Error': f"{tenTang} đã được thêm vào trước đó!"}, status=status.HTTP_404_NOT_FOUND)
             qs_tang=Tang.objects.create(tenTang=tenTang,nhaTro=qs_nhatro)
             if taoPhong:
                 for tao in range(0,int(soPhong)):
@@ -98,9 +101,9 @@ class ThemtangAPIView(APIView):
             # Trả về phản hồi thành công
             return Response(NhatroDetailsSerializer(qs_nhatro,many=False).data, status=status.HTTP_201_CREATED)
         except Nhatro.DoesNotExist:
-            return Response({'Lỗi': "Không tìm thấy nhà trọ"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'Error': "Không tìm thấy nhà trọ"}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
-            return Response({'Lỗi': f"{e}"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'Error': f"{e}"}, status=status.HTTP_400_BAD_REQUEST)
 
 class ZaloLoginAPIView(APIView):
     def post(self, request):
@@ -659,7 +662,7 @@ class DanhsachNhanvienViewSet(viewsets.ModelViewSet):
                     serializer.save()  # Set the user field
                     return Response(serializer.data, status=201)
                 else:
-                    return Response(data={"Lỗi":"Bạn không phải nhân viên của công ty này!"}, status=400)
+                    return Response(data={"Error":"Bạn không phải nhân viên của công ty này!"}, status=400)
         return Response(serializer.errors, status=400)
     
     def list(self, request, *args, **kwargs):

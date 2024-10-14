@@ -323,7 +323,16 @@ class NhatroSerializer(serializers.ModelSerializer):
         model = Nhatro
         fields = '__all__'
 
+class LichsuNguoitroSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LichsuNguoitro
+        fields = '__all__'
+
 class PhongSerializer(serializers.ModelSerializer):
+    Nguoitro = serializers.SerializerMethodField(read_only=True)
+    def get_Nguoitro(self, qs):
+        qs_nguoi=LichsuNguoitro.objects.filter(phong=qs,isOnline=True)
+        return LichsuNguoitroSerializer(qs_nguoi,many=True).data
     class Meta:
         model = Phong
         fields = '__all__'
