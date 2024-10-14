@@ -68,6 +68,84 @@ def generate_refresh_token(length=32):
     characters = string.ascii_letters + string.digits
     return ''.join(secrets.choice(characters) for _ in range(length))
 
+class ThemnguoivaoAPIView(APIView):
+    authentication_classes = [OAuth2Authentication]  # Kiểm tra xác thực OAuth2
+    permission_classes = [IsAuthenticated]  # Đảm bảo người dùng phải đăng nhập (token hợp lệ)
+
+    def post(self, request):
+        data = request.data
+        # Kiểm tra token đã xác thực
+        if request.user.is_authenticated:
+            data = request.data
+        try:
+            nhaTro=data.get("tro",None)
+            if nhaTro is None:
+                return Response({'Error': "Chưa chọn nhà trọ"}, status=status.HTTP_400_BAD_REQUEST)
+            soPhong=data.get("phong",None)
+            if soPhong is None:
+                return Response({'Error': "Chưa nhập số phòng"}, status=status.HTTP_400_BAD_REQUEST)
+            tenTang=data.get("tang",None)
+            if tenTang is None:
+                return Response({'Error': "Chưa nhập tên tầng"}, status=status.HTTP_400_BAD_REQUEST)
+            qs_phong=Phong.objects.get(
+                id=soPhong, 
+                tang__id=tenTang, 
+                tang__nhaTro__id=nhaTro, 
+                tang__nhaTro__user=request.user
+            )
+            nguoitro, _ = Nguoitro.objects.get_or_create(
+                cccd=data.get("cccd", None),
+                defaults={
+                    'hoTen': data.get("hoTen", None),
+                    'sdt': data.get("sdt", None)
+                }
+            )
+            lichsu_otro=LichsuNguoitro.objects.create(nguoiTro=nguoitro,
+                                            phong=qs_phong,
+                                            ngayBatdauO=data.get("ngayBatDau", None))
+            qs_nhatro=Nhatro.objects.filter(user=request.user)
+            return Response(NhatroDetailsSerializer(qs_nhatro,many=True).data, status=status.HTTP_201_CREATED)
+        except Tang.DoesNotExist:
+            return Response({'Error': "Không tìm thấy tầng"}, status=status.HTTP_404_NOT_FOUND)
+        except Phong.DoesNotExist:
+            return Response({'Error': "Không tìm thấy phòng"}, status=status.HTTP_404_NOT_FOUND)
+        except Nhatro.DoesNotExist:
+            return Response({'Error': "Không tìm thấy nhà trọ"}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({'Error': f"{e}"}, status=status.HTTP_400_BAD_REQUEST)
+
+class NhaTroCreateView(APIView):
+    authentication_classes = [OAuth2Authentication]  # Kiểm tra xác thực OAuth2
+    permission_classes = [IsAuthenticated]  # Đảm bảo người dùng phải đăng nhập (token hợp lệ)
+
+    def post(self, request):
+        data = request.data
+        # Kiểm tra token đã xác thực
+        if request.user.is_authenticated:
+            data = request.data
+        try:
+            nhaTro=data.get("tenTro",None)
+            if nhaTro is None:
+                return Response({'Error': "Chưa nhập tên trọ"}, status=status.HTTP_400_BAD_REQUEST)
+            list_tang=data.get("tangs",None)
+            if list_tang is None:
+                return Response({'Error': "Chưa có tầng"}, status=status.HTTP_400_BAD_REQUEST)
+            qs_nhatro=Nhatro.objects.create(tenTro=nhaTro,user=request.user)
+            for tang in list_tang:
+                create_tang=Tang.objects.create(nhaTro=qs_nhatro,tenTang=f"Tầng {tang.get('soTang',None)}")
+                for phong in range(int(tang.get('phongBatDau',0)),int(tang.get('phongKetThuc',0))+1):
+                    create_phong=Phong.objects.create(tang=create_tang,soPhong=f"Phòng {phong}")
+
+            qs_nhatro=Nhatro.objects.filter(user=request.user)
+            return Response(NhatroDetailsSerializer(qs_nhatro,many=True).data, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            lineno = exc_tb.tb_lineno
+            file_path = exc_tb.tb_frame.f_code.co_filename
+            file_name = os.path.basename(file_path)
+            res_data = generate_response_json("FAIL", f"[{file_name}_{lineno}] {str(e)}")
+            return Response(data=res_data, status=status.HTTP_400_BAD_REQUEST)
+    
 class ThemtangAPIView(APIView):
     authentication_classes = [OAuth2Authentication]  # Kiểm tra xác thực OAuth2
     permission_classes = [IsAuthenticated]  # Đảm bảo người dùng phải đăng nhập (token hợp lệ)
@@ -198,19 +276,6 @@ class RegisterView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 
-class NhaTroCreateView(APIView):
-    def post(self, request):
-        try:
-            data= request.data 
-        
-        except Exception as e:
-            exc_type, exc_obj, exc_tb = sys.exc_info()
-            lineno = exc_tb.tb_lineno
-            file_path = exc_tb.tb_frame.f_code.co_filename
-            file_name = os.path.basename(file_path)
-            res_data = generate_response_json("FAIL", f"[{file_name}_{lineno}] {str(e)}")
-            return Response(data=res_data, status=status.HTTP_400_BAD_REQUEST)
-    
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer

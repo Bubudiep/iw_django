@@ -559,7 +559,7 @@ class Tang(models.Model):
         ordering = ['id']  # Sắp xếp theo 'id' mặc định
 
     def __str__(self):
-        return f"Tầng {self.soTang} - {self.nhaTro.tenTro}"
+        return f"Tầng {self.tenTang} - {self.nhaTro.tenTro}"
 
 class Phong(models.Model):
     tang = models.ForeignKey(Tang, on_delete=models.CASCADE, related_name='phongs')  # Tầng chứa phòng
@@ -574,7 +574,7 @@ class Phong(models.Model):
         ordering = ['id']  # Sắp xếp theo 'id' mặc định
 
     def __str__(self):
-        return f"Phòng {self.soPhong} - Tầng {self.tang.soTang} - {self.tang.nhaTro.tenTro}"
+        return f"Phòng {self.soPhong} - Tầng {self.tang.tenTang} - {self.tang.nhaTro.tenTro}"
 
 class Nguoitro(models.Model):
     user = models.OneToOneField(User, on_delete=models.SET_NULL,null=True, blank=True)  # Liên kết với tài khoản người dùng

@@ -318,6 +318,16 @@ class ChiacaSerializer(serializers.ModelSerializer):
         model = Chiaca
         fields = '__all__'
 
+
+
+
+
+
+
+
+
+
+
 class NhatroSerializer(serializers.ModelSerializer):
     class Meta:
         model = Nhatro
@@ -329,6 +339,7 @@ class LichsuNguoitroSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class PhongSerializer(serializers.ModelSerializer):
+    tenTang = serializers.CharField(source='tang.tenTang', read_only=True)  # Fetch 'tenTang' using source
     Nguoitro = serializers.SerializerMethodField(read_only=True)
     def get_Nguoitro(self, qs):
         qs_nguoi=LichsuNguoitro.objects.filter(phong=qs,isOnline=True)
@@ -354,6 +365,12 @@ class NhatroDetailsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Nhatro
         fields = '__all__'
+
+
+
+
+
+
 
 class DanhsachNhanvienSerializer(serializers.ModelSerializer):
     class Meta:
