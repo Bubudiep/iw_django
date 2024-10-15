@@ -328,12 +328,21 @@ class ChiacaSerializer(serializers.ModelSerializer):
 
 
 
+class NguoitroSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Nguoitro
+        fields = '__all__'
+
 class NhatroSerializer(serializers.ModelSerializer):
     class Meta:
         model = Nhatro
         fields = '__all__'
 
 class LichsuNguoitroSerializer(serializers.ModelSerializer):
+    ThongtinNguoiTro = serializers.SerializerMethodField(read_only=True)
+    def get_ThongtinNguoiTro(self, qs):
+        qs_nguoi=Nguoitro.objects.get(id=qs.nguoiTro.id)
+        return NguoitroSerializer(qs_nguoi,many=False).data
     class Meta:
         model = LichsuNguoitro
         fields = '__all__'
@@ -367,11 +376,6 @@ class NhatroDetailsSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-
-
-
-
-
 class DanhsachNhanvienSerializer(serializers.ModelSerializer):
     class Meta:
         model = DanhsachNhanvien
@@ -399,7 +403,26 @@ class DanhsachnhanvienDilamSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class DanhsachnhanvienDilamDetailsSerializer(serializers.ModelSerializer):
-    manhanvien=DanhsachNhanvienSerializer()
+    # Hiển thị thông tin nhân viên đầy đủ qua serializer DanhsachNhanvienSerializer, nhưng chỉ dùng để đọc
+    nhanvien = DanhsachNhanvienSerializer(read_only=True)
+    manhanvien = serializers.CharField(write_only=True)  # Sử dụng mã nhân viên để nhập dữ liệu
+
+    def create(self, validated_data):
+        # Tách mã nhân viên từ dữ liệu đầu vào
+        manv = validated_data.pop('manhanvien', None)
+        if manv:
+            try:
+                # Tìm đối tượng DanhsachNhanvien theo mã nhân viên
+                qs_manhanvien = DanhsachNhanvien.objects.get(manhanvien=manv)
+                validated_data['manhanvien'] = qs_manhanvien  # Gán đối tượng nhân viên vào validated_data
+            except DanhsachNhanvien.DoesNotExist:
+                raise serializers.ValidationError({'Error':f"Nhân viên với mã '{manv}' không tồn tại."})
+        # Gọi phương thức create của lớp cha để tạo bản ghi mới
+        return super().create(validated_data)
+
     class Meta:
         model = DanhsachnhanvienDilam
         fields = '__all__'
+        extra_kwargs = {
+            'manhanvien': {'write_only': True},  # Chỉ cho phép nhập mã nhân viên, không hiển thị trong kết quả API
+        }

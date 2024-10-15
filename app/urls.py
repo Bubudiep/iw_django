@@ -22,6 +22,7 @@ router.register(r'danhsachdilam', api.DanhsachnhanvienDilamViewSet, basename='da
 router.register(r'danhsachadmin', api.DanhsachAdminViewSet, basename='danhsachadmin')
 
 urlpatterns = [
+    path('them-nguoi/', api.ThemnguoivaoAPIView.as_view(), name='them-nguoi'),
     path('themtangtro/', api.ThemtangAPIView.as_view(), name='themtangtro'),
     path('nha-tro/', api.NhaTroCreateView.as_view(), name='nha_tro_create'),
     path('zlogin/', api.ZaloLoginAPIView.as_view(), name='zalo_login'),

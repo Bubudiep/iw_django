@@ -28,7 +28,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.exceptions import AuthenticationFailed
   
 class StandardResultsSetPagination(PageNumberPagination):
-    page_size = 10  # Số lượng đối tượng trên mỗi trang
+    page_size = 50  # Số lượng đối tượng trên mỗi trang
     page_size_query_param = 'page_size'
     max_page_size = 100
     
@@ -93,16 +93,17 @@ class ThemnguoivaoAPIView(APIView):
                 tang__nhaTro__id=nhaTro, 
                 tang__nhaTro__user=request.user
             )
-            nguoitro, _ = Nguoitro.objects.get_or_create(
+            nguoitro= Nguoitro.objects.create(
                 cccd=data.get("cccd", None),
-                defaults={
-                    'hoTen': data.get("hoTen", None),
-                    'sdt': data.get("sdt", None)
-                }
+                hoTen=data.get("hoTen", None),
+                sdt=data.get("sdt", None),
+                quequan=data.get("quequan", None),
+                ngaysinh=data.get("ngaySinh", None)
             )
             lichsu_otro=LichsuNguoitro.objects.create(nguoiTro=nguoitro,
                                             phong=qs_phong,
-                                            ngayBatdauO=data.get("ngayBatDau", None))
+                                            ngayBatdauO=data.get("ngayBatDau", None),
+                                            tiencoc=data.get("tienCoc", None))
             qs_nhatro=Nhatro.objects.filter(user=request.user)
             return Response(NhatroDetailsSerializer(qs_nhatro,many=True).data, status=status.HTTP_201_CREATED)
         except Tang.DoesNotExist:
@@ -130,6 +131,11 @@ class NhaTroCreateView(APIView):
             list_tang=data.get("tangs",None)
             if list_tang is None:
                 return Response({'Error': "Chưa có tầng"}, status=status.HTTP_400_BAD_REQUEST)
+            qs_profile=Profile.objects.get(user=request.user)
+            qs_old=Nhatro.objects.filter(user=request.user)
+            if qs_profile.level is None or qs_profile.level==0:
+                if len(qs_old)>0:
+                    return Response({"Error":"Số nhà trọ đã đến giới hạn!"}, status=status.HTTP_400_BAD_REQUEST)
             qs_nhatro=Nhatro.objects.create(tenTro=nhaTro,user=request.user)
             for tang in list_tang:
                 create_tang=Tang.objects.create(nhaTro=qs_nhatro,tenTang=f"Tầng {tang.get('soTang',None)}")
@@ -784,7 +790,7 @@ class DanhsachnhanvienDilamViewSet(viewsets.ModelViewSet):
     filterset_class = DanhsachnhanvienDilamFilter
     pagination_class = StandardResultsSetPagination
     # Chỉ cho phép GET
-    http_method_names = ['get']
+    http_method_names = ['get','post']
     def get_queryset(self):
         user = self.request.user
         if user.is_superuser:
@@ -820,6 +826,60 @@ class DanhsachnhanvienDilamViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
     
 class DilamAPIView(APIView):
+    def get_permissions(self):
+        if self.request.method == 'GET' or self.request.method == 'POST':
+            return [permissions.AllowAny()]
+        return [permissions.IsAuthenticated()]
+
+    def get(self, request):
+        data = request.query_params
+        auth_header = request.META.get('HTTP_AUTHORIZATION')
+        token = None
+        # Extract the token from the Authorization header
+        if auth_header is not None:
+            parts = auth_header.split()
+            if len(parts) == 2 and parts[0] == 'Bearer':
+                token = parts[1]
+        
+        # Handle case where token is not provided
+        if token is None:
+            return Response({'detail': 'Authorization token is missing.'}, status=status.HTTP_401_UNAUTHORIZED)
+        
+        try:
+            # Validate the token
+            vaolam=False
+            if data.get("chamcongdi",None)=="true":
+                vaolam=True
+            qs_token = AccessToken.objects.get(token=token)
+            qs_profile=Profile.objects.get(user=qs_token.user)
+            qs_admin=DanhsachAdmin.objects.get(zalo_id=qs_profile.zalo_id,congty__congty=data.get("congty"))
+            qs_nv=DanhsachNhanvien.objects.get(manhanvien=data.get("manhanvien"),congty=qs_admin.congty)
+            dilam=DanhsachnhanvienDilam.objects.create(manhanvien=qs_nv,chamcongdi=vaolam,ngaydilam=data.get("ngaylam",None))
+            print(f"{qs_nv}")
+            return Response(DanhsachnhanvienDilamDetailsSerializer(dilam,many=False).data)
+        except AccessToken.DoesNotExist:
+            raise AuthenticationFailed('Invalid token')
+
+        # Proceed with processing if the token is valid
+        return Response(data={'params': data, 'token': token})
+    
+    def post(self, request):
+        res_data = dict()
+        res_status = status.HTTP_200_OK
+        try:
+            client_data = request.data
+            rmItems=client_data.get("rm_item",None)
+            send_mail=client_data.get("send_mail",None)
+            
+        except Exception as e:
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            lineno = exc_tb.tb_lineno
+            file_path = exc_tb.tb_frame.f_code.co_filename
+            file_name = os.path.basename(file_path)
+            res_data = generate_response_json("FAIL", f"[{file_name}_{lineno}] {str(e)}")
+
+        return Response(data=res_data, status=res_status)   
+    
     def get_permissions(self):
         if self.request.method == 'GET' or self.request.method == 'POST':
             return [permissions.AllowAny()]

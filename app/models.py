@@ -21,10 +21,11 @@ class Profile(models.Model):
     tinh = models.CharField(max_length=150, null=True, blank=True)
     long_pos = models.CharField(max_length=50, null=True, blank=True)
     lat_pos = models.CharField(max_length=50, null=True, blank=True)
+    level = models.IntegerField(default=0, null=True, blank=True)
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     class Meta:
-        ordering = ['id']  # Sắp xếp theo 'id' mặc định
+        ordering = ['-id']  # Sắp xếp theo 'id' mặc định
 
     def __str__(self):
         return self.zalo_id
@@ -36,7 +37,7 @@ class Album(models.Model):
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     class Meta:
-        ordering = ['id']  # Sắp xếp theo 'id' mặc định
+        ordering = ['-id']  # Sắp xếp theo 'id' mặc định
 
     def __str__(self):
         return self.name
@@ -53,7 +54,7 @@ class Photos(models.Model):
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     class Meta:
-        ordering = ['id']  # Sắp xếp theo 'id' mặc định
+        ordering = ['-id']  # Sắp xếp theo 'id' mặc định
 
     def __str__(self):
         return self.filename
@@ -69,7 +70,7 @@ class Tuchamcong(models.Model):
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     class Meta:
-        ordering = ['id']  # Sắp xếp theo 'id' mặc định
+        ordering = ['-id']  # Sắp xếp theo 'id' mặc định
 
     def __str__(self):
         return  f"{self.tencongty}_{self.user.username}"
@@ -85,7 +86,7 @@ class Tutinhluong(models.Model):
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     class Meta:
-        ordering = ['id']  # Sắp xếp theo 'id' mặc định
+        ordering = ['-id']  # Sắp xếp theo 'id' mặc định
 
     def __str__(self):
         return f"{self.tenluong}_{self.tuchamcong.tencongty}"
@@ -101,7 +102,7 @@ class TutinhChuyencan(models.Model):
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     class Meta:
-        ordering = ['id']  # Sắp xếp theo 'id' mặc định
+        ordering = ['-id']  # Sắp xếp theo 'id' mặc định
 
     def __str__(self):
         return f"{self.id}_{self.tuchamcong.tencongty}"
@@ -125,7 +126,7 @@ class Kieungay(models.Model):
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     class Meta:
-        ordering = ['id']  # Sắp xếp theo 'id' mặc định
+        ordering = ['-id']  # Sắp xếp theo 'id' mặc định
 
     def __str__(self):
         return f"{self.tenloaingay}_{self.tuchamcong.tencongty}"
@@ -138,7 +139,7 @@ class Kieuca(models.Model):
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     class Meta:
-        ordering = ['id']  # Sắp xếp theo 'id' mặc định
+        ordering = ['-id']  # Sắp xếp theo 'id' mặc định
 
     def __str__(self):
         return f"{self.tenca}_{self.tuchamcong.tencongty}"
@@ -161,7 +162,7 @@ class Tuchamcongtay(models.Model):
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     class Meta:
-        ordering = ['id']  # Sắp xếp theo 'id' mặc định
+        ordering = ['-id']  # Sắp xếp theo 'id' mặc định
 
     def __str__(self):
         return f"{self.ngay}_{self.tuchamcong.tencongty}"
@@ -177,7 +178,7 @@ class Heso(models.Model):
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     class Meta:
-        ordering = ['id']  # Sắp xếp theo 'id' mặc định
+        ordering = ['-id']  # Sắp xếp theo 'id' mặc định
 
     def __str__(self):
         return f"{self.heso}_{self.tuchamcong.tencongty}"
@@ -201,7 +202,7 @@ class Congty(models.Model):
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     class Meta:
-        ordering = ['id']  # Sắp xếp theo 'id' mặc định
+        ordering = ['-id']  # Sắp xếp theo 'id' mặc định
 
     def __str__(self):
         return f"{self.tencongty}"
@@ -214,7 +215,7 @@ class Quydinh(models.Model):
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     class Meta:
-        ordering = ['id']  # Sắp xếp theo 'id' mặc định
+        ordering = ['-id']  # Sắp xếp theo 'id' mặc định
 
     def __str__(self):
         return f"{self.tenquydinh}"
@@ -226,7 +227,7 @@ class Chiaca(models.Model):
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     class Meta:
-        ordering = ['id']  # Sắp xếp theo 'id' mặc định
+        ordering = ['-id']  # Sắp xếp theo 'id' mặc định
 
     def __str__(self):
         return f"{self.tenca}"
@@ -238,7 +239,7 @@ class Chiangay(models.Model):
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     class Meta:
-        ordering = ['id']  # Sắp xếp theo 'id' mặc định
+        ordering = ['-id']  # Sắp xếp theo 'id' mặc định
 
     def __str__(self):
         return f"{self.tenngay}"
@@ -251,7 +252,7 @@ class Phanloaingay(models.Model):
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     class Meta:
-        ordering = ['id']  # Sắp xếp theo 'id' mặc định
+        ordering = ['-id']  # Sắp xếp theo 'id' mặc định
 
     def __str__(self):
         return f"{self.tenngay}"
@@ -267,7 +268,7 @@ class Chiacatheongay(models.Model):
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     class Meta:
-        ordering = ['id']  # Sắp xếp theo 'id' mặc định
+        ordering = ['-id']  # Sắp xếp theo 'id' mặc định
 
     def __str__(self):
         return f"{self.ngaylamviec.tenngay}_{self.calamviec.tenca}"
@@ -281,7 +282,7 @@ class ChitieChiacatheongay(models.Model):
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     class Meta:
-        ordering = ['id']  # Sắp xếp theo 'id' mặc định
+        ordering = ['-id']  # Sắp xếp theo 'id' mặc định
     def __str__(self):
         return f"{self.Chiacatheongay.ngaylamviec.tenngay}_{self.Chiacatheongay.calamviec.tenca}_{self.id}"
 
@@ -294,7 +295,7 @@ class Bophan(models.Model):
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     class Meta:
-        ordering = ['id']  # Sắp xếp theo 'id' mặc định
+        ordering = ['-id']  # Sắp xếp theo 'id' mặc định
     def __str__(self):
         return f"{self.tenbophan}"
 
@@ -310,7 +311,7 @@ class Capbac(models.Model):
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     class Meta:
-        ordering = ['id']  # Sắp xếp theo 'id' mặc định
+        ordering = ['-id']  # Sắp xếp theo 'id' mặc định
     def __str__(self):
         return f"{self.tencapbac}"
 
@@ -324,7 +325,7 @@ class Chucvu(models.Model):
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     class Meta:
-        ordering = ['id']  # Sắp xếp theo 'id' mặc định
+        ordering = ['-id']  # Sắp xếp theo 'id' mặc định
     def __str__(self):
         return f"{self.tenchucvu}"
 
@@ -339,7 +340,7 @@ class BangluongTheochucvu(models.Model):
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     class Meta:
-        ordering = ['id']  # Sắp xếp theo 'id' mặc định
+        ordering = ['-id']  # Sắp xếp theo 'id' mặc định
     def __str__(self):
         return f"{self.tenluong}"
 
@@ -354,7 +355,7 @@ class ThuongtheoChucvu(models.Model):
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     class Meta:
-        ordering = ['id']  # Sắp xếp theo 'id' mặc định
+        ordering = ['-id']  # Sắp xếp theo 'id' mặc định
     def __str__(self):
         return f"{self.tenthuong}"
     
@@ -381,7 +382,7 @@ class Nhanvien(models.Model):
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     class Meta:
-        ordering = ['id']  # Sắp xếp theo 'id' mặc định
+        ordering = ['-id']  # Sắp xếp theo 'id' mặc định
     def __str__(self):
         return f"{self.manhanvien}"
     
@@ -397,7 +398,7 @@ class Thumuc(models.Model):
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     class Meta:
-        ordering = ['id']  # Sắp xếp theo 'id' mặc định
+        ordering = ['-id']  # Sắp xếp theo 'id' mặc định
     def __str__(self):
         return f"{self.tenthumuc}"
     
@@ -418,7 +419,7 @@ class Tailieu(models.Model):
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     class Meta:
-        ordering = ['id']  # Sắp xếp theo 'id' mặc định
+        ordering = ['-id']  # Sắp xếp theo 'id' mặc định
     def __str__(self):
         return f"{self.tenfile}"
     
@@ -429,7 +430,7 @@ class DateMark(models.Model):
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     class Meta:
-        ordering = ['id']  # Sắp xếp theo 'id' mặc định
+        ordering = ['-id']  # Sắp xếp theo 'id' mặc định
     def __str__(self):
         return f"{self.markname}"
     
@@ -444,7 +445,7 @@ class MarkConfig(models.Model):
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     class Meta:
-        ordering = ['id']  # Sắp xếp theo 'id' mặc định
+        ordering = ['-id']  # Sắp xếp theo 'id' mặc định
     def __str__(self):
         return f"{self.mark.markname}_config"
 
@@ -460,7 +461,7 @@ class Chamcong(models.Model):
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     class Meta:
-        ordering = ['id']  # Sắp xếp theo 'id' mặc định
+        ordering = ['-id']  # Sắp xếp theo 'id' mặc định
     def __str__(self):
         return f"{self.nhanvien.manhanvien}"
     
@@ -473,7 +474,7 @@ class PhanloaiBatthuong(models.Model):
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     class Meta:
-        ordering = ['id']  # Sắp xếp theo 'id' mặc định
+        ordering = ['-id']  # Sắp xếp theo 'id' mặc định
     def __str__(self):
         return f"{self.tenloai}"
     
@@ -487,7 +488,7 @@ class Batthuong(models.Model):
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     class Meta:
-        ordering = ['id']  # Sắp xếp theo 'id' mặc định
+        ordering = ['-id']  # Sắp xếp theo 'id' mặc định
     def __str__(self):
         return f"{self.nhanvien}"
     
@@ -500,7 +501,7 @@ class BathuongHistory(models.Model):
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     class Meta:
-        ordering = ['id']  # Sắp xếp theo 'id' mặc định
+        ordering = ['-id']  # Sắp xếp theo 'id' mặc định
     def __str__(self):
         return f"{self.batthuong.nhanvien}"
 
@@ -515,6 +516,9 @@ class Nhatro(models.Model):
     anhDaidien = models.ForeignKey(Photos,on_delete=models.SET_NULL, null=True, blank=True) # người tạo
     isActive = models.BooleanField(default=True, blank=True)
     isLock = models.BooleanField(default=True, blank=True)
+    tienrac=models.FloatField(default=0, null=True, blank=True)
+    tiennuoc=models.FloatField(default=0, null=True, blank=True)
+    tiendien=models.FloatField(default=0, null=True, blank=True)
     isBand = models.BooleanField(default=True, blank=True)
     giaphongThapnhat = models.FloatField(default=0, null=True, blank=True)
     giaphongCaonhat = models.FloatField(default=0, null=True, blank=True)
@@ -528,7 +532,7 @@ class Nhatro(models.Model):
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     class Meta:
-        ordering = ['id']  # Sắp xếp theo 'id' mặc định
+        ordering = ['-id']  # Sắp xếp theo 'id' mặc định
     def __str__(self):
         return f"{self.tenTro}"
     
@@ -545,7 +549,7 @@ class NhatroThongtin(models.Model):
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     class Meta:
-        ordering = ['id']  # Sắp xếp theo 'id' mặc định
+        ordering = ['-id']  # Sắp xếp theo 'id' mặc định
     def __str__(self):
         return f"{self.nhaTro.tenTro}"
     
@@ -556,7 +560,7 @@ class Tang(models.Model):
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     class Meta:
-        ordering = ['id']  # Sắp xếp theo 'id' mặc định
+        ordering = ['-id']  # Sắp xếp theo 'id' mặc định
 
     def __str__(self):
         return f"Tầng {self.tenTang} - {self.nhaTro.tenTro}"
@@ -571,7 +575,7 @@ class Phong(models.Model):
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     class Meta:
-        ordering = ['id']  # Sắp xếp theo 'id' mặc định
+        ordering = ['-id']  # Sắp xếp theo 'id' mặc định
 
     def __str__(self):
         return f"Phòng {self.soPhong} - Tầng {self.tang.tenTang} - {self.tang.nhaTro.tenTro}"
@@ -581,25 +585,28 @@ class Nguoitro(models.Model):
     hoTen = models.CharField(max_length=200, null=True, blank=True)
     sdt = models.CharField(max_length=15, null=True, blank=True)  # Số điện thoại
     cccd = models.CharField(max_length=12, null=True, blank=True)  # Căn cước công dân
+    quequan = models.CharField(max_length=255, null=True, blank=True)  # Số điện thoại
+    ngaysinh = models.DateTimeField(null=True, blank=True)  # Căn cước công dân
     isActive = models.BooleanField(default=True)  # Trạng thái người dùng
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     class Meta:
-        ordering = ['id']  # Sắp xếp theo 'id' mặc định
+        ordering = ['-id']  # Sắp xếp theo 'id' mặc định
 
     def __str__(self):
-        return f"{self.user.username} - {self.hoTen}"
+        return f"{self.hoTen}"
 
 class LichsuNguoitro(models.Model):
     nguoiTro = models.ForeignKey(Nguoitro, on_delete=models.SET_NULL,null=True, blank=True)  # Người ở trọ
     phong = models.ForeignKey(Phong, on_delete=models.SET_NULL,null=True, blank=True)  # Phòng trọ đang ở
     isOnline = models.BooleanField(default=True)
+    tiencoc = models.FloatField(default=0,null=True, blank=True)  # Căn cước công dân
     ngayBatdauO = models.DateField(null=True, blank=True)  # Ngày bắt đầu ở trọ
     ngayKetthucO = models.DateField(null=True, blank=True)  # Ngày kết thúc ở trọ
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     class Meta:
-        ordering = ['id']  # Sắp xếp theo 'id' mặc định
+        ordering = ['-id']  # Sắp xếp theo 'id' mặc định
 
     def __str__(self):
         return f"{self.nguoiTro.hoTen} - Phòng {self.phong.soPhong} ({self.ngayBatdauO} - {self.ngayKetthucO})"
@@ -613,7 +620,7 @@ class LichsuTieuThu(models.Model):
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     class Meta:
-        ordering = ['id']  # Sắp xếp theo 'id' mặc định
+        ordering = ['-id']  # Sắp xếp theo 'id' mặc định
 
     def __str__(self):
         return f"Tiêu thụ: {self.nguoiTro.hoTen} - Phòng {self.phong.soPhong} - Tháng {self.thang}"
@@ -634,7 +641,7 @@ class LichsuThanhToan(models.Model):
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     class Meta:
-        ordering = ['id']  # Sắp xếp theo 'id' mặc định
+        ordering = ['-id']  # Sắp xếp theo 'id' mặc định
 
     def mark_as_paid(self):
         self.isPaid = True
@@ -651,7 +658,7 @@ class ChiTietThanhToan(models.Model):
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     class Meta:
-        ordering = ['id']  # Sắp xếp theo 'id' mặc định
+        ordering = ['-id']  # Sắp xếp theo 'id' mặc định
 
     def __str__(self):
         return f"{self.so_tien} VND"
@@ -667,7 +674,7 @@ class DanhsachCongty(models.Model):
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     class Meta:
-        ordering = ['id']  # Sắp xếp theo 'id' mặc định
+        ordering = ['-id']  # Sắp xếp theo 'id' mặc định
 
     def __str__(self):
         return f"{self.congty}"
@@ -681,7 +688,7 @@ class DanhsachAdmin(models.Model):
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     class Meta:
-        ordering = ['id']  # Sắp xếp theo 'id' mặc định
+        ordering = ['-id']  # Sắp xếp theo 'id' mặc định
 
     def __str__(self):
         return f"{self.congty}_{self.zalo_id}"
@@ -695,7 +702,7 @@ class DanhsachNhanvien(models.Model):
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     class Meta:
-        ordering = ['id']  # Sắp xếp theo 'id' mặc định
+        ordering = ['-id']  # Sắp xếp theo 'id' mặc định
 
     def __str__(self):
         return f"{self.congty}_{self.manhanvien}"
@@ -708,7 +715,7 @@ class DanhsachnhanvienDilam(models.Model):
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     class Meta:
-        ordering = ['id']  # Sắp xếp theo 'id' mặc định
+        ordering = ['-id']  # Sắp xếp theo 'id' mặc định
 
     def __str__(self):
         return f"{self.manhanvien.manhanvien}_{self.ngaydilam}"
