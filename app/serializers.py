@@ -403,26 +403,17 @@ class DanhsachnhanvienDilamSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class DanhsachnhanvienDilamDetailsSerializer(serializers.ModelSerializer):
-    # Hiển thị thông tin nhân viên đầy đủ qua serializer DanhsachNhanvienSerializer, nhưng chỉ dùng để đọc
-    nhanvien = DanhsachNhanvienSerializer(read_only=True)
-    manhanvien = serializers.CharField(write_only=True)  # Sử dụng mã nhân viên để nhập dữ liệu
-
+    manhanvien = serializers.CharField(source="manhanvien.manhanvien", allow_null=True)
     def create(self, validated_data):
-        # Tách mã nhân viên từ dữ liệu đầu vào
         manv = validated_data.pop('manhanvien', None)
         if manv:
             try:
-                # Tìm đối tượng DanhsachNhanvien theo mã nhân viên
                 qs_manhanvien = DanhsachNhanvien.objects.get(manhanvien=manv)
-                validated_data['manhanvien'] = qs_manhanvien  # Gán đối tượng nhân viên vào validated_data
+                validated_data['manhanvien'] = qs_manhanvien
             except DanhsachNhanvien.DoesNotExist:
                 raise serializers.ValidationError({'Error':f"Nhân viên với mã '{manv}' không tồn tại."})
-        # Gọi phương thức create của lớp cha để tạo bản ghi mới
         return super().create(validated_data)
 
     class Meta:
         model = DanhsachnhanvienDilam
         fields = '__all__'
-        extra_kwargs = {
-            'manhanvien': {'write_only': True},  # Chỉ cho phép nhập mã nhân viên, không hiển thị trong kết quả API
-        }
