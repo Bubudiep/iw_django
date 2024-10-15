@@ -790,7 +790,7 @@ class DanhsachnhanvienDilamViewSet(viewsets.ModelViewSet):
     filterset_class = DanhsachnhanvienDilamFilter
     pagination_class = StandardResultsSetPagination
     # Chỉ cho phép GET
-    http_method_names = ['get','post']
+    http_method_names = ['get']
     def get_queryset(self):
         user = self.request.user
         if user.is_superuser:
@@ -833,7 +833,7 @@ class DanhsachDilamViewSet(viewsets.ModelViewSet):
     filterset_class = DanhsachnhanvienDilamFilter
     pagination_class = StandardResultsSetPagination
     # Chỉ cho phép GET
-    http_method_names = ['get','post']
+    http_method_names = ['post']
     def get_queryset(self):
         user = self.request.user
         if user.is_superuser:

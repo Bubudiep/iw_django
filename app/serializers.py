@@ -340,9 +340,11 @@ class NhatroSerializer(serializers.ModelSerializer):
 
 class LichsuNguoitroSerializer(serializers.ModelSerializer):
     ThongtinNguoiTro = serializers.SerializerMethodField(read_only=True)
-    def get_ThongtinNguoiTro(self, qs):
-        qs_nguoi=Nguoitro.objects.get(id=qs.nguoiTro.id)
-        return NguoitroSerializer(qs_nguoi,many=False).data
+    SoPhong = serializers.CharField(source="phong.soPhong", allow_null=True)
+    SoTang = serializers.CharField(source="phong.tang.tenTang", allow_null=True)
+    def get_ThongtinNguoiTro(self, obj):
+        return NguoitroSerializer(obj.nguoiTro, many=False).data
+
     class Meta:
         model = LichsuNguoitro
         fields = '__all__'
