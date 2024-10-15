@@ -824,7 +824,50 @@ class DanhsachnhanvienDilamViewSet(viewsets.ModelViewSet):
 
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
-    
+     
+class DanhsachDilamViewSet(viewsets.ModelViewSet):
+    serializer_class = DanhsachnhanvienDilamSerializer
+    authentication_classes = [OAuth2Authentication]
+    permission_classes = [IsAuthenticated]
+    filter_backends = (DjangoFilterBackend,)
+    filterset_class = DanhsachnhanvienDilamFilter
+    pagination_class = StandardResultsSetPagination
+    # Chỉ cho phép GET
+    http_method_names = ['get','post']
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_superuser:
+            return DanhsachnhanvienDilam.objects.all()
+        #
+        qs_profile=Profile.objects.get(user=user)
+        qs_admin=DanhsachAdmin.objects.filter(zalo_id=qs_profile.zalo_id).values_list("congty__id",flat=True)
+        qs_nhanvien=DanhsachNhanvien.objects.filter(congty__in=qs_admin).values_list("id",flat=True)
+        return DanhsachnhanvienDilam.objects.filter(manhanvien__in=qs_nhanvien)
+
+    def create(self, request, *args, **kwargs):
+        # Set the user to the authenticated user
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(user=request.user)  # Set the user field
+            return Response(serializer.data, status=201)
+        return Response(serializer.errors, status=400)
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        queryset = self.filter_queryset(queryset)  # Áp dụng bộ lọc cho queryset
+        
+        page_size = self.request.query_params.get('page_size')
+        if page_size is not None:
+            self.pagination_class.page_size = int(page_size)
+            
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
 class DilamAPIView(APIView):
     def get_permissions(self):
         if self.request.method == 'GET' or self.request.method == 'POST':

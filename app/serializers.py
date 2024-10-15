@@ -403,6 +403,12 @@ class DanhsachnhanvienDilamSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class DanhsachnhanvienDilamDetailsSerializer(serializers.ModelSerializer):
+    nhanvien=DanhsachNhanvienSerializer(read_only=True)
+    class Meta:
+        model = DanhsachnhanvienDilam
+        fields = '__all__'
+
+class DanhsachnhanvienDilamSerializer(serializers.ModelSerializer):
     manhanvien = serializers.CharField(source="manhanvien.manhanvien", allow_null=True)
     def create(self, validated_data):
         manv = validated_data.pop('manhanvien', None)

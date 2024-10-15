@@ -19,6 +19,7 @@ router.register(r'nhatro', api.NhatroViewSet, basename='nhatro')
 router.register(r'my_nhatro', api.DanhsachNhatroViewSet, basename='my_nhatro')
 router.register(r'danhsachnhanvien', api.DanhsachNhanvienViewSet, basename='danhsachnhanvien')
 router.register(r'danhsachdilam', api.DanhsachnhanvienDilamViewSet, basename='danhsachdilam')
+router.register(r'dsdilam', api.DanhsachDilamViewSet, basename='dsdilam')
 router.register(r'danhsachadmin', api.DanhsachAdminViewSet, basename='danhsachadmin')
 
 urlpatterns = [
