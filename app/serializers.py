@@ -404,8 +404,9 @@ class DanhsachnhanvienDilamSerializer(serializers.ModelSerializer):
         model = DanhsachnhanvienDilam
         fields = '__all__'
 
+
 class DanhsachnhanvienDilamDetailsSerializer(serializers.ModelSerializer):
-    nhanvien=DanhsachNhanvienSerializer(read_only=True)
+    manhanvien=DanhsachNhanvienSerializer()
     class Meta:
         model = DanhsachnhanvienDilam
         fields = '__all__'
