@@ -93,6 +93,11 @@ class ThemnguoivaoAPIView(APIView):
                 tang__nhaTro__id=nhaTro, 
                 tang__nhaTro__user=request.user
             )
+            qs_old=LichsuNguoitro.objects.filter(nguoiTro__cccd=data.get("cccd", None),
+                                                ngayBatdauO__isnull=False,
+                                                ngayKetthucO__isnull=True)
+            if len(qs_old)>0:
+                return Response({'Error': "Người này đã có trong phòng trọ!"}, status=status.HTTP_404_NOT_FOUND)
             nguoitro= Nguoitro.objects.create(
                 cccd=data.get("cccd", None),
                 hoTen=data.get("hoTen", None),

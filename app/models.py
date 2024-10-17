@@ -516,6 +516,7 @@ class Nhatro(models.Model):
     anhDaidien = models.ForeignKey(Photos,on_delete=models.SET_NULL, null=True, blank=True) # người tạo
     isActive = models.BooleanField(default=True, blank=True)
     isLock = models.BooleanField(default=True, blank=True)
+    tienphong=models.FloatField(default=0, null=True, blank=True)
     tienrac=models.FloatField(default=0, null=True, blank=True)
     tiennuoc=models.FloatField(default=0, null=True, blank=True)
     tiendien=models.FloatField(default=0, null=True, blank=True)
@@ -568,7 +569,10 @@ class Tang(models.Model):
 class Phong(models.Model):
     tang = models.ForeignKey(Tang, on_delete=models.CASCADE, related_name='phongs')  # Tầng chứa phòng
     soPhong = models.CharField(max_length=10)  # Số phòng
-    giaPhong = models.FloatField(default=0, null=True, blank=True)  # Giá phòng
+    giaPhong = models.FloatField(default=None, null=True, blank=True)  # Giá phòng
+    wifi = models.BooleanField(default=None, null=True, blank=True)
+    dieuhoa = models.BooleanField(default=None, null=True, blank=True)
+    nonglanh = models.BooleanField(default=None, null=True, blank=True)
     soNguoiToida = models.IntegerField(default=1)  # Số người ở tối đa
     isActive = models.BooleanField(default=True, blank=True)
     mota = models.TextField(null=True, blank=True)  # Mô tả phòng
@@ -576,7 +580,6 @@ class Phong(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     class Meta:
         ordering = ['-id']  # Sắp xếp theo 'id' mặc định
-
     def __str__(self):
         return f"Phòng {self.soPhong} - Tầng {self.tang.tenTang} - {self.tang.nhaTro.tenTro}"
 
@@ -588,6 +591,8 @@ class Nguoitro(models.Model):
     quequan = models.CharField(max_length=255, null=True, blank=True)  # Số điện thoại
     ngaysinh = models.DateTimeField(null=True, blank=True)  # Căn cước công dân
     isActive = models.BooleanField(default=True)  # Trạng thái người dùng
+    tamtru = models.BooleanField(default=False)  # Trạng thái người dùng
+    tiencoc = models.FloatField(default=0,null=True, blank=True)
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     class Meta:
@@ -600,7 +605,6 @@ class LichsuNguoitro(models.Model):
     nguoiTro = models.ForeignKey(Nguoitro, on_delete=models.SET_NULL,null=True, blank=True)  # Người ở trọ
     phong = models.ForeignKey(Phong, on_delete=models.SET_NULL,null=True, blank=True)  # Phòng trọ đang ở
     isOnline = models.BooleanField(default=True)
-    tiencoc = models.FloatField(default=0,null=True, blank=True)  # Căn cước công dân
     ngayBatdauO = models.DateField(null=True, blank=True)  # Ngày bắt đầu ở trọ
     ngayKetthucO = models.DateField(null=True, blank=True)  # Ngày kết thúc ở trọ
     created_at = models.DateTimeField(default=timezone.now)

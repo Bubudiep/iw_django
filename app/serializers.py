@@ -352,9 +352,27 @@ class LichsuNguoitroSerializer(serializers.ModelSerializer):
 class PhongSerializer(serializers.ModelSerializer):
     tenTang = serializers.CharField(source='tang.tenTang', read_only=True)  # Fetch 'tenTang' using source
     Nguoitro = serializers.SerializerMethodField(read_only=True)
+    Ngaybatdau = serializers.SerializerMethodField(read_only=True)
+    wifi = serializers.SerializerMethodField(read_only=True)
+    dieuhoa = serializers.SerializerMethodField(read_only=True)
+    nonglanh = serializers.SerializerMethodField(read_only=True)
+    giaPhong = serializers.SerializerMethodField(read_only=True)
+    def get_giaPhong(self, qs):
+        return qs.giaPhong if qs.giaPhong is not None else qs.tang.nhaTro.tienphong
+    def get_dieuhoa(self, qs):
+        return qs.dieuhoa if qs.dieuhoa is not None else qs.tang.nhaTro.dieuhoa
+    def get_wifi(self, qs):
+        return qs.wifi if qs.wifi is not None else qs.tang.nhaTro.wifi
+    def get_nonglanh(self, qs):
+        return qs.nonglanh if qs.nonglanh is not None else qs.tang.nhaTro.nonglanh
     def get_Nguoitro(self, qs):
         qs_nguoi=LichsuNguoitro.objects.filter(phong=qs,isOnline=True)
         return LichsuNguoitroSerializer(qs_nguoi,many=True).data
+    def get_Ngaybatdau(self, qs):
+        qs_nguoi=LichsuNguoitro.objects.filter(phong=qs,isOnline=True).order_by('ngayBatdauO')
+        if len(qs_nguoi)>0:
+            return qs_nguoi[0].ngayBatdauO
+        return None
     class Meta:
         model = Phong
         fields = '__all__'
