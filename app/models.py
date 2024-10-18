@@ -592,7 +592,6 @@ class Nguoitro(models.Model):
     ngaysinh = models.DateTimeField(null=True, blank=True)  # Căn cước công dân
     isActive = models.BooleanField(default=True)  # Trạng thái người dùng
     tamtru = models.BooleanField(default=False)  # Trạng thái người dùng
-    tiencoc = models.FloatField(default=0,null=True, blank=True)
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     class Meta:
@@ -607,6 +606,7 @@ class LichsuNguoitro(models.Model):
     isOnline = models.BooleanField(default=True)
     ngayBatdauO = models.DateField(null=True, blank=True)  # Ngày bắt đầu ở trọ
     ngayKetthucO = models.DateField(null=True, blank=True)  # Ngày kết thúc ở trọ
+    tiencoc = models.FloatField(default=0,null=True, blank=True)
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     class Meta:
