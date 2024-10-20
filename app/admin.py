@@ -106,3 +106,9 @@ class DanhsachnhanvienDilamAdmin(admin.ModelAdmin):
     save_as = True  # Kích hoạt Save as new
     list_filter = ('created_at',)
     ordering = ('-created_at',)
+    
+@admin.register(LichsuThanhToan)
+class LichsuThanhToanAdmin(admin.ModelAdmin):
+    save_as = True  # Kích hoạt Save as new
+    list_filter = ('created_at',)
+    ordering = ('-created_at',)

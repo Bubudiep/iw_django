@@ -627,28 +627,6 @@ class LichsuNguoitro(models.Model):
     def __str__(self):
         return f"{self.nguoiTro.hoTen} - Phòng {self.phong.soPhong} ({self.ngayBatdauO} - {self.ngayKetthucO})"
     
-class LichsuTieuThu(models.Model):
-    phong = models.ForeignKey(Phong, on_delete=models.SET_NULL, null=True, blank=True)  # Phòng trọ liên quan
-    nguoiTro = models.ForeignKey(Nguoitro, on_delete=models.SET_NULL, null=True, blank=True)  # Người tiêu thụ điện, nước
-    tienPhong = models.FloatField(default=0, null=True, blank=True)  # Số điện tiêu thụ trong tháng
-    tienRac = models.FloatField(default=0, null=True, blank=True)  # Số điện tiêu thụ trong tháng
-    tienDien = models.FloatField(default=0, null=True, blank=True)  # Số điện tiêu thụ trong tháng
-    tienNuoc = models.FloatField(default=0, null=True, blank=True)  # Số điện tiêu thụ trong tháng
-    soDienBatdau = models.FloatField(default=0, null=True, blank=True)  # Số điện tiêu thụ trong tháng
-    soNuocBatdau = models.FloatField(default=0, null=True, blank=True)  # Số nước tiêu thụ trong tháng
-    soDienKetthuc = models.FloatField(default=0, null=True, blank=True)  # Số điện tiêu thụ trong tháng
-    soNuocKetthuc = models.FloatField(default=0, null=True, blank=True)  # Số nước tiêu thụ trong tháng
-    ngaBatdau = models.DateTimeField(null=True, blank=True)  # Ngày thanh toán
-    ngayKetthuc = models.DateField(null=True, blank=True)  # Ngày thanh toán
-    thang = models.DateField(null=True, blank=True)  # Tháng của bản ghi tiêu thụ
-    created_at = models.DateTimeField(default=timezone.now)
-    updated_at = models.DateTimeField(auto_now=True)
-    class Meta:
-        ordering = ['-id']  # Sắp xếp theo 'id' mặc định
-
-    def __str__(self):
-        return f"Tiêu thụ: {self.nguoiTro.hoTen} - Phòng {self.phong.soPhong} - Tháng {self.thang}"
-
 class LichsuThanhToan(models.Model):
     user = models.ForeignKey(User, on_delete=models.SET_NULL,null=True, blank=True)  # Liên kết với tài khoản người dùng
     phong = models.ForeignKey(Phong, on_delete=models.SET_NULL, null=True, blank=True)
@@ -662,6 +640,7 @@ class LichsuThanhToan(models.Model):
     tongTien = models.FloatField(default=0, null=True, blank=True)
     ngayThanhToan = models.DateTimeField(null=True, blank=True)  # Ngày thanh toán
     ngayKetthuc = models.DateField(null=True, blank=True)  # Ngày thanh toán
+    ngayBatdau = models.DateField(null=True, blank=True)  # Ngày thanh toán
     isPaid = models.BooleanField(default=False)  # Trạng thái thanh toán
     ghichu = models.TextField(null=True, blank=True)  # Ghi chú
     created_at = models.DateTimeField(default=timezone.now)
@@ -675,7 +654,23 @@ class LichsuThanhToan(models.Model):
         self.save()
 
     def __str__(self):
-        return f"{self.nguoiTro.hoTen} {self.ngayThanhToan if self.isPaid else 'Chưa thanh toán'}"
+        return f"{self.ngayThanhToan if self.isPaid else 'Chưa thanh toán'}"
+
+class LichsuTieuThu(models.Model):
+    phong = models.ForeignKey(Phong, on_delete=models.SET_NULL, null=True, blank=True)  # Phòng trọ liên quan
+    hoadon = models.ForeignKey(LichsuThanhToan, on_delete=models.SET_NULL,null=True, blank=True)  # Liên kết với tài khoản người dùng
+    soDienKetthuc = models.FloatField(default=0, null=True, blank=True)  # Số điện tiêu thụ trong tháng
+    soNuocKetthuc = models.FloatField(default=0, null=True, blank=True)  # Số nước tiêu thụ trong tháng
+    ngaBatdau = models.DateTimeField(null=True, blank=True)  # Ngày thanh toán
+    ngayKetthuc = models.DateField(null=True, blank=True)  # Ngày thanh toán
+    thang = models.DateField(null=True, blank=True)  # Tháng của bản ghi tiêu thụ
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+    class Meta:
+        ordering = ['-id']  # Sắp xếp theo 'id' mặc định
+
+    def __str__(self):
+        return f"Tiêu thụ: {self.nguoiTro.hoTen} - Phòng {self.phong.soPhong} - Tháng {self.thang}"
 
 class ChiTietThanhToan(models.Model):
     user = models.OneToOneField(User, on_delete=models.SET_NULL,null=True, blank=True)  # Liên kết với tài khoản người dùng

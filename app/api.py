@@ -206,6 +206,52 @@ class NhatroUpdateAPIView(APIView):
             return Response({'Error': "Không tìm thấy nhà trọ"}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({'Error': f"{e}"}, status=status.HTTP_400_BAD_REQUEST)
+class NhatroThanhtoanAPIView(APIView):
+    authentication_classes = [OAuth2Authentication]  # Kiểm tra xác thực OAuth2
+    permission_classes = [IsAuthenticated]  # Đảm bảo người dùng phải đăng nhập (token hợp lệ)
+
+    def post(self, request):
+        data = request.data
+        # Kiểm tra token đã xác thực
+        if request.user.is_authenticated:
+            data = request.data
+        try:
+            soDien=data.get("soDien",None)
+            soNuoc=data.get("soNuoc",None)
+            phong=data.get("phong",None)
+            soTienPhong=data.get("soTienPhong",None)
+            soTienDien=data.get("soTienDien",None)
+            soTienNuoc=data.get("soTienNuoc",None)
+            soTienWifi=data.get("soTienWifi",None)
+            soTienRac=data.get("soTienRac",None)
+            soTienKhac=data.get("soTienKhac",None)
+            tongTien=data.get("tongTien",None)
+            ngayBatdau=data.get("ngayBatdau",None)
+            ngayKetthuc=data.get("ngayKetthuc",None)
+            qs_phong=Phong.objects.get(id=phong,tang__nhaTro__user=request.user)
+            thanhtoan=LichsuThanhToan.objects.create(user=request.user,
+                                                    phong=qs_phong,
+                                                    soTienPhong=soTienPhong,
+                                                    soTienDien=soTienDien,
+                                                    soTienNuoc=soTienNuoc,
+                                                    soTienWifi=soTienWifi,
+                                                    soTienRac=soTienRac,
+                                                    soTienKhac=soTienKhac,
+                                                    tongTien=tongTien,
+                                                    ngayBatdau=ngayBatdau,
+                                                    ngayKetthuc=ngayKetthuc)
+            tieuthu=LichsuTieuThu.objects.create(hoadon=thanhtoan,
+                                                phong=qs_phong,
+                                                soDienKetthuc=soDien,
+                                                soNuocKetthuc=soNuoc,
+                                                ngaBatdau=ngayKetthuc,
+                                                ngayKetthuc=ngayKetthuc)
+            qs_tro=Nhatro.objects.filter(user=request.user)
+            return Response(NhatroDetailsSerializer(qs_tro,many=True).data, status=status.HTTP_201_CREATED)
+        except Phong.DoesNotExist:
+            return Response({'Error': "Không tìm thấy nhà trọ"}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({'Error': f"{e}"}, status=status.HTTP_400_BAD_REQUEST)
 
 class ThemtangAPIView(APIView):
     authentication_classes = [OAuth2Authentication]  # Kiểm tra xác thực OAuth2

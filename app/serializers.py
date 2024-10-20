@@ -434,7 +434,6 @@ class LichsuThanhToanSerializer(serializers.ModelSerializer):
         model = LichsuThanhToan
         fields = '__all__'
 
-
 class DanhsachNhanvienSerializer(serializers.ModelSerializer):
     class Meta:
         model = DanhsachNhanvien
