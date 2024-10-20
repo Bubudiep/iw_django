@@ -93,7 +93,7 @@ class ThemnguoivaoAPIView(APIView):
                 tang__nhaTro__id=nhaTro, 
                 tang__nhaTro__user=request.user
             )
-            qs_old=LichsuNguoitro.objects.filter(nguoiTro__cccd=data.get("cccd", None),
+            qs_old=LichsuNguoitro.objects.filter(phong=qs_phong,nguoiTro__cccd=data.get("cccd", None),
                                                 ngayBatdauO__isnull=False,
                                                 ngayKetthucO__isnull=True)
             if len(qs_old)>0:
@@ -157,6 +157,56 @@ class NhaTroCreateView(APIView):
             res_data = generate_response_json("FAIL", f"[{file_name}_{lineno}] {str(e)}")
             return Response(data=res_data, status=status.HTTP_400_BAD_REQUEST)
     
+class NhatroUpdateAPIView(APIView):
+    authentication_classes = [OAuth2Authentication]  # Kiểm tra xác thực OAuth2
+    permission_classes = [IsAuthenticated]  # Đảm bảo người dùng phải đăng nhập (token hợp lệ)
+
+    def post(self, request):
+        data = request.data
+        # Kiểm tra token đã xác thực
+        if request.user.is_authenticated:
+            data = request.data
+        try:
+            phong=data.get("phong",None)
+            if phong is None:
+                return Response({'Error': "Chưa chọn nhà trọ"}, status=status.HTTP_400_BAD_REQUEST)
+            giaphong=data.get("giaphong",None)
+            if giaphong is None:
+                return Response({'Error': "Chưa chọn nhà trọ"}, status=status.HTTP_400_BAD_REQUEST)
+            sodien=data.get("sodien",None)
+            if sodien is None:
+                return Response({'Error': "Chưa nhập số phòng"}, status=status.HTTP_400_BAD_REQUEST)
+            sonuoc=data.get("sonuoc",None)
+            if sonuoc is None:
+                return Response({'Error': "Chưa nhập tên tầng"}, status=status.HTTP_400_BAD_REQUEST)
+            wifi=data.get("wifi",None)
+            if wifi is None:
+                return Response({'Error': "Bạn đang sử dụng phiên bản khác"}, status=status.HTTP_400_BAD_REQUEST)
+            dieuhoa=data.get("dieuhoa",None)
+            if dieuhoa is None:
+                return Response({'Error': "Bạn đang sử dụng phiên bản khác"}, status=status.HTTP_400_BAD_REQUEST)
+            nonglanh=data.get("nonglanh",None)
+            if nonglanh is None:
+                return Response({'Error': "Bạn đang sử dụng phiên bản khác"}, status=status.HTTP_400_BAD_REQUEST)
+            qs_phong=Phong.objects.get(id=phong,tang__nhaTro__user=request.user)
+            qs_phong.giaPhong=giaphong
+            qs_phong.wifi=wifi
+            qs_phong.dieuhoa=dieuhoa
+            qs_phong.nonglanh=nonglanh
+            qs_phong.save()
+            tieuthu=LichsuTieuThu.objects.create(phong=qs_phong,
+                                                soDienKetthuc=sodien,
+                                                soNuocKetthuc=sonuoc)
+            qs_nhatro=Nhatro.objects.filter(user=request.user)
+            return Response({
+                "phong":PhongSerializer(qs_phong,many=False).data,
+                "tro":NhatroDetailsSerializer(qs_nhatro,many=True).data
+            }, status=status.HTTP_201_CREATED)
+        except Phong.DoesNotExist:
+            return Response({'Error': "Không tìm thấy nhà trọ"}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({'Error': f"{e}"}, status=status.HTTP_400_BAD_REQUEST)
+
 class ThemtangAPIView(APIView):
     authentication_classes = [OAuth2Authentication]  # Kiểm tra xác thực OAuth2
     permission_classes = [IsAuthenticated]  # Đảm bảo người dùng phải đăng nhập (token hợp lệ)
@@ -829,7 +879,46 @@ class DanhsachnhanvienDilamViewSet(viewsets.ModelViewSet):
 
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
-     
+         
+class PhongViewSet(viewsets.ModelViewSet):
+    serializer_class = PhongSerializer
+    authentication_classes = [OAuth2Authentication]
+    permission_classes = [IsAuthenticated]
+    filter_backends = (DjangoFilterBackend,)
+    filterset_class = PhongFilter
+    pagination_class = StandardResultsSetPagination
+    # Chỉ cho phép GET
+    http_method_names = ['post','patch']
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_superuser:
+            return Phong.objects.all()
+        return Phong.objects.filter(tang__nhaTro__user=user)
+
+    def create(self, request, *args, **kwargs):
+        # Set the user to the authenticated user
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(user=request.user)  # Set the user field
+            return Response(serializer.data, status=201)
+        return Response(serializer.errors, status=400)
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        queryset = self.filter_queryset(queryset)  # Áp dụng bộ lọc cho queryset
+        
+        page_size = self.request.query_params.get('page_size')
+        if page_size is not None:
+            self.pagination_class.page_size = int(page_size)
+            
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
 class DanhsachDilamViewSet(viewsets.ModelViewSet):
     serializer_class = DanhsachnhanvienDilamSerializer
     authentication_classes = [OAuth2Authentication]
@@ -848,6 +937,45 @@ class DanhsachDilamViewSet(viewsets.ModelViewSet):
         qs_admin=DanhsachAdmin.objects.filter(zalo_id=qs_profile.zalo_id).values_list("congty__id",flat=True)
         qs_nhanvien=DanhsachNhanvien.objects.filter(congty__in=qs_admin).values_list("id",flat=True)
         return DanhsachnhanvienDilam.objects.filter(manhanvien__in=qs_nhanvien)
+
+    def create(self, request, *args, **kwargs):
+        # Set the user to the authenticated user
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(user=request.user)  # Set the user field
+            return Response(serializer.data, status=201)
+        return Response(serializer.errors, status=400)
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        queryset = self.filter_queryset(queryset)  # Áp dụng bộ lọc cho queryset
+        
+        page_size = self.request.query_params.get('page_size')
+        if page_size is not None:
+            self.pagination_class.page_size = int(page_size)
+            
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+class LichsuThanhToanViewSet(viewsets.ModelViewSet):
+    serializer_class = LichsuThanhToanSerializer
+    authentication_classes = [OAuth2Authentication]
+    permission_classes = [IsAuthenticated]
+    filter_backends = (DjangoFilterBackend,)
+    filterset_class = LichsuThanhToanFilter
+    pagination_class = StandardResultsSetPagination
+    # Chỉ cho phép GET
+    http_method_names = ['post']
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_superuser:
+            return LichsuThanhToan.objects.all()
+        return LichsuThanhToan.objects.filter(phong__tang__nhaTro__user=user)
 
     def create(self, request, *args, **kwargs):
         # Set the user to the authenticated user
@@ -980,4 +1108,5 @@ class DilamAPIView(APIView):
             file_name = os.path.basename(file_path)
             res_data = generate_response_json("FAIL", f"[{file_name}_{lineno}] {str(e)}")
 
-        return Response(data=res_data, status=res_status)   
+        return Response(data=res_data, status=res_status)
+    

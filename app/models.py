@@ -537,6 +537,18 @@ class Nhatro(models.Model):
     def __str__(self):
         return f"{self.tenTro}"
     
+class NhatroNoiquy(models.Model):
+    nhaTro = models.ForeignKey(Nhatro,on_delete=models.SET_NULL, null=True, blank=True) # người tạo
+    noiquy = models.TextField(null=True, blank=True)
+    tienphat = models.FloatField(default=0, null=True, blank=True)
+    mota = models.TextField(null=True, blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+    class Meta:
+        ordering = ['-id']  # Sắp xếp theo 'id' mặc định
+    def __str__(self):
+        return f"{self.nhaTro.tenTro}"
+    
 class NhatroThongtin(models.Model):
     nhaTro = models.ForeignKey(Nhatro,on_delete=models.SET_NULL, null=True, blank=True) # người tạo
     tienKhac = models.FloatField(default=0, null=True, blank=True)
@@ -618,9 +630,17 @@ class LichsuNguoitro(models.Model):
 class LichsuTieuThu(models.Model):
     phong = models.ForeignKey(Phong, on_delete=models.SET_NULL, null=True, blank=True)  # Phòng trọ liên quan
     nguoiTro = models.ForeignKey(Nguoitro, on_delete=models.SET_NULL, null=True, blank=True)  # Người tiêu thụ điện, nước
-    soDienTieuThu = models.FloatField(default=0, null=True, blank=True)  # Số điện tiêu thụ trong tháng
-    soNuocTieuThu = models.FloatField(default=0, null=True, blank=True)  # Số nước tiêu thụ trong tháng
-    thang = models.DateField()  # Tháng của bản ghi tiêu thụ
+    tienPhong = models.FloatField(default=0, null=True, blank=True)  # Số điện tiêu thụ trong tháng
+    tienRac = models.FloatField(default=0, null=True, blank=True)  # Số điện tiêu thụ trong tháng
+    tienDien = models.FloatField(default=0, null=True, blank=True)  # Số điện tiêu thụ trong tháng
+    tienNuoc = models.FloatField(default=0, null=True, blank=True)  # Số điện tiêu thụ trong tháng
+    soDienBatdau = models.FloatField(default=0, null=True, blank=True)  # Số điện tiêu thụ trong tháng
+    soNuocBatdau = models.FloatField(default=0, null=True, blank=True)  # Số nước tiêu thụ trong tháng
+    soDienKetthuc = models.FloatField(default=0, null=True, blank=True)  # Số điện tiêu thụ trong tháng
+    soNuocKetthuc = models.FloatField(default=0, null=True, blank=True)  # Số nước tiêu thụ trong tháng
+    ngaBatdau = models.DateTimeField(null=True, blank=True)  # Ngày thanh toán
+    ngayKetthuc = models.DateField(null=True, blank=True)  # Ngày thanh toán
+    thang = models.DateField(null=True, blank=True)  # Tháng của bản ghi tiêu thụ
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     class Meta:
@@ -630,6 +650,7 @@ class LichsuTieuThu(models.Model):
         return f"Tiêu thụ: {self.nguoiTro.hoTen} - Phòng {self.phong.soPhong} - Tháng {self.thang}"
 
 class LichsuThanhToan(models.Model):
+    user = models.ForeignKey(User, on_delete=models.SET_NULL,null=True, blank=True)  # Liên kết với tài khoản người dùng
     phong = models.ForeignKey(Phong, on_delete=models.SET_NULL, null=True, blank=True)
     nguoiTro = models.ForeignKey(Nguoitro, on_delete=models.SET_NULL, null=True, blank=True)
     soTienPhong = models.FloatField(default=0, null=True, blank=True)
@@ -640,6 +661,7 @@ class LichsuThanhToan(models.Model):
     soTienKhac = models.FloatField(default=0, null=True, blank=True)
     tongTien = models.FloatField(default=0, null=True, blank=True)
     ngayThanhToan = models.DateTimeField(null=True, blank=True)  # Ngày thanh toán
+    ngayKetthuc = models.DateField(null=True, blank=True)  # Ngày thanh toán
     isPaid = models.BooleanField(default=False)  # Trạng thái thanh toán
     ghichu = models.TextField(null=True, blank=True)  # Ghi chú
     created_at = models.DateTimeField(default=timezone.now)
@@ -656,6 +678,8 @@ class LichsuThanhToan(models.Model):
         return f"{self.nguoiTro.hoTen} {self.ngayThanhToan if self.isPaid else 'Chưa thanh toán'}"
 
 class ChiTietThanhToan(models.Model):
+    user = models.OneToOneField(User, on_delete=models.SET_NULL,null=True, blank=True)  # Liên kết với tài khoản người dùng
+    nguoiTro = models.ForeignKey(Nguoitro, on_delete=models.SET_NULL,null=True, blank=True)  # Người ở trọ
     lichsu_thanh_toan = models.ForeignKey(LichsuThanhToan, on_delete=models.CASCADE, related_name='chi_tiet_thanh_toan')
     so_tien = models.FloatField(default=0)  # Số tiền thanh toán cho hạng mục
     ghichu = models.TextField(null=True, blank=True)  # Ghi chú

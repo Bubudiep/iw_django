@@ -112,6 +112,13 @@ class LichsuNguoitroFilter(django_filters.FilterSet):
         model = LichsuNguoitro
         fields = ['created_at']
 
+class LichsuThanhToanFilter(django_filters.FilterSet):
+    created_at = django_filters.DateFromToRangeFilter()
+
+    class Meta:
+        model = LichsuThanhToan
+        fields = ['created_at']
+
 class LichsuTieuThuFilter(django_filters.FilterSet):
     created_at = django_filters.DateFromToRangeFilter()
 

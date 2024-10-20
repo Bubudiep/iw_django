@@ -2,6 +2,7 @@ from rest_framework import serializers
 from django.contrib.auth.models import User
 from .models import *
 from django.db import transaction
+from django.db.models import Max
 
 class RegisterSerializer(serializers.ModelSerializer):
     # Bạn có thể thêm các trường zalo_name và zalo_id vào đây
@@ -349,14 +350,45 @@ class LichsuNguoitroSerializer(serializers.ModelSerializer):
         model = LichsuNguoitro
         fields = '__all__'
 
+class LichsuThanhToanSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LichsuThanhToan
+        fields = '__all__'
+
 class PhongSerializer(serializers.ModelSerializer):
     tenTang = serializers.CharField(source='tang.tenTang', read_only=True)  # Fetch 'tenTang' using source
     Nguoitro = serializers.SerializerMethodField(read_only=True)
+    DaTro = serializers.SerializerMethodField(read_only=True)
     Ngaybatdau = serializers.SerializerMethodField(read_only=True)
     wifi = serializers.SerializerMethodField(read_only=True)
     dieuhoa = serializers.SerializerMethodField(read_only=True)
     nonglanh = serializers.SerializerMethodField(read_only=True)
     giaPhong = serializers.SerializerMethodField(read_only=True)
+    sodien = serializers.SerializerMethodField()  # Allow input for sodien
+    sonuoc = serializers.SerializerMethodField()  # Allow input for sonuoc
+    hoadon = serializers.SerializerMethodField(read_only=True)
+    
+    def update(self, instance, validated_data):
+        sodien = validated_data.get('usodien',None)
+        sonuoc = validated_data.get('usonuoc',None)
+        print(f"{validated_data} {sodien} {sonuoc}")
+        return instance
+    
+    def get_hoadon(self, qs):
+        qs_hoadon=LichsuThanhToan.objects.filter(phong=qs,isPaid=False)
+        return LichsuThanhToanSerializer(qs_hoadon,many=True).data
+    def get_sodien(self, obj):
+        lich_su_moi_nhat = LichsuTieuThu.objects.filter(phong=obj).order_by('-created_at').first()
+        if lich_su_moi_nhat:
+            return lich_su_moi_nhat.soDienKetthuc
+        return 0  # Trả về 0 nếu không có bản ghi
+    
+    def get_sonuoc(self, obj):
+        lich_su_moi_nhat = LichsuTieuThu.objects.filter(phong=obj).order_by('-created_at').first()
+        if lich_su_moi_nhat:
+            return lich_su_moi_nhat.soNuocKetthuc
+        return 0  # Trả về 0 nếu không có bản ghi
+    
     def get_giaPhong(self, qs):
         return qs.giaPhong if qs.giaPhong is not None else qs.tang.nhaTro.tienphong
     def get_dieuhoa(self, qs):
@@ -367,6 +399,9 @@ class PhongSerializer(serializers.ModelSerializer):
         return qs.nonglanh if qs.nonglanh is not None else qs.tang.nhaTro.nonglanh
     def get_Nguoitro(self, qs):
         qs_nguoi=LichsuNguoitro.objects.filter(phong=qs,isOnline=True)
+        return LichsuNguoitroSerializer(qs_nguoi,many=True).data
+    def get_DaTro(self, qs):
+        qs_nguoi=LichsuNguoitro.objects.filter(phong=qs,isOnline=False)
         return LichsuNguoitroSerializer(qs_nguoi,many=True).data
     def get_Ngaybatdau(self, qs):
         qs_nguoi=LichsuNguoitro.objects.filter(phong=qs,isOnline=True).order_by('ngayBatdauO')
@@ -393,6 +428,10 @@ class NhatroDetailsSerializer(serializers.ModelSerializer):
         return TangPhongSerializer(qs_tang,many=True).data
     class Meta:
         model = Nhatro
+        fields = '__all__'
+class LichsuThanhToanSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LichsuThanhToan
         fields = '__all__'
 
 
