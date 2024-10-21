@@ -356,7 +356,11 @@ class LichsuThanhToanSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class PhongSerializer(serializers.ModelSerializer):
-    tenTang = serializers.CharField(source='tang.tenTang', read_only=True)  # Fetch 'tenTang' using source
+    tenTang = serializers.CharField(source='tang.tenTang', read_only=True)
+    tiendien = serializers.FloatField(default=0,source='tang.nhaTro.tiendien', read_only=True)
+    tiennuoc = serializers.FloatField(default=0,source='tang.nhaTro.tiennuoc', read_only=True)
+    tienrac = serializers.FloatField(default=0,source='tang.nhaTro.tienrac', read_only=True)
+    tienkhac = serializers.FloatField(default=0,source='tang.nhaTro.tienkhac', read_only=True)
     Nguoitro = serializers.SerializerMethodField(read_only=True)
     DaTro = serializers.SerializerMethodField(read_only=True)
     Ngaybatdau = serializers.SerializerMethodField(read_only=True)
@@ -364,8 +368,8 @@ class PhongSerializer(serializers.ModelSerializer):
     dieuhoa = serializers.SerializerMethodField(read_only=True)
     nonglanh = serializers.SerializerMethodField(read_only=True)
     giaPhong = serializers.SerializerMethodField(read_only=True)
-    sodien = serializers.SerializerMethodField()  # Allow input for sodien
-    sonuoc = serializers.SerializerMethodField()  # Allow input for sonuoc
+    sodien = serializers.SerializerMethodField()
+    sonuoc = serializers.SerializerMethodField()
     hoadon = serializers.SerializerMethodField(read_only=True)
     
     def update(self, instance, validated_data):
