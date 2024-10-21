@@ -3,6 +3,7 @@ from django.utils import timezone
 from django.contrib.auth.models import User
 import datetime
 from datetime import time
+import uuid  # Thư viện để tạo khóa ngẫu nhiên
 
 def get_current_date():
     return timezone.now().date()
@@ -530,13 +531,19 @@ class Nhatro(models.Model):
     hotline = models.CharField(max_length=200, null=True, blank=True)
     diachi = models.CharField(max_length=200, null=True, blank=True)
     mota = models.TextField(null=True, blank=True)
+    # Thêm trường random_key
+    tkey = models.CharField(max_length=32, unique=True, editable=False, blank=True, null=True)
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     class Meta:
         ordering = ['-id']  # Sắp xếp theo 'id' mặc định
     def __str__(self):
         return f"{self.tenTro}"
-    
+    def save(self, *args, **kwargs):
+        if not self.random_key:
+            self.random_key = uuid.uuid4().hex.upper()  # Tạo UUID, xóa dấu '-' và chuyển sang viết hoa
+        super(Nhatro, self).save(*args, **kwargs)
+
 class NhatroNoiquy(models.Model):
     nhaTro = models.ForeignKey(Nhatro,on_delete=models.SET_NULL, null=True, blank=True) # người tạo
     noiquy = models.TextField(null=True, blank=True)
