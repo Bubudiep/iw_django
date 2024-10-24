@@ -516,12 +516,12 @@ class Nhatro(models.Model):
     tenTro = models.CharField(max_length=200, null=True, blank=True)
     anhDaidien = models.ForeignKey(Photos,on_delete=models.SET_NULL, null=True, blank=True) # người tạo
     isActive = models.BooleanField(default=True, blank=True)
-    isLock = models.BooleanField(default=True, blank=True)
+    isLock = models.BooleanField(default=False, blank=True)
     tienphong=models.FloatField(default=0, null=True, blank=True)
     tienrac=models.FloatField(default=0, null=True, blank=True)
     tiennuoc=models.FloatField(default=0, null=True, blank=True)
     tiendien=models.FloatField(default=0, null=True, blank=True)
-    isBand = models.BooleanField(default=True, blank=True)
+    isBand = models.BooleanField(default=False, blank=True)
     giaphongThapnhat = models.FloatField(default=0, null=True, blank=True)
     giaphongCaonhat = models.FloatField(default=0, null=True, blank=True)
     chungchu = models.BooleanField(default=0, null=True, blank=True) # có chung chủ hay không
