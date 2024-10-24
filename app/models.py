@@ -533,14 +533,14 @@ class Nhatro(models.Model):
     mota = models.TextField(null=True, blank=True)
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
-    tkey = models.CharField(max_length=32, unique=True, editable=False, blank=True, null=True)
+    QRKey = models.CharField(max_length=32, unique=True, editable=False, blank=True, null=True)
     class Meta:
         ordering = ['-id']  # Sắp xếp theo 'id' mặc định
     def __str__(self):
         return f"{self.tenTro}"
     def save(self, *args, **kwargs):
-        if not self.tkey:
-            self.tkey = uuid.uuid4().hex.upper()  # Tạo UUID, xóa dấu '-' và chuyển sang viết hoa
+        if not self.QRKey:
+            self.QRKey = uuid.uuid4().hex.upper()  # Tạo UUID, xóa dấu '-' và chuyển sang viết hoa
         super(Nhatro, self).save(*args, **kwargs)
 
 class NhatroNoiquy(models.Model):
