@@ -521,6 +521,7 @@ class Nhatro(models.Model):
     tienrac=models.FloatField(default=0, null=True, blank=True)
     tiennuoc=models.FloatField(default=0, null=True, blank=True)
     tiendien=models.FloatField(default=0, null=True, blank=True)
+    tienkhac=models.FloatField(default=0, null=True, blank=True)
     isBand = models.BooleanField(default=False, blank=True)
     giaphongThapnhat = models.FloatField(default=0, null=True, blank=True)
     giaphongCaonhat = models.FloatField(default=0, null=True, blank=True)
@@ -588,6 +589,10 @@ class Phong(models.Model):
     tang = models.ForeignKey(Tang, on_delete=models.CASCADE, related_name='phongs')  # Tầng chứa phòng
     soPhong = models.CharField(max_length=10)  # Số phòng
     giaPhong = models.FloatField(default=None, null=True, blank=True)  # Giá phòng
+    giaDien = models.FloatField(default=None, null=True, blank=True)  # Giá phòng
+    giaNuoc = models.FloatField(default=None, null=True, blank=True)  # Giá phòng
+    giaRac = models.FloatField(default=None, null=True, blank=True)  # Giá phòng
+    giaKhac = models.FloatField(default=None, null=True, blank=True)  # Giá phòng
     wifi = models.BooleanField(default=None, null=True, blank=True)
     dieuhoa = models.BooleanField(default=None, null=True, blank=True)
     nonglanh = models.BooleanField(default=None, null=True, blank=True)
@@ -651,8 +656,14 @@ class LichsuThanhToan(models.Model):
     ghichu = models.TextField(null=True, blank=True)  # Ghi chú
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
+    Key = models.CharField(max_length=100, null=True, blank=True)
     class Meta:
         ordering = ['-id']  # Sắp xếp theo 'id' mặc định
+    def save(self, *args, **kwargs):
+        if not self.Key:
+            tkey=uuid.uuid4().hex[:18].upper()
+            self.Key = f"HD-{tkey}"
+        super(LichsuThanhToan, self).save(*args, **kwargs)
 
     def mark_as_paid(self):
         self.isPaid = True

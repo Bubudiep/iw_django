@@ -350,23 +350,58 @@ class LichsuNguoitroSerializer(serializers.ModelSerializer):
         model = LichsuNguoitro
         fields = '__all__'
 
-class LichsuThanhToanSerializer(serializers.ModelSerializer):
+class ChiTietThanhToanSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ChiTietThanhToan
+        fields = '__all__'
+class LichsuTieuThuSerializer(serializers.ModelSerializer):
+    soDienBatDau = serializers.SerializerMethodField()
+    soNuocBatDau = serializers.SerializerMethodField()
+    def get_soDienBatDau(self, obj):
+        previous_record = LichsuTieuThu.objects.filter(phong=obj.phong, id__lt=obj.id).order_by('-id').first()
+        if previous_record:
+            return previous_record.soDienKetthuc
+        return 0  # Nếu không có bản ghi trước đó
+
+    def get_soNuocBatDau(self, obj):
+        previous_record = LichsuTieuThu.objects.filter(phong=obj.phong, id__lt=obj.id).order_by('-id').first()
+        if previous_record:
+            return previous_record.soNuocKetthuc
+        return 0  # Nếu không có bản ghi trước đó
+    class Meta:
+        model = LichsuTieuThu
+        fields = '__all__'
+class LichsuThanhToanDetailsSerializer(serializers.ModelSerializer):
+    Tieuthu = serializers.SerializerMethodField()
+    Chitiet = serializers.SerializerMethodField()
+    def get_Tieuthu(self, qs):
+        try:
+            qs_ct=LichsuTieuThu.objects.get(hoadon=qs)
+            return LichsuTieuThuSerializer(qs_ct,many=False).data
+        except Exception as e:
+            return None
+    def get_Chitiet(self, qs):
+        try:
+            qs_ct=ChiTietThanhToan.objects.filter(lichsu_thanh_toan=qs)
+            return ChiTietThanhToanSerializer(qs_ct,many=True).data
+        except Exception as e:
+            return []
     class Meta:
         model = LichsuThanhToan
         fields = '__all__'
 
 class PhongSerializer(serializers.ModelSerializer):
     tenTang = serializers.CharField(source='tang.tenTang', read_only=True)
-    tiendien = serializers.FloatField(default=0,source='tang.nhaTro.tiendien', read_only=True)
-    tiennuoc = serializers.FloatField(default=0,source='tang.nhaTro.tiennuoc', read_only=True)
-    tienrac = serializers.FloatField(default=0,source='tang.nhaTro.tienrac', read_only=True)
-    tienkhac = serializers.FloatField(default=0,source='tang.nhaTro.tienkhac', read_only=True)
+    tiendien = serializers.SerializerMethodField(read_only=True)
+    tiennuoc = serializers.SerializerMethodField(read_only=True)
+    tienrac = serializers.SerializerMethodField(read_only=True)
+    tienkhac = serializers.SerializerMethodField(read_only=True)
     Nguoitro = serializers.SerializerMethodField(read_only=True)
     DaTro = serializers.SerializerMethodField(read_only=True)
     Ngaybatdau = serializers.SerializerMethodField(read_only=True)
-    wifi = serializers.SerializerMethodField(read_only=True)
-    dieuhoa = serializers.SerializerMethodField(read_only=True)
-    nonglanh = serializers.SerializerMethodField(read_only=True)
+    wifi = serializers.SerializerMethodField()
+    dieuhoa = serializers.SerializerMethodField()
+    nonglanh = serializers.SerializerMethodField()
     giaPhong = serializers.SerializerMethodField(read_only=True)
     sodien = serializers.SerializerMethodField()
     sonuoc = serializers.SerializerMethodField()
@@ -380,7 +415,7 @@ class PhongSerializer(serializers.ModelSerializer):
     
     def get_hoadon(self, qs):
         qs_hoadon=LichsuThanhToan.objects.filter(phong=qs,isPaid=False)
-        return LichsuThanhToanSerializer(qs_hoadon,many=True).data
+        return LichsuThanhToanDetailsSerializer(qs_hoadon,many=True).data
     def get_sodien(self, obj):
         lich_su_moi_nhat = LichsuTieuThu.objects.filter(phong=obj).order_by('-created_at').first()
         if lich_su_moi_nhat:
@@ -393,6 +428,14 @@ class PhongSerializer(serializers.ModelSerializer):
             return lich_su_moi_nhat.soNuocKetthuc
         return 0  # Trả về 0 nếu không có bản ghi
     
+    def get_tiendien(self, qs):
+        return qs.giaDien if qs.giaDien is not None else qs.tang.nhaTro.tiendien
+    def get_tiennuoc(self, qs):
+        return qs.giaNuoc if qs.giaNuoc is not None else qs.tang.nhaTro.tiennuoc
+    def get_tienrac(self, qs):
+        return qs.giaRac if qs.giaRac is not None else qs.tang.nhaTro.tienrac
+    def get_tienkhac(self, qs):
+        return qs.giaKhac if qs.giaKhac is not None else qs.tang.nhaTro.tienkhac
     def get_giaPhong(self, qs):
         return qs.giaPhong if qs.giaPhong is not None else qs.tang.nhaTro.tienphong
     def get_dieuhoa(self, qs):

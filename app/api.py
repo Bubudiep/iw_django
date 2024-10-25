@@ -191,6 +191,10 @@ class NhatroUpdateAPIView(APIView):
             qs_phong=Phong.objects.get(id=phong,tang__nhaTro__user=request.user)
             qs_phong.giaPhong=giaphong
             qs_phong.wifi=wifi
+            qs_phong.giaDien=data.get("tiendien",qs_phong.giaDien)
+            qs_phong.giaNuoc=data.get("tiennuoc",qs_phong.giaNuoc)
+            qs_phong.giaRac=data.get("tienrac",qs_phong.giaRac)
+            qs_phong.giaKhac=data.get("tienkhac",qs_phong.giaKhac)
             qs_phong.dieuhoa=dieuhoa
             qs_phong.nonglanh=nonglanh
             qs_phong.save()
@@ -200,6 +204,7 @@ class NhatroUpdateAPIView(APIView):
             qs_nhatro=Nhatro.objects.filter(user=request.user)
             return Response({
                 "phong":PhongSerializer(qs_phong,many=False).data,
+                "tro_hientai":NhatroDetailsSerializer(qs_phong.tang.nhaTro,many=False).data,
                 "tro":NhatroDetailsSerializer(qs_nhatro,many=True).data
             }, status=status.HTTP_201_CREATED)
         except Phong.DoesNotExist:
