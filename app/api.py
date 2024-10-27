@@ -78,9 +78,6 @@ class ThemnguoivaoAPIView(APIView):
         if request.user.is_authenticated:
             data = request.data
         try:
-            nhaTro=data.get("tro",None)
-            if nhaTro is None:
-                return Response({'Error': "Chưa chọn nhà trọ"}, status=status.HTTP_400_BAD_REQUEST)
             soPhong=data.get("phong",None)
             if soPhong is None:
                 return Response({'Error': "Chưa nhập số phòng"}, status=status.HTTP_400_BAD_REQUEST)
@@ -90,7 +87,6 @@ class ThemnguoivaoAPIView(APIView):
             qs_phong=Phong.objects.get(
                 id=soPhong, 
                 tang__id=tenTang, 
-                tang__nhaTro__id=nhaTro, 
                 tang__nhaTro__user=request.user
             )
             qs_old=LichsuNguoitro.objects.filter(phong=qs_phong,nguoiTro__cccd=data.get("cccd", None),
@@ -211,6 +207,71 @@ class NhatroUpdateAPIView(APIView):
             return Response({'Error': "Không tìm thấy nhà trọ"}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({'Error': f"{e}"}, status=status.HTTP_400_BAD_REQUEST)
+
+class XacnhanTamtruAPIView(APIView):
+    authentication_classes = [OAuth2Authentication]  # Kiểm tra xác thực OAuth2
+    permission_classes = [IsAuthenticated]  # Đảm bảo người dùng phải đăng nhập (token hợp lệ)
+    def post(self, request):
+        data = request.data
+        # Kiểm tra token đã xác thực
+        if request.user.is_authenticated:
+            data = request.data
+        try:
+            phongtro=data.get("phongtro",None)
+            if phongtro is None:
+                return Response({'Error': "Lỗi không xác định"}, status=status.HTTP_400_BAD_REQUEST)
+            qs_ptro=LichsuNguoitro.objects.get(id=phongtro)
+            nguoitro=qs_ptro.nguoiTro
+            nguoitro.tamtru=True
+            nguoitro.save()
+            qs_tro=Nhatro.objects.filter(user=request.user)
+            return Response({
+                "lichsu":LichsuNguoitroSerializer(qs_ptro,many=False).data,
+                "nhatro":NhatroDetailsSerializer(qs_tro,many=True).data
+            }, status=status.HTTP_201_CREATED)
+        except LichsuNguoitro.DoesNotExist:
+            return Response({'Error': "Không tìm thấy nhà trọ"}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({'Error': f"{e}"}, status=status.HTTP_400_BAD_REQUEST)
+
+class XacnhanThanhtoanAPIView(APIView):
+    authentication_classes = [OAuth2Authentication]  # Kiểm tra xác thực OAuth2
+    permission_classes = [IsAuthenticated]  # Đảm bảo người dùng phải đăng nhập (token hợp lệ)
+
+    def post(self, request):
+        data = request.data
+        # Kiểm tra token đã xác thực
+        if request.user.is_authenticated:
+            data = request.data
+        try:
+            hoadon=data.get("hoadon",None)
+            sotien=data.get("sotien",None)
+            ghichu=data.get("ghichu",None)
+            qs_hoadon=LichsuThanhToan.objects.get(id=hoadon,phong__tang__nhaTro__user=request.user)
+            qs_old=ChiTietThanhToan.objects.filter(lichsu_thanh_toan=qs_hoadon)
+            dathanhtoan=0
+            for thanhtoan in qs_old:
+                dathanhtoan+=thanhtoan.so_tien
+            qs_nguoitro=LichsuNguoitro.objects.filter(phong=qs_hoadon.phong,
+                                                      ngayBatdauO__isnull=False,
+                                                      ngayKetthucO__isnull=True,
+                                                      isOnline=True)
+            thanhtoan=ChiTietThanhToan.objects.create(nguoiTro=qs_nguoitro.first().nguoiTro,
+                                                    lichsu_thanh_toan=qs_hoadon,
+                                                    so_tien=sotien,
+                                                    ghichu=ghichu)
+            dathanhtoan+=int(sotien)
+            if dathanhtoan>=int(qs_hoadon.tongTien):
+                qs_hoadon.ngayThanhToan=datetime.datetime.now()
+                qs_hoadon.isPaid=True
+                qs_hoadon.save()
+            qs_tro=Nhatro.objects.filter(user=request.user)
+            return Response(NhatroDetailsSerializer(qs_tro,many=True).data, status=status.HTTP_201_CREATED)
+        except Phong.DoesNotExist:
+            return Response({'Error': "Không tìm thấy nhà trọ"}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({'Error': f"{e}"}, status=status.HTTP_400_BAD_REQUEST)
+
 class NhatroThanhtoanAPIView(APIView):
     authentication_classes = [OAuth2Authentication]  # Kiểm tra xác thực OAuth2
     permission_classes = [IsAuthenticated]  # Đảm bảo người dùng phải đăng nhập (token hợp lệ)

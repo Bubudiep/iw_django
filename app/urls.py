@@ -25,8 +25,10 @@ router.register(r'dsdilam', api.DanhsachDilamViewSet, basename='dsdilam')
 router.register(r'danhsachadmin', api.DanhsachAdminViewSet, basename='danhsachadmin')
 
 urlpatterns = [
+    path('tamtru/', api.XacnhanTamtruAPIView.as_view(), name='tamtru'),
     path('them-nguoi/', api.ThemnguoivaoAPIView.as_view(), name='them-nguoi'),
     path('themtangtro/', api.ThemtangAPIView.as_view(), name='themtangtro'),
+    path('tt-phong/', api.XacnhanThanhtoanAPIView.as_view(), name='tt-phong'),
     path('t-thanhtoan/', api.NhatroThanhtoanAPIView.as_view(), name='update_phong'),
     path('u-phong/', api.NhatroUpdateAPIView.as_view(), name='update_phong'),
     path('nha-tro/', api.NhaTroCreateView.as_view(), name='nha_tro_create'),
