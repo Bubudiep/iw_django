@@ -360,15 +360,21 @@ class ZaloLoginAPIView(APIView):
     def post(self, request):
         zalo_id = request.data.get('zalo_id')
         zalo_phone = request.data.get('zalo_phone',None)
+        zalo_name = request.data.get('zalo_name',None)
+        zalo_avatar = request.data.get('zalo_avatar',None)
 
         if not zalo_id:
             return Response({'detail': 'Zalo ID is required'}, status=status.HTTP_400_BAD_REQUEST)
 
         # Xác thực người dùng qua zalo_id
         profile = get_object_or_404(Profile, zalo_id=zalo_id)
+        if zalo_name is not None and profile.zalo_name!=zalo_name:
+            profile.zalo_name=zalo_name
+        if zalo_avatar is not None and profile.zalo_avatar!=zalo_avatar:
+            profile.zalo_avatar=zalo_avatar
         if (profile.zalo_phone is None or profile.zalo_phone.strip()=="") and zalo_phone is not None:
             profile.zalo_phone=zalo_phone
-            profile.save()
+        profile.save()
         user = profile.user
         qs_app = Application.objects.first()
         expires_in_seconds = settings.OAUTH2_PROVIDER.get('ACCESS_TOKEN_EXPIRE_SECONDS', 360000)
