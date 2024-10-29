@@ -636,7 +636,7 @@ class LichsuNguoitro(models.Model):
         ordering = ['-id']  # Sắp xếp theo 'id' mặc định
 
     def __str__(self):
-        return f"{self.nguoiTro.hoTen} - Phòng {self.phong.soPhong} ({self.ngayBatdauO} - {self.ngayKetthucO})"
+        return f"{self.nguoiTro.hoTen}"
     
 class LichsuThanhToan(models.Model):
     user = models.ForeignKey(User, on_delete=models.SET_NULL,null=True, blank=True)  # Liên kết với tài khoản người dùng
@@ -690,7 +690,7 @@ class LichsuTieuThu(models.Model):
         return f"Tiêu thụ: {self.nguoiTro.hoTen} - Phòng {self.phong.soPhong} - Tháng {self.thang}"
 
 class ChiTietThanhToan(models.Model):
-    user = models.OneToOneField(User, on_delete=models.SET_NULL,null=True, blank=True)  # Liên kết với tài khoản người dùng
+    user = models.ForeignKey(User, on_delete=models.SET_NULL,null=True, blank=True)  # Liên kết với tài khoản người dùng
     nguoiTro = models.ForeignKey(Nguoitro, on_delete=models.SET_NULL,null=True, blank=True)  # Người ở trọ
     lichsu_thanh_toan = models.ForeignKey(LichsuThanhToan, on_delete=models.CASCADE, related_name='chi_tiet_thanh_toan')
     so_tien = models.FloatField(default=0)  # Số tiền thanh toán cho hạng mục

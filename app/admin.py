@@ -84,6 +84,24 @@ class NhatroAdmin(admin.ModelAdmin):
     list_filter = ('created_at',)
     ordering = ('-created_at',)
     
+@admin.register(Phong)
+class PhongAdmin(admin.ModelAdmin):
+    save_as = True  # Kích hoạt Save as new
+    list_filter = ('created_at',)
+    ordering = ('-created_at',)
+    
+@admin.register(Nguoitro)
+class NguoitroAdmin(admin.ModelAdmin):
+    save_as = True  # Kích hoạt Save as new
+    list_filter = ('created_at',)
+    ordering = ('-created_at',)
+   
+@admin.register(LichsuNguoitro)
+class LichsuNguoitroAdmin(admin.ModelAdmin):
+    save_as = True  # Kích hoạt Save as new
+    list_filter = ('created_at',)
+    ordering = ('-created_at',)
+   
 @admin.register(DanhsachCongty)
 class DanhsachCongtyAdmin(admin.ModelAdmin):
     save_as = True  # Kích hoạt Save as new
@@ -107,8 +125,15 @@ class DanhsachnhanvienDilamAdmin(admin.ModelAdmin):
     list_filter = ('created_at',)
     ordering = ('-created_at',)
     
+# Tạo một InlineAdmin để hiển thị ChiTietThanhToan
+class ChiTietThanhToanInline(admin.TabularInline):  # Hoặc bạn có thể dùng StackedInline
+    model = ChiTietThanhToan
+    extra = 1  # Số lượng bản ghi ChiTietThanhToan mặc định
+    readonly_fields = ['so_tien', 'ghichu', 'created_at', 'updated_at']
+
 @admin.register(LichsuThanhToan)
 class LichsuThanhToanAdmin(admin.ModelAdmin):
+    inlines = [ChiTietThanhToanInline]
     save_as = True  # Kích hoạt Save as new
     list_filter = ('created_at',)
     ordering = ('-created_at',)

@@ -417,7 +417,7 @@ class PhongSerializer(serializers.ModelSerializer):
         return instance
     
     def get_hoadon(self, qs):
-        qs_hoadon=LichsuThanhToan.objects.filter(phong=qs,isPaid=False)
+        qs_hoadon=LichsuThanhToan.objects.filter(phong=qs)
         return LichsuThanhToanDetailsSerializer(qs_hoadon,many=True).data
     def get_sodien(self, obj):
         lich_su_moi_nhat = LichsuTieuThu.objects.filter(phong=obj).order_by('-created_at').first()
