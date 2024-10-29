@@ -8,14 +8,16 @@ class RegisterSerializer(serializers.ModelSerializer):
     # Bạn có thể thêm các trường zalo_name và zalo_id vào đây
     zalo_name = serializers.CharField(required=False)
     zalo_id = serializers.CharField(required=False)
+    zalo_phone = serializers.CharField(required=False)
     class Meta:
         model = User
-        fields = ['username', 'password', 'email','zalo_name','zalo_id']
+        fields = ['username', 'password', 'email','zalo_name','zalo_id','zalo_phone']
 
     def create(self, validated_data):
         # Lấy các thông tin zalo_name và zalo_id từ dữ liệu đã xác thực
         zalo_name = validated_data.pop('zalo_name', None)
         zalo_id = validated_data.pop('zalo_id',None)
+        zalo_phone = validated_data.pop('zalo_phone',None)
         # create_profile
         if zalo_id is not None:
             qs_zalo_id=Profile.objects.filter(zalo_id=zalo_id).count()
@@ -26,7 +28,8 @@ class RegisterSerializer(serializers.ModelSerializer):
                 Profile.objects.create(
                     user=user,
                     zalo_name=zalo_name,
-                    zalo_id=zalo_id
+                    zalo_id=zalo_id,
+                    zalo_phone=zalo_phone,
                 )
             else:
                 raise serializers.ValidationError({

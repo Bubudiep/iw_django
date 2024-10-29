@@ -298,12 +298,16 @@ class ThemtangAPIView(APIView):
 class ZaloLoginAPIView(APIView):
     def post(self, request):
         zalo_id = request.data.get('zalo_id')
+        zalo_phone = request.data.get('zalo_phone',None)
 
         if not zalo_id:
             return Response({'detail': 'Zalo ID is required'}, status=status.HTTP_400_BAD_REQUEST)
 
         # Xác thực người dùng qua zalo_id
         profile = get_object_or_404(Profile, zalo_id=zalo_id)
+        if (profile.zalo_phone is None or profile.zalo_phone.strip()=="") and zalo_phone is not None:
+            profile.zalo_phone=zalo_phone
+            profile.save()
         user = profile.user
         qs_app = Application.objects.first()
         expires_in_seconds = settings.OAUTH2_PROVIDER.get('ACCESS_TOKEN_EXPIRE_SECONDS', 360000)
