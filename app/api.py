@@ -399,6 +399,7 @@ class ZaloLoginAPIView(APIView):
                 'token_type': 'Bearer',
                 'scope': valid_token.scope,
                 'refresh_token': 'existing_refresh_token',  # Add your logic to handle refresh tokens
+                'user':UserSerializer(user,many=False).data
             })
 
         # Nếu không có token hợp lệ, tạo token mới
@@ -425,6 +426,7 @@ class ZaloLoginAPIView(APIView):
             'token_type': 'Bearer',
             'scope': 'read write',
             'refresh_token': refresh_token_str,
+            'user':UserSerializer(user,many=False).data
         })
      
 class RegisterView(APIView):
@@ -434,6 +436,7 @@ class RegisterView(APIView):
         serializer = RegisterSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
+            profile=Profile.objects.get(user=user)
             qs_app = Application.objects.first()
             expires_in_seconds = settings.OAUTH2_PROVIDER.get('ACCESS_TOKEN_EXPIRE_SECONDS', 3600)
             expires_at = timezone.now() + timedelta(seconds=expires_in_seconds)
@@ -448,11 +451,12 @@ class RegisterView(APIView):
                 )
                 # Trả về token
                 return JsonResponse({
-                    'access_token': access_token_str,
+                    'access_token': token.token,
                     'expires_in': expires_in_seconds,
                     'token_type': 'Bearer',
                     'scope': 'read write',
                     'refresh_token': refresh_token_str,
+                    'user':UserSerializer(user,many=False).data
                 })
             except Exception as e:
                 return Response({'detail': 'Internal server error'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
