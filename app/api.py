@@ -234,6 +234,19 @@ class XacnhanTamtruAPIView(APIView):
         except Exception as e:
             return Response({'Error': f"{e}"}, status=status.HTTP_400_BAD_REQUEST)
 
+class KiemtraTroAPIView(APIView):
+    authentication_classes = [OAuth2Authentication]  # Kiểm tra xác thực OAuth2
+    permission_classes = [IsAuthenticated]  # Đảm bảo người dùng phải đăng nhập (token hợp lệ)
+    def get(self, request):
+        key = request.query_params.get('KEY', None)
+        print(key)
+        if key:
+            try:
+                qs_nhatro=Nhatro.objects.get(QRKey=key)
+                return Response(Nhatro_thongtinSerializer(qs_nhatro).data, status=status.HTTP_200_OK)
+            except Nhatro.DoesNotExist:
+                return Response({"error": "Không thấy nhà trọ!"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"error": "KEY parameter is missing or invalid."}, status=status.HTTP_400_BAD_REQUEST)
 class XacnhanThanhtoanAPIView(APIView):
     authentication_classes = [OAuth2Authentication]  # Kiểm tra xác thực OAuth2
     permission_classes = [IsAuthenticated]  # Đảm bảo người dùng phải đăng nhập (token hợp lệ)
@@ -1005,7 +1018,45 @@ class DanhsachnhanvienDilamViewSet(viewsets.ModelViewSet):
 
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
-         
+           
+class NhatroNoiquyViewSet(viewsets.ModelViewSet):
+    serializer_class = NhatroNoiquySerializer
+    authentication_classes = [OAuth2Authentication]
+    permission_classes = [IsAuthenticated]
+    filter_backends = (DjangoFilterBackend,)
+    filterset_class = NhatroNoiquyFilter
+    pagination_class = StandardResultsSetPagination
+    # Chỉ cho phép GET
+    http_method_names = ['post','patch','get']
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_superuser:
+            return NhatroNoiquy.objects.all()
+        return NhatroNoiquy.objects.filter(nhaTro__user=user)
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()  # Set the user field
+            return Response(serializer.data, status=201)
+        return Response(serializer.errors, status=400)
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        queryset = self.filter_queryset(queryset)  # Áp dụng bộ lọc cho queryset
+        
+        page_size = self.request.query_params.get('page_size')
+        if page_size is not None:
+            self.pagination_class.page_size = int(page_size)
+            
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
 class PhongViewSet(viewsets.ModelViewSet):
     serializer_class = PhongSerializer
     authentication_classes = [OAuth2Authentication]

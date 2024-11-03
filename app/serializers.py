@@ -535,3 +535,66 @@ class DanhsachnhanvienDilamSerializer(serializers.ModelSerializer):
     class Meta:
         model = DanhsachnhanvienDilam
         fields = '__all__'
+
+
+class Phong2Serializer(serializers.ModelSerializer):
+    tenTang = serializers.CharField(source='tang.tenTang', read_only=True)
+    tiendien = serializers.SerializerMethodField(read_only=True)
+    tiennuoc = serializers.SerializerMethodField(read_only=True)
+    tienrac = serializers.SerializerMethodField(read_only=True)
+    tienkhac = serializers.SerializerMethodField(read_only=True)
+    nguoitro = serializers.SerializerMethodField(read_only=True)
+    wifi = serializers.SerializerMethodField()
+    dieuhoa = serializers.SerializerMethodField()
+    nonglanh = serializers.SerializerMethodField()
+    tienphong = serializers.SerializerMethodField(read_only=True)
+    def get_tiendien(self, qs):
+        return qs.giaDien if qs.giaDien is not None else qs.tang.nhaTro.tiendien
+    def get_tiennuoc(self, qs):
+        return qs.giaNuoc if qs.giaNuoc is not None else qs.tang.nhaTro.tiennuoc
+    def get_tienrac(self, qs):
+        return qs.giaRac if qs.giaRac is not None else qs.tang.nhaTro.tienrac
+    def get_tienkhac(self, qs):
+        return qs.giaKhac if qs.giaKhac is not None else qs.tang.nhaTro.tienkhac
+    def get_tienphong(self, qs):
+        return qs.giaPhong if qs.giaPhong is not None else qs.tang.nhaTro.tienphong
+    def get_dieuhoa(self, qs):
+        return qs.dieuhoa if qs.dieuhoa is not None else qs.tang.nhaTro.dieuhoa
+    def get_wifi(self, qs):
+        return qs.wifi if qs.wifi is not None else qs.tang.nhaTro.wifi
+    def get_nonglanh(self, qs):
+        return qs.nonglanh if qs.nonglanh is not None else qs.tang.nhaTro.nonglanh
+    def get_nguoitro(self, qs):
+        qs_nguoi=LichsuNguoitro.objects.filter(phong=qs,isOnline=True)
+        return len(qs_nguoi)
+    class Meta:
+        model = Phong
+        fields = ['dieuhoa','nonglanh','wifi','nguoitro','tiendien','tiennuoc','tienrac'
+                  ,'tienkhac','soPhong','tenTang','tienphong']
+
+class NhatroNoiquySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = NhatroNoiquy
+        fields = '__all__'
+
+class TangPhong2Serializer(serializers.ModelSerializer):
+    Phong = serializers.SerializerMethodField(read_only=True)
+    def get_Phong(self, qs):
+        qs_Phong=Phong.objects.filter(tang=qs)
+        return Phong2Serializer(qs_Phong,many=True).data
+    class Meta:
+        model = Tang
+        fields = '__all__'
+
+class Nhatro_thongtinSerializer(serializers.ModelSerializer):
+    Tang = serializers.SerializerMethodField(read_only=True)
+    Noiquy = serializers.SerializerMethodField(read_only=True)
+    def get_Tang(self, qs):
+        qs_tang=Tang.objects.filter(nhaTro=qs)
+        return TangPhong2Serializer(qs_tang,many=True).data
+    def get_Noiquy(self, qs):
+        qs_noiquy=NhatroNoiquy.objects.filter(nhaTro=qs)
+        return NhatroNoiquySerializer(qs_noiquy,many=True).data
+    class Meta:
+        model = Nhatro
+        fields = '__all__'

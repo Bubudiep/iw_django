@@ -14,7 +14,8 @@ router.register(r'tuchamcongtay', api.TuchamcongtayViewSet, basename='tuchamcong
 router.register(r'kieungay', api.KieungayViewSet, basename='kieungay')
 router.register(r'kieuca', api.KieucaViewSet, basename='kieuca')
 router.register(r'heso', api.HesoViewSet, basename='heso')
-router.register(r'congty', api.CongtyViewSet, basename='congty')
+router.register(r'noiquynhatro', api.NhatroNoiquyViewSet, basename='noiquynhatro')
+router.register(r'congty', api.NhatroNoiquyViewSet, basename='congty')
 router.register(r'phong', api.PhongViewSet, basename='phong')
 router.register(r'thanhtoan', api.LichsuThanhToanViewSet, basename='thanhtoan')
 router.register(r'nhatro', api.NhatroViewSet, basename='nhatro')
@@ -25,6 +26,7 @@ router.register(r'dsdilam', api.DanhsachDilamViewSet, basename='dsdilam')
 router.register(r'danhsachadmin', api.DanhsachAdminViewSet, basename='danhsachadmin')
 
 urlpatterns = [
+    path('kiemtra_tro/', api.KiemtraTroAPIView.as_view(), name='kiemtra_tro'),
     path('tamtru/', api.XacnhanTamtruAPIView.as_view(), name='tamtru'),
     path('them-nguoi/', api.ThemnguoivaoAPIView.as_view(), name='them-nguoi'),
     path('themtangtro/', api.ThemtangAPIView.as_view(), name='themtangtro'),

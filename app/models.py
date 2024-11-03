@@ -509,8 +509,6 @@ class BathuongHistory(models.Model):
 
 
 
-
-
 class Nhatro(models.Model):
     user = models.ForeignKey(User,on_delete=models.SET_NULL, null=True, blank=True) # người tạo
     tenTro = models.CharField(max_length=200, null=True, blank=True)
@@ -535,6 +533,8 @@ class Nhatro(models.Model):
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     QRKey = models.CharField(max_length=32, unique=True, editable=False, blank=True, null=True)
+     # New field for maximum payment collection date
+    ngay_thu_tien = models.PositiveSmallIntegerField(default=15, blank=True)  # Default is day 31
     class Meta:
         ordering = ['-id']  # Sắp xếp theo 'id' mặc định
     def __str__(self):
