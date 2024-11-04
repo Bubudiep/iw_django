@@ -23,6 +23,7 @@ class Profile(models.Model):
     long_pos = models.CharField(max_length=50, null=True, blank=True)
     lat_pos = models.CharField(max_length=50, null=True, blank=True)
     level = models.IntegerField(default=0, null=True, blank=True)
+    is_Chutro=models.BooleanField(default=False)
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     class Meta:
