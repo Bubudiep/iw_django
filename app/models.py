@@ -798,11 +798,148 @@ class Restaurant(models.Model):
     def __str__(self):
         return self.name
     
+class Restaurant_layout(models.Model):
+    restaurant = models.ForeignKey(Restaurant, on_delete=models.CASCADE, null=True, blank=True)
+    name = models.CharField(max_length=100, default="Tầng 1")  # Mô tả thêm về quán ăn
+    is_active = models.BooleanField(default=True)
+    description = models.TextField(blank=True, null=True)  # Mô tả thêm về quán ăn
+    created_at = models.DateTimeField(auto_now_add=True)  # Ngày tạo
+    updated_at = models.DateTimeField(auto_now=True)  # Ngày cập nhật
+    
+    def __str__(self):
+        return self.name
+    
+class Restaurant_space_group(models.Model):
+    layout = models.ForeignKey(Restaurant_layout, on_delete=models.CASCADE, null=True, blank=True)
+    name = models.CharField(max_length=100, default="Nhóm 1")  # Mô tả thêm về quán ăn
+    is_active = models.BooleanField(default=True) # bật
+    is_ordering = models.BooleanField(default=True) # đã đặt trước
+    description = models.TextField(blank=True, null=True)  # Mô tả thêm về quán ăn
+    created_at = models.DateTimeField(auto_now_add=True)  # Ngày tạo
+    updated_at = models.DateTimeField(auto_now=True)  # Ngày cập nhật
+    
+    def __str__(self):
+        return self.name
+class Restaurant_space(models.Model):
+    layout = models.ForeignKey(Restaurant_layout, on_delete=models.CASCADE, null=True, blank=True)
+    name = models.CharField(max_length=100, default="Vị trí 1")  # Mô tả thêm về quán ăn
+    group = models.ForeignKey(Restaurant_space_group, on_delete=models.SET_NULL, null=True, blank=True)
+    is_active = models.BooleanField(default=True) # bật
+    is_ordering = models.BooleanField(default=True) # đã đặt trước
+    description = models.TextField(blank=True, null=True)  # Mô tả thêm về quán ăn
+    created_at = models.DateTimeField(auto_now_add=True)  # Ngày tạo
+    updated_at = models.DateTimeField(auto_now=True)  # Ngày cập nhật
+    
+    def __str__(self):
+        return self.name
+    
+class Restaurant_counpon(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
+    restaurant = models.ForeignKey(Restaurant, on_delete=models.CASCADE, null=True, blank=True)
+    is_percent=models.BooleanField(default=True) # giảm theo %
+    value=models.IntegerField(default=0) # giảm bao nhiêu
+    max_discount=models.IntegerField(default=0) # giảm tối đa bao tiền
+    min_of_all_order=models.IntegerField(default=0) # đơn hàng đã đặt đạt bao nhiêu
+    min_of_this_order=models.IntegerField(default=0) # đơn hàng này phải đạt bao nhiêu
+    max_for_person=models.IntegerField(default=0) # một người được dùng tối đa bao lần
+    is_for_first_order=models.BooleanField(default=False) # chỉ cho đơn hàng đầu tiên
+    max_use=models.IntegerField(default=0) # lượt dùng tối đa
+    start_use = models.DateTimeField(null=True,blank=True)  # Ngày bắt đầu
+    end_use = models.DateTimeField(null=True,blank=True)  # Ngày kết thúc
+    title = models.CharField(max_length=200,blank=True, null=True)
+    description = models.TextField(blank=True, null=True)
+    description_short = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)  # Ngày tạo
+    updated_at = models.DateTimeField(auto_now=True)  # Ngày cập nhật
+    
+    def __str__(self):
+        return self.title
+    
+class Restaurant_staff(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
+    restaurant = models.ForeignKey(Restaurant, on_delete=models.CASCADE, null=True, blank=True)
+    is_Admin = models.BooleanField(max_length=15)  # Số điện thoại quán ăn
+    is_Active = models.BooleanField(max_length=15)  # Số điện thoại quán ăn
+    description = models.TextField(blank=True, null=True)  # Mô tả thêm về quán ăn
+    created_at = models.DateTimeField(auto_now_add=True)  # Ngày tạo
+    updated_at = models.DateTimeField(auto_now=True)  # Ngày cập nhật
+    
+    def __str__(self):
+        return self.name
+    
 class Restaurant_menu(models.Model):
-    restaurant = models.ForeignKey(Restaurant, on_delete=models.CASCADE, related_name="menu_items")  # Liên kết với quán ăn
-    name = models.CharField(max_length=100)  # Tên món ăn
+    restaurant = models.ForeignKey(Restaurant, on_delete=models.CASCADE)  # Liên kết với quán ăn
+    name = models.CharField(max_length=100)  # Tên memu
     is_online = models.BooleanField(default=True)  # Trạng thái có sẵn hay không
     description = models.TextField(blank=True, null=True)  # Mô tả món ăn
     
     def __str__(self):
         return f"{self.name} - {self.restaurant.name}"
+    
+class Restaurant_menu_items(models.Model):
+    menu = models.ForeignKey(Restaurant_menu, on_delete=models.CASCADE)  # Liên kết với quán ăn
+    name = models.CharField(max_length=100)  # Tên memu
+    price = models.FloatField(default=0)
+    is_hot = models.BooleanField(default=False)
+    is_new = models.BooleanField(default=False)
+    is_online = models.BooleanField(default=True)  # Trạng thái có sẵn hay không
+    image64_mini = models.TextField(null=True, blank=True)
+    image64_full = models.TextField(null=True, blank=True)
+    short_description = models.TextField(blank=True, null=True)  # Mô tả món ăn
+    description = models.TextField(blank=True, null=True)  # Mô tả món ăn
+    
+    def __str__(self):
+        return f"{self.name} - {self.price}"
+
+class Restaurant_order(models.Model):
+    ORDER_STATUS_CHOICES = [
+        ('CREATED', 'Đã tạo'),
+        ('RECEIVED', 'Đã nhận'),
+        ('SHIPPING', 'Đang ship'),
+        ('DELIVERED', 'Đã giao'),
+    ]
+    OrderKey = models.CharField(max_length=32, unique=True, editable=False, blank=True, null=True)
+    restaurant = models.ForeignKey(Restaurant, on_delete=models.SET_NULL, null=True, blank=True)
+    user_order = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True) 
+    status = models.CharField(max_length=10, choices=ORDER_STATUS_CHOICES, default='CREATED')
+    is_use_coupon = models.BooleanField(default=True)  # Trạng thái có sẵn hay không
+    is_takeaway = models.BooleanField(default=True)  # Mang về
+    is_online = models.BooleanField(default=True)  # Đơn online
+    is_paid = models.BooleanField(default=True)  # Thanh toán
+    is_paided = models.BooleanField(default=True)  # Xác nhận thanh toán
+    
+    def __str__(self):
+        return f"{self.OrderKey} - {self.is_paid} - {self.is_paided}"
+    def save(self, *args, **kwargs):
+        if not self.OrderKey:
+            self.OrderKey = uuid.uuid4().hex.upper()
+        super(Restaurant_order, self).save(*args, **kwargs)
+        
+class Restaurant_order_items(models.Model):
+    Order = models.ForeignKey(Restaurant_order, on_delete=models.SET_NULL, null=True, blank=True)
+    items = models.ForeignKey(Restaurant_menu_items, on_delete=models.CASCADE)  # Liên kết với quán ăn
+    name = models.CharField(max_length=100)
+    price = models.FloatField(default=0)
+    quantity = models.IntegerField(default=0)
+    
+    def __str__(self):
+        return f"{self.Order.OrderKey}_{self.items.name}"
+    
+class Restaurant_counpon_history(models.Model):
+    Order = models.ForeignKey(Restaurant_order, on_delete=models.SET_NULL, null=True, blank=True)
+    counpon = models.ForeignKey(Restaurant_counpon, on_delete=models.SET_NULL, null=True, blank=True) # mã giảm
+    counpon_count = models.IntegerField(default=0) # bộ đếm
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True) # người dùng
+    discount=models.IntegerField(default=0) # giảm thực tế
+    created_at = models.DateTimeField(auto_now_add=True)  # Ngày tạo
+    updated_at = models.DateTimeField(auto_now=True)  # Ngày cập nhật
+    def __str__(self):
+        return f"{self.Order.OrderKey}_{self.items.name}"
+    
+    def save(self, *args, **kwargs):
+        # Nếu đây là một bản ghi mới
+        if not self.pk:
+            if self.counpon:
+                self.counpon_count = Restaurant_counpon_history.objects.filter(counpon=self.counpon).count() + 1
+        super(Restaurant_counpon_history, self).save(*args, **kwargs)
+        

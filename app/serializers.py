@@ -598,3 +598,8 @@ class Nhatro_thongtinSerializer(serializers.ModelSerializer):
     class Meta:
         model = Nhatro
         fields = '__all__'
+        
+class RestaurantDetailsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Restaurant
+        fields = '__all__'

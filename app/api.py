@@ -122,6 +122,25 @@ class QR_loginAPIView(APIView):
             file_name = os.path.basename(file_path)
             return Response({"Error":f"[{file_name}_{lineno}] {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
         
+class LenmonAppAPIView(APIView):
+    authentication_classes = [OAuth2Authentication]  # Kiểm tra xác thực OAuth2
+    permission_classes = [IsAuthenticated]  # Đảm bảo người dùng phải đăng nhập (token hợp lệ)
+
+    def get(self, request):
+        if request.user.is_authenticated:
+            data = request.data
+        try:
+            user = request.user  # user hiện tại từ request
+            restaurants = Restaurant.objects.filter(restaurant_staff__user=user)
+            return Response({
+            "count":len(restaurants),
+            "data":RestaurantDetailsSerializer(restaurants,many=True).data
+            }, status=status.HTTP_200_OK)
+        except Restaurant.DoesNotExist:
+            return Response({'Error': "Không tìm thấy nhà hàng"}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({'Error': f"{e}"}, status=status.HTTP_403_FORBIDDEN)
+        
 class ThemnguoivaoAPIView(APIView):
     authentication_classes = [OAuth2Authentication]  # Kiểm tra xác thực OAuth2
     permission_classes = [IsAuthenticated]  # Đảm bảo người dùng phải đăng nhập (token hợp lệ)
