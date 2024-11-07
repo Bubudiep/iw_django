@@ -3,6 +3,7 @@ import sys
 import os
 import requests
 import secrets
+import socketio
 from rest_framework import viewsets
 from rest_framework import permissions
 from oauth2_provider.contrib.rest_framework import OAuth2Authentication
@@ -26,6 +27,34 @@ import string
 from .filters import *
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.exceptions import AuthenticationFailed
+import time
+
+sio = socketio.Client()
+def connect_to_server():
+    try:
+        sio.connect('http://localhost:3009', wait=True, wait_timeout=5)
+        print("Successfully connected to the server.")
+    except socketio.exceptions.ConnectionError as e:
+        reconnect()
+def reconnect(max_retries=5, delay=5):
+    attempts = 0
+    print(f"Attempting to reconnect ({attempts + 1}/{max_retries})...")
+    while attempts < max_retries:
+        try:
+            sio.connect('http://localhost:3009', wait=True, wait_timeout=5)
+            return
+        except socketio.exceptions.ConnectionError as e:
+            attempts += 1
+            time.sleep(delay)
+@sio.event
+def connect():
+    print("Connected to the server.")
+
+@sio.event
+def disconnect():
+    print("Disconnected from server.")
+    reconnect()
+connect_to_server()
   
 class StandardResultsSetPagination(PageNumberPagination):
     page_size = 50  # Số lượng đối tượng trên mỗi trang
@@ -67,7 +96,32 @@ def generate_refresh_token(length=32):
     """Tạo refresh token ngắn với độ dài cụ thể."""
     characters = string.ascii_letters + string.digits
     return ''.join(secrets.choice(characters) for _ in range(length))
-
+class QR_loginAPIView(APIView):
+    def post(self, request):
+        data = request.data
+        try:
+            platform=data.get("platform",None);
+            app=data.get("app",None);
+            qs_app=Fixed_link.objects.get(platform=platform,app=app)
+            create_key=QR_Login.objects.create(isSuccess=False)
+            print(app)
+            return Response({
+                "link":qs_app.link,
+                "key":create_key.QRKey
+            }, status=status.HTTP_201_CREATED)
+        except Tang.DoesNotExist:
+            return Response({'Error': "Không tìm thấy tầng"}, status=status.HTTP_404_NOT_FOUND)
+        except Phong.DoesNotExist:
+            return Response({'Error': "Không tìm thấy phòng"}, status=status.HTTP_404_NOT_FOUND)
+        except Nhatro.DoesNotExist:
+            return Response({'Error': "Không tìm thấy nhà trọ"}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            lineno = exc_tb.tb_lineno
+            file_path = exc_tb.tb_frame.f_code.co_filename
+            file_name = os.path.basename(file_path)
+            return Response({"Error":f"[{file_name}_{lineno}] {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+        
 class ThemnguoivaoAPIView(APIView):
     authentication_classes = [OAuth2Authentication]  # Kiểm tra xác thực OAuth2
     permission_classes = [IsAuthenticated]  # Đảm bảo người dùng phải đăng nhập (token hợp lệ)
@@ -404,8 +458,21 @@ class ZaloLoginAPIView(APIView):
                 token.delete()
 
         # Nếu còn token hợp lệ, trả về token đó
+        key = request.data.get('key',None)
         valid_token = existing_tokens.filter(expires__gt=now).first()
         if valid_token:
+            if key is not None:
+                qs_key=QR_Login.objects.get(QRKey=key)
+                if qs_key:
+                    sio.emit("backend-event",{
+                        "token":valid_token.token,
+                        "expires_in":int((valid_token.expires - now).total_seconds()),
+                        "room":qs_key.QRKey,
+                        "status":"PASS"
+                    })
+                    qs_key.user=user
+                    qs_key.isSuccess=True
+                    qs_key.save()
             return JsonResponse({
                 'access_token': valid_token.token,
                 'expires_in': int((valid_token.expires - now).total_seconds()),
@@ -433,6 +500,18 @@ class ZaloLoginAPIView(APIView):
             return Response({'detail': 'Internal server error'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         # Trả về token mới
+        if key is not None:
+            qs_key=QR_Login.objects.get(QRKey=key)
+            if qs_key:
+                sio.emit("backend-event",{
+                    "token":access_token_str,
+                    "expires_in":expires_in_seconds,
+                    "room":qs_key.QRKey,
+                    "status":"PASS"
+                })
+                qs_key.user=user
+                qs_key.isSuccess=True
+                qs_key.save()
         return JsonResponse({
             'access_token': access_token_str,
             'expires_in': expires_in_seconds,

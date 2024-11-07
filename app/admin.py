@@ -78,6 +78,12 @@ class HesoAdmin(admin.ModelAdmin):
     list_filter = ('created_at',)
     ordering = ('-created_at',)
 
+@admin.register(Fixed_link)
+class Fixed_linkAdmin(admin.ModelAdmin):
+    save_as = True  # Kích hoạt Save as new
+    list_filter = ('created_at',)
+    ordering = ('-created_at',)
+    
 @admin.register(Nhatro)
 class NhatroAdmin(admin.ModelAdmin):
     save_as = True  # Kích hoạt Save as new

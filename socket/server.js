@@ -4,7 +4,12 @@ const socketIo = require("socket.io");
 const fs = require("fs"); // Add this line to require the fs module
 const app = express();
 const server = http.createServer(app);
-const io = socketIo(server);
+const io = socketIo(server, {
+  cors: {
+    origin: "*", // hoặc chỉ định tên miền của bạn
+    methods: ["GET", "POST"],
+  },
+});
 const axios = require("axios"); // Add this line to require the axios module
 
 // Store rooms and users in an object
@@ -15,7 +20,6 @@ const rooms = {},
 io.on("connection", (socket) => {
   // Khi người dùng kết nối
   var name = "";
-  console.log(socket.handshake.headers);
   if (socket.handshake.headers.cookie) {
     try {
       var cookie = socket.handshake.headers.cookie.split(";");
@@ -49,26 +53,9 @@ io.on("connection", (socket) => {
   });
 
   socket.on("join room", (room, data) => {
-    // Khi có người join room
+    console.log(room);
     socket.join(room);
-    console.log(data);
-    if (!rooms[room]) {
-      rooms[room] = [name];
-      rooms_data[room] = [];
-      rooms_data[room].push({
-        key: socket.id,
-        name: name,
-        data: data,
-      });
-    } else {
-      rooms[room].push(name);
-      rooms_data[room].push({
-        key: socket.id,
-        name: name,
-        data: data,
-      });
-    }
-    socket.to(room).emit("user joined", data);
+    socket.to(room).emit("message", data);
   });
 
   socket.on("notice", (data) => {
@@ -91,15 +78,20 @@ io.on("connection", (socket) => {
   socket.on("backend-wo", (data) => {
     io.emit("message", { type: "updateWO", message: data });
   });
+  socket.on("backend-event", (data) => {
+    if (data.room) {
+      io.to(data.room).emit("message", data);
+    } else {
+      io.emit("message", { type: data.type, message: data.data });
+    }
+  });
   socket.on("backend-schedule", (data) => {
     io.emit("message", { type: "updatePLAN", message: data });
   });
   socket.on("chat message", (msg, room) => {
-    // Broadcast the message to all users in the room
     io.to(room).emit("chat message", { message: msg, sender: name });
   });
   socket.on("message", (type, msg) => {
-    // Public messenger
     io.emit("message", { type: type, message: msg });
   });
 
@@ -108,7 +100,6 @@ io.on("connection", (socket) => {
   });
 
   socket.on("backend-message", (msg) => {
-    // Public messenger
     io.emit("message", { type: msg.type, message: msg });
     try {
       if (msg.function == "mail") {
@@ -140,8 +131,8 @@ io.on("connection", (socket) => {
     }
   });
 });
-server.listen(3000, () => {
-  console.log("Server is running on port 3000");
+server.listen(3009, () => {
+  console.log("Server is running on port 3009");
 });
 
 // Function to send a POST request

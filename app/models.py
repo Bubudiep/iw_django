@@ -8,6 +8,32 @@ import uuid  # Thư viện để tạo khóa ngẫu nhiên
 def get_current_date():
     return timezone.now().date()
 
+class Fixed_link(models.Model):
+    app = models.CharField(max_length=100,blank=True, null=True)  # Tên quán ăn
+    platform = models.CharField(max_length=100,blank=True, null=True)  # Tên quán ăn
+    link = models.TextField(blank=True, null=True)  # Mô tả thêm về quán ăn
+    description = models.TextField(blank=True, null=True)  # Mô tả thêm về quán ăn
+    created_at = models.DateTimeField(auto_now_add=True)  # Ngày tạo
+    updated_at = models.DateTimeField(auto_now=True)  # Ngày cập nhật
+    
+    def __str__(self):
+        return f"{self.app}_{self.platform}"
+    
+class QR_Login(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
+    QRKey = models.CharField(max_length=32, unique=True, editable=False, blank=True, null=True)
+    isSuccess = models.BooleanField(default=False)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+    class Meta:
+        ordering = ['-id']  # Sắp xếp theo 'id' mặc định
+    def __str__(self):
+        return self.name
+    def save(self, *args, **kwargs):
+        if not self.QRKey:
+            self.QRKey = uuid.uuid4().hex.upper()  # Tạo UUID, xóa dấu '-' và chuyển sang viết hoa
+        super(QR_Login, self).save(*args, **kwargs)
+        
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
     avatar = models.ForeignKey('Photos', on_delete=models.SET_NULL, null=True, blank=True, related_name='avatar_profiles')
@@ -760,3 +786,23 @@ class DanhsachnhanvienDilam(models.Model):
 
     def __str__(self):
         return f"{self.manhanvien.manhanvien}_{self.ngaydilam}"
+    
+class Restaurant(models.Model):
+    name = models.CharField(max_length=100)  # Tên quán ăn
+    address = models.CharField(max_length=200)  # Địa chỉ quán ăn
+    phone_number = models.CharField(max_length=15)  # Số điện thoại quán ăn
+    description = models.TextField(blank=True, null=True)  # Mô tả thêm về quán ăn
+    created_at = models.DateTimeField(auto_now_add=True)  # Ngày tạo
+    updated_at = models.DateTimeField(auto_now=True)  # Ngày cập nhật
+    
+    def __str__(self):
+        return self.name
+    
+class Restaurant_menu(models.Model):
+    restaurant = models.ForeignKey(Restaurant, on_delete=models.CASCADE, related_name="menu_items")  # Liên kết với quán ăn
+    name = models.CharField(max_length=100)  # Tên món ăn
+    is_online = models.BooleanField(default=True)  # Trạng thái có sẵn hay không
+    description = models.TextField(blank=True, null=True)  # Mô tả món ăn
+    
+    def __str__(self):
+        return f"{self.name} - {self.restaurant.name}"
