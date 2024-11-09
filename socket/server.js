@@ -1,36 +1,17 @@
 const express = require("express");
 const http = require("http");
-const https = require("https");
 const socketIo = require("socket.io");
 const fs = require("fs"); // Add this line to require the fs module
 const app = express();
-const Greenlock = require("greenlock-express");
-const greenlock = Greenlock.init({
-  packageRoot: __dirname,
-  configDir: "./greenlock.d",
-  maintainerEmail: "youremail@example.com",
-  agreeToTerms: true,
-  cluster: false,
-  packageAgent: "socket-app/1.0.0",
-  sites: [
-    {
-      subject: "ipays.vn",
-      altnames: ["ipays.vn"],
-    },
-  ],
-});
-const axios = require("axios"); // Add this line to require the axios module
-
-const server = https.createServer(greenlock.tlsOptions, app);
-server.listen(3009, () => {
-  console.log("Socket.IO server running with SSL on port 3009");
-});
+const server = http.createServer(app);
 const io = socketIo(server, {
   cors: {
     origin: "*", // hoặc chỉ định tên miền của bạn
     methods: ["GET", "POST"],
   },
 });
+const axios = require("axios"); // Add this line to require the axios module
+
 // Store rooms and users in an object
 const rooms = {},
   users = {},
@@ -150,6 +131,9 @@ io.on("connection", (socket) => {
     }
   });
 });
+server.listen(3009, "0.0.0.0", () => {
+  console.log("Server is running on port 3009");
+});
 
 // Function to send a POST request
 function sendPostRequest(
@@ -174,7 +158,6 @@ function sendPostRequest(
       console.error("Error sending POST request:", error);
     });
 }
-
 // socket dotnet server
 // const net = require('net');
 // const server2 = net.createServer(socket => {
