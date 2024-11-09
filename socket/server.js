@@ -4,6 +4,7 @@ const socketIo = require("socket.io");
 const fs = require("fs"); // Add this line to require the fs module
 const app = express();
 const server = http.createServer(app);
+
 const io = socketIo(server, {
   cors: {
     origin: "*", // hoặc chỉ định tên miền của bạn
@@ -131,7 +132,7 @@ io.on("connection", (socket) => {
     }
   });
 });
-server.listen(3009, () => {
+server.listen(3009, "0.0.0.0", () => {
   console.log("Server is running on port 3009");
 });
 

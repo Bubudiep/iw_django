@@ -102,6 +102,7 @@ class QR_loginAPIView(APIView):
         try:
             platform=data.get("platform",None);
             app=data.get("app",None);
+            print(f"{platform}_{app}")
             qs_app=Fixed_link.objects.get(platform=platform,app=app)
             create_key=QR_Login.objects.create(isSuccess=False)
             print(app)
@@ -133,8 +134,8 @@ class LenmonAppAPIView(APIView):
             user = request.user  # user hiện tại từ request
             restaurants = Restaurant.objects.filter(restaurant_staff__user=user)
             return Response({
-            "count":len(restaurants),
-            "data":RestaurantDetailsSerializer(restaurants,many=True).data
+                "count":len(restaurants),
+                "data":RestaurantDetailsSerializer(restaurants,many=True).data
             }, status=status.HTTP_200_OK)
         except Restaurant.DoesNotExist:
             return Response({'Error': "Không tìm thấy nhà hàng"}, status=status.HTTP_404_NOT_FOUND)
