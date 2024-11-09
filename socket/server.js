@@ -22,14 +22,14 @@ const greenlock = Greenlock.init({
 const axios = require("axios"); // Add this line to require the axios module
 
 const server = https.createServer(greenlock.tlsOptions, app);
+server.listen(3009, () => {
+  console.log("Socket.IO server running with SSL on port 3009");
+});
 const io = socketIo(server, {
   cors: {
     origin: "*", // hoặc chỉ định tên miền của bạn
     methods: ["GET", "POST"],
   },
-});
-server.listen(3009, () => {
-  console.log("Socket.IO server running with SSL on port 3009");
 });
 // Store rooms and users in an object
 const rooms = {},
