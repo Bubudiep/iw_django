@@ -67,12 +67,10 @@ CORS_ALLOWED_ORIGINS = [
     'http://localhost:3001',
     'http://localhost:3003',
     'http://localhost:3000',
-    'http://localhost:4000',
-    'https://localhost:4000',
+    "http://localhost:4000",
     "http://localhost:6500",
     "http://192.168.110.120",
     "http://192.168.1.27:4000",
-    "https://192.168.1.27:4000",
     'https://h5.zdn.vn',
     'zbrowser://h5.zdn.vn',
 ]

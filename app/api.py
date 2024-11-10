@@ -28,6 +28,8 @@ from .filters import *
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.exceptions import AuthenticationFailed
 import time
+from django.db import transaction
+import uuid  # Thư viện để tạo khóa ngẫu nhiên
 
 sio = socketio.Client()
 def connect_to_server():
@@ -123,6 +125,62 @@ class QR_loginAPIView(APIView):
             file_name = os.path.basename(file_path)
             return Response({"Error":f"[{file_name}_{lineno}] {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
         
+class CreateRestaurantAPIView(APIView):
+    authentication_classes = [OAuth2Authentication]  # Kiểm tra xác thực OAuth2
+    permission_classes = [IsAuthenticated]  # Đảm bảo người dùng phải đăng nhập (token hợp lệ)
+
+    def post(self, request):
+        if request.user.is_authenticated:
+            data = request.data
+        try:
+            user = request.user  # user hiện tại từ request
+            print(data)
+            with transaction.atomic():
+                # tạo nhà hàng
+                option=data.get("option")
+                restaurant=Restaurant.objects.create(name=data.get("name"),
+                                                address=data.get("address"),
+                                                phone_number=data.get("phone"),
+                                                mohinh=data.get("mohinh"),
+                                                avatar=data.get("avatar"),
+                                                Takeaway=option.get("Oder"),
+                                                isRate=option.get("Rate"),
+                                                isChat=option.get("Chat"),
+                                                Oder_online=option.get("OderOnline"))
+                room=Restaurant_socket.objects.create(restaurant=restaurant,QRKey=uuid.uuid4().hex.upper())
+                staff=Restaurant_staff.objects.create(user=user,
+                                                restaurant=restaurant,
+                                                is_Admin=True,is_Active=True)
+                layout = Restaurant_layout.objects.create(
+                    restaurant=restaurant,
+                    name=f"Tầng 1"
+                )
+                for room_number, table_count in data.get("table", {}).items():
+                    group = Restaurant_space_group.objects.create(
+                        layout=layout,
+                        name=f"Phòng {room_number}"
+                    )
+                    for table_index in range(1, table_count + 1):
+                        Restaurant_space.objects.create(
+                            layout=layout,
+                            group=group,
+                            name=f"Bàn {table_index}",
+                            description=f"Bàn số {table_index} trong phòng {room_number}",
+                        )
+                        
+                qs_staff=Restaurant_staff.objects.filter(user=user,
+                                    is_Active=True).values_list("restaurant__id",
+                                    flat=True)
+                restaurants = Restaurant.objects.filter(id__in=qs_staff)
+                return Response({
+                    "count":len(restaurants),
+                    "data":RestaurantDetailsSerializer(restaurants,many=True).data
+                }, status=status.HTTP_200_OK)
+        except Restaurant.DoesNotExist:
+            return Response({'Error': "Không tìm thấy nhà hàng"}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({'Error': f"{e}"}, status=status.HTTP_403_FORBIDDEN)
+                
 class LenmonAppAPIView(APIView):
     authentication_classes = [OAuth2Authentication]  # Kiểm tra xác thực OAuth2
     permission_classes = [IsAuthenticated]  # Đảm bảo người dùng phải đăng nhập (token hợp lệ)
@@ -132,7 +190,9 @@ class LenmonAppAPIView(APIView):
             data = request.data
         try:
             user = request.user  # user hiện tại từ request
-            restaurants = Restaurant.objects.filter(restaurant_staff__user=user)
+            qs_staff=Restaurant_staff.objects.filter(user=user,is_Active=True).values_list("restaurant__id",flat=True)
+            print(qs_staff)
+            restaurants = Restaurant.objects.filter(id__in=qs_staff)
             return Response({
                 "count":len(restaurants),
                 "data":RestaurantDetailsSerializer(restaurants,many=True).data

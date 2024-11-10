@@ -143,3 +143,17 @@ class LichsuThanhToanAdmin(admin.ModelAdmin):
     save_as = True  # Kích hoạt Save as new
     list_filter = ('created_at',)
     ordering = ('-created_at',)
+    
+class Restaurant_staffInline(admin.TabularInline):  # Hoặc bạn có thể dùng StackedInline
+    model = Restaurant_staff
+    extra = 0
+    fields = ["user","is_Admin","is_Active"]
+    readonly_fields = ['created_at', 'updated_at']
+    raw_id_fields = ['user']
+
+@admin.register(Restaurant)
+class RestaurantAdmin(admin.ModelAdmin):
+    inlines = [Restaurant_staffInline]
+    save_as = True  # Kích hoạt Save as new
+    list_filter = ('created_at',)
+    ordering = ('-created_at',)

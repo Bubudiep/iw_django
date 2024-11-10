@@ -599,7 +599,49 @@ class Nhatro_thongtinSerializer(serializers.ModelSerializer):
         model = Nhatro
         fields = '__all__'
         
+class RestaurantSocketSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Restaurant_socket
+        fields = ['id', 'name', 'is_active', 'description', 'QRKey', 'created_at', 'updated_at']
+
+class RestaurantSpaceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Restaurant_space
+        fields = ['id', 'name', 'is_active', 'is_ordering', 'description', 'created_at', 'updated_at']
+
+class RestaurantSpaceGroupSerializer(serializers.ModelSerializer):
+    spaces = RestaurantSpaceSerializer(many=True, source='restaurant_space_set')  # Đảm bảo trường liên kết đúng
+
+    class Meta:
+        model = Restaurant_space_group
+        fields = ['id', 'name', 'is_active', 'is_ordering', 'description', 'created_at', 'updated_at', 'spaces']
+
+class RestaurantLayoutSerializer(serializers.ModelSerializer):
+    groups = RestaurantSpaceGroupSerializer(many=True, source='restaurant_space_group_set')  # Đảm bảo trường liên kết đúng
+
+    class Meta:
+        model = Restaurant_layout
+        fields = ['id', 'name', 'is_active', 'description', 'created_at', 'updated_at', 'groups']
+
+class RestaurantCouponSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Restaurant_counpon
+        fields = [
+            'id', 'is_percent', 'value', 'max_discount', 'min_of_all_order',
+            'min_of_this_order', 'max_for_person', 'is_for_first_order',
+            'max_use', 'start_use', 'end_use', 'title', 'description',
+            'description_short', 'created_at', 'updated_at'
+        ]
+
 class RestaurantDetailsSerializer(serializers.ModelSerializer):
+    sockets = RestaurantSocketSerializer(many=True, source='restaurant_socket_set')  # Đảm bảo lấy tất cả các socket liên kết
+    layouts = RestaurantLayoutSerializer(many=True, source='restaurant_layout_set')  # Đảm bảo lấy tất cả các layout liên kết
+    coupons = RestaurantCouponSerializer(many=True, source='restaurant_counpon_set')  # Đảm bảo lấy tất cả các coupon liên kết
+
     class Meta:
         model = Restaurant
-        fields = '__all__'
+        fields = [
+            'id', 'name', 'address', 'phone_number', 'avatar', 'Oder_online',
+            'Takeaway', 'isRate', 'isChat', 'is_active', 'description', 'created_at',
+            'updated_at', 'sockets', 'layouts', 'coupons'
+        ]

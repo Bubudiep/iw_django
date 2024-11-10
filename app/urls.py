@@ -26,6 +26,7 @@ router.register(r'dsdilam', api.DanhsachDilamViewSet, basename='dsdilam')
 router.register(r'danhsachadmin', api.DanhsachAdminViewSet, basename='danhsachadmin')
 
 urlpatterns = [
+    path('create-res/', api.CreateRestaurantAPIView.as_view(), name='create-res'),
     path('lenmon/', api.LenmonAppAPIView.as_view(), name='lenmon'),
     path('qr_login/', api.QR_loginAPIView.as_view(), name='qr_login'),
     path('kiemtra_tro/', api.KiemtraTroAPIView.as_view(), name='kiemtra_tro'),
