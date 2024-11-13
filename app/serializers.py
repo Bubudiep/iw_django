@@ -628,30 +628,32 @@ class RestaurantMenuItemsSerializer(serializers.ModelSerializer):
         return [mark.name for mark in obj.mark.all()]
 
     def create(self, validated_data):
-        group_names = validated_data.pop('group', [])
-        mark_names = validated_data.pop('mark', [])
+        group_names = validated_data.pop('group', None)
+        mark_names = validated_data.pop('mark', None)
         menu_item = Restaurant_menu_items.objects.create(**validated_data)
         self.set_groups_and_marks(menu_item, group_names, mark_names)
         return menu_item
     def update(self, instance, validated_data):
-        group_names = validated_data.pop('group', [])
-        mark_names = validated_data.pop('mark', [])
+        group_names = validated_data.pop('group', None)
+        mark_names = validated_data.pop('mark', None)
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
         self.set_groups_and_marks(instance, group_names, mark_names)
         return instance
     def set_groups_and_marks(self, menu_item, group_names, mark_names):
-        groups = []
-        for name in group_names:
-            group, created = Restaurant_menu_groups.objects.get_or_create(name=name)
-            groups.append(group)
-        menu_item.group.set(groups)
-        marks = []
-        for name in mark_names:
-            mark, created = Restaurant_menu_marks.objects.get_or_create(name=name)
-            marks.append(mark)
-        menu_item.mark.set(marks)
+        if group_names is not None:
+            groups = []
+            for name in group_names:
+                group, created = Restaurant_menu_groups.objects.get_or_create(name=name)
+                groups.append(group)
+            menu_item.group.set(groups)
+        if mark_names is not None:
+            marks = []
+            for name in mark_names:
+                mark, created = Restaurant_menu_marks.objects.get_or_create(name=name)
+                marks.append(mark)
+            menu_item.mark.set(marks)
         
 class Restaurant_menu_groupsSerializer(serializers.ModelSerializer):
     class Meta:
