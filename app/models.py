@@ -902,21 +902,49 @@ class Restaurant_menu(models.Model):
     def __str__(self):
         return f"{self.name} - {self.restaurant.name}"
     
-class Restaurant_menu_items(models.Model):
+class Restaurant_menu_groups(models.Model):
     menu = models.ForeignKey(Restaurant_menu, on_delete=models.CASCADE)  # Liên kết với quán ăn
     name = models.CharField(max_length=100)  # Tên memu
-    price = models.FloatField(default=0)
-    is_hot = models.BooleanField(default=False)
-    is_new = models.BooleanField(default=False)
     is_online = models.BooleanField(default=True)  # Trạng thái có sẵn hay không
-    image64_mini = models.TextField(null=True, blank=True)
-    image64_full = models.TextField(null=True, blank=True)
-    short_description = models.TextField(blank=True, null=True)  # Mô tả món ăn
     description = models.TextField(blank=True, null=True)  # Mô tả món ăn
     
     def __str__(self):
+        return f"{self.name}"
+    
+class Restaurant_menu_marks(models.Model):
+    menu = models.ForeignKey(Restaurant_menu, on_delete=models.CASCADE)  # Liên kết với quán ăn
+    name = models.CharField(max_length=100)  # Tên memu
+    is_online = models.BooleanField(default=True)  # Trạng thái có sẵn hay không
+    description = models.TextField(blank=True, null=True)  # Mô tả món ăn
+    
+    def __str__(self):
+        return f"{self.name}"
+    
+class Restaurant_menu_items(models.Model):
+    menu = models.ForeignKey(Restaurant_menu, on_delete=models.CASCADE)  # Liên kết với quán ăn
+    mark = models.ManyToManyField(Restaurant_menu_marks, blank=True)  # Liên kết với quán ăn
+    group = models.ManyToManyField(Restaurant_menu_groups, blank=True)  # Liên kết với quán ăn
+    name = models.CharField(max_length=222,null=True, blank=True)  # Tên memu
+    price = models.FloatField(default=0)
+    is_hot = models.BooleanField(default=False)
+    is_new = models.BooleanField(default=False)
+    is_online = models.BooleanField(default=True)  # Trạng thái có đặt online không
+    is_ship = models.BooleanField(default=True)  # Trạng thái có đặt online không
+    is_available = models.BooleanField(default=True)
+    is_active = models.BooleanField(default=True)
+    is_delete = models.BooleanField(default=False)
+    image64_mini = models.TextField(null=True, blank=True)
+    image64_full = models.TextField(null=True, blank=True)
+    image64_sub1 = models.TextField(null=True, blank=True)
+    image64_sub2 = models.TextField(null=True, blank=True)
+    image64_sub3 = models.TextField(null=True, blank=True)
+    short_description = models.TextField(blank=True, null=True)  # Mô tả món ăn
+    description = models.TextField(blank=True, null=True)  # Mô tả món ăn
+    def __str__(self):
         return f"{self.name} - {self.price}"
-
+    class Meta:
+        ordering = ['-id']
+        
 class Restaurant_order(models.Model):
     ORDER_STATUS_CHOICES = [
         ('CREATED', 'Đã tạo'),

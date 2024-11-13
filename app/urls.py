@@ -24,6 +24,7 @@ router.register(r'danhsachnhanvien', api.DanhsachNhanvienViewSet, basename='danh
 router.register(r'danhsachdilam', api.DanhsachnhanvienDilamViewSet, basename='danhsachdilam')
 router.register(r'dsdilam', api.DanhsachDilamViewSet, basename='dsdilam')
 router.register(r'danhsachadmin', api.DanhsachAdminViewSet, basename='danhsachadmin')
+router.register(r'res-items', api.Restaurant_menu_itemsViewSet, basename='res-items')
 
 urlpatterns = [
     path('create-res/', api.CreateRestaurantAPIView.as_view(), name='create-res'),

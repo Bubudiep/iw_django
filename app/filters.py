@@ -205,3 +205,26 @@ class DanhsachnhanvienDilamFilter(django_filters.FilterSet):
     class Meta:
         model = DanhsachnhanvienDilam
         fields = ['manhanvien', 'chamcongdi', 'ngaydilam']
+
+class RestaurantMenuItemsFilter(django_filters.FilterSet):
+    mark = django_filters.ModelMultipleChoiceFilter(
+        queryset=Restaurant_menu_marks.objects.all(),
+        field_name='mark',
+        label="Mark",
+        conjoined=True  # Ensures items must have all selected marks
+    )
+    group = django_filters.ModelMultipleChoiceFilter(
+        queryset=Restaurant_menu_groups.objects.all(),
+        field_name='group',
+        label="Group",
+        conjoined=True  # Ensures items must belong to all selected groups
+    )
+    is_hot = django_filters.BooleanFilter(field_name='is_hot', label="Is Hot")
+    is_new = django_filters.BooleanFilter(field_name='is_new', label="Is New")
+    is_online = django_filters.BooleanFilter(field_name='is_online', label="Is Online")
+    min_price = django_filters.NumberFilter(field_name='price', lookup_expr='gte', label="Min Price")
+    max_price = django_filters.NumberFilter(field_name='price', lookup_expr='lte', label="Max Price")
+
+    class Meta:
+        model = Restaurant_menu_items
+        fields = ['mark', 'group', 'is_hot', 'is_new', 'is_online', 'min_price', 'max_price']

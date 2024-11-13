@@ -147,6 +147,25 @@ class CreateRestaurantAPIView(APIView):
                                                 isRate=option.get("Rate"),
                                                 isChat=option.get("Chat"),
                                                 Oder_online=option.get("OderOnline"))
+                menu=Restaurant_menu.objects.create(restaurant=restaurant,name="Default")
+                # Tạo các "mark" (đánh dấu)
+                marks = [
+                    Restaurant_menu_marks(menu=menu, name="Mới"),
+                    Restaurant_menu_marks(menu=menu, name="Tiêu biểu"),
+                ]
+                Restaurant_menu_marks.objects.bulk_create(marks)
+
+                # Tạo các "group" (nhóm)
+                groups = [
+                    Restaurant_menu_groups(menu=menu, name="Món chính"),
+                    Restaurant_menu_groups(menu=menu, name="Món phụ"),
+                    Restaurant_menu_groups(menu=menu, name="Món gọi thêm"),
+                    Restaurant_menu_groups(menu=menu, name="Nước uống"),
+                    Restaurant_menu_groups(menu=menu, name="Ăn vặt"),
+                    Restaurant_menu_groups(menu=menu, name="Món gọi kèm"),
+                    Restaurant_menu_groups(menu=menu, name="Khác"),
+                ]
+                Restaurant_menu_groups.objects.bulk_create(groups)
                 room=Restaurant_socket.objects.create(restaurant=restaurant,QRKey=uuid.uuid4().hex.upper())
                 staff=Restaurant_staff.objects.create(user=user,
                                                 restaurant=restaurant,
@@ -1318,6 +1337,60 @@ class LichsuThanhToanViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
             serializer.save(user=request.user)  # Set the user field
+            return Response(serializer.data, status=201)
+        return Response(serializer.errors, status=400)
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        queryset = self.filter_queryset(queryset)  # Áp dụng bộ lọc cho queryset
+        
+        page_size = self.request.query_params.get('page_size')
+        if page_size is not None:
+            self.pagination_class.page_size = int(page_size)
+            
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+class Restaurant_menu_itemsViewSet(viewsets.ModelViewSet):
+    serializer_class = RestaurantMenuItemsSerializer
+    authentication_classes = [OAuth2Authentication]
+    permission_classes = [IsAuthenticated]
+    filter_backends = (DjangoFilterBackend,)
+    filterset_class = RestaurantMenuItemsFilter
+    pagination_class = StandardResultsSetPagination
+    # Chỉ cho phép GET
+    http_method_names = ['post','patch']
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_superuser:
+            return Restaurant_menu_items.objects.all()
+        qs_res=Restaurant_staff.objects.filter(user=user,is_Active=True).values_list("restaurant__id",flat=True)
+        return Restaurant_menu_items.objects.filter(menu__restaurant__id__in=qs_res)
+
+    def create(self, request, *args, **kwargs):
+        # Set the user to the authenticated user
+        user = request.user  # Retrieve the authenticated user
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            allowed_restaurants = Restaurant_staff.objects.filter(
+                user=user,
+                is_Active=True,
+            ).values_list("restaurant__id",flat=True)
+            
+            menu_restaurant_id = serializer.validated_data.get("menu").restaurant.id
+            if menu_restaurant_id in allowed_restaurants:
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            else:
+                return Response(
+                    {"error": "You do not have permission to create items for this restaurant."},
+                    status=status.HTTP_403_FORBIDDEN
+                )
             return Response(serializer.data, status=201)
         return Response(serializer.errors, status=400)
 
