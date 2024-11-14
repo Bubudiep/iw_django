@@ -1381,14 +1381,22 @@ class Restaurant_menu_itemsViewSet(viewsets.ModelViewSet):
                 user=user,
                 is_Active=True,
             ).values_list("restaurant__id",flat=True)
-            
+            qs_items=Restaurant_menu_items.objects.filter(
+                menu=serializer.validated_data.get('menu'),
+                is_delete=False
+            )
+            if qs_items.count() >= 25:
+                return Response(
+                    {"Error": "Tối đa 25 món trên một menu!"},
+                    status=status.HTTP_403_FORBIDDEN
+                )
             menu_restaurant_id = serializer.validated_data.get("menu").restaurant.id
             if menu_restaurant_id in allowed_restaurants:
                 serializer.save()
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
             else:
                 return Response(
-                    {"error": "You do not have permission to create items for this restaurant."},
+                    {"Error": "Bạn không có quyền!"},
                     status=status.HTTP_403_FORBIDDEN
                 )
             return Response(serializer.data, status=201)
