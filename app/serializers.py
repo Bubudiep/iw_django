@@ -713,7 +713,7 @@ class RestaurantDetailsSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'name', 'address', 'phone_number', 'avatar', 'Oder_online','menu',
             'Takeaway', 'isRate', 'isChat', 'is_active', 'description', 'created_at',
-            'updated_at', 'sockets', 'layouts', 'coupons'
+            'updated_at', 'sockets', 'layouts', 'coupons', 'address_details'
         ]
     def to_representation(self, instance):
         if instance.restaurant_menu_set.count() == 0:

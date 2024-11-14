@@ -788,6 +788,7 @@ class DanhsachnhanvienDilam(models.Model):
         return f"{self.manhanvien.manhanvien}_{self.ngaydilam}"
     
 class Restaurant(models.Model):
+    address_details = models.JSONField(blank=True, null=True)
     name = models.CharField(max_length=100)  # Tên quán ăn
     address = models.CharField(max_length=200)
     phone_number = models.CharField(max_length=15)  # Số điện thoại quán ăn
@@ -803,6 +804,8 @@ class Restaurant(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)  # Ngày tạo
     updated_at = models.DateTimeField(auto_now=True)  # Ngày cập nhật
     
+    class Meta:
+        ordering = ['-id']  # Sắp xếp theo 'id' mặc định
     def __str__(self):
         return self.name
       

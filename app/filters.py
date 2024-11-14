@@ -228,3 +228,22 @@ class RestaurantMenuItemsFilter(django_filters.FilterSet):
     class Meta:
         model = Restaurant_menu_items
         fields = ['mark', 'group', 'is_hot', 'is_new', 'is_online', 'min_price', 'max_price']
+class RestaurantFilter(django_filters.FilterSet):
+    name = django_filters.CharFilter(lookup_expr='icontains')  # Lọc tên quán ăn (không phân biệt hoa thường)
+    address = django_filters.CharFilter(lookup_expr='icontains')  # Lọc địa chỉ
+    phone_number = django_filters.CharFilter(lookup_expr='icontains')  # Lọc số điện thoại
+    mohinh = django_filters.CharFilter(lookup_expr='icontains')  # Lọc mô hình quán
+    Oder_online = django_filters.BooleanFilter()  # Lọc theo khả năng đặt hàng online
+    Takeaway = django_filters.BooleanFilter()  # Lọc theo khả năng mang về
+    isRate = django_filters.BooleanFilter()  # Lọc theo tính năng đánh giá
+    isChat = django_filters.BooleanFilter()  # Lọc theo tính năng chat
+    is_active = django_filters.BooleanFilter()  # Lọc theo trạng thái hoạt động
+    created_at = django_filters.DateFromToRangeFilter()  # Lọc theo ngày tạo (phạm vi ngày)
+    updated_at = django_filters.DateFromToRangeFilter()  # Lọc theo ngày cập nhật (phạm vi ngày)
+
+    class Meta:
+        model = Restaurant
+        fields = [
+            'name', 'address', 'phone_number', 'mohinh', 'Oder_online', 
+            'Takeaway', 'isRate', 'isChat', 'is_active', 'created_at', 'updated_at'
+        ]
