@@ -849,6 +849,7 @@ class Restaurant_space_group(models.Model):
     
     def __str__(self):
         return self.name
+    
 class Restaurant_space(models.Model):
     layout = models.ForeignKey(Restaurant_layout, on_delete=models.CASCADE, null=True, blank=True)
     name = models.CharField(max_length=100, default="Vị trí 1")  # Mô tả thêm về quán ăn
@@ -948,6 +949,22 @@ class Restaurant_menu_items(models.Model):
     class Meta:
         ordering = ['-id']
         
+class UserActionLog(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
+    menu_item = models.ForeignKey(Restaurant_menu_items, on_delete=models.CASCADE, null=True, blank=True)
+    search_term = models.CharField(max_length=255, null=True, blank=True)
+    category = models.ForeignKey(Restaurant_menu_groups, on_delete=models.CASCADE, null=True, blank=True)
+    action_type = models.CharField(max_length=50, choices=[
+        ('click', 'Click'),
+        ('search', 'Search'),
+        ('category_view', 'Category View')
+    ])
+    created_at = models.DateTimeField(auto_now_add=True)
+    class Meta:
+        ordering = ['-id']
+    def __str__(self):
+        return f"{self.user} - {self.action_type} - {self.created_at}"
+    
 class Restaurant_order(models.Model):
     ORDER_STATUS_CHOICES = [
         ('CREATED', 'Đã tạo'),

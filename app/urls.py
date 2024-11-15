@@ -28,6 +28,8 @@ router.register(r'res-items', api.Restaurant_menu_itemsViewSet, basename='res-it
 router.register(r'restaurant', api.RestaurantViewSet, basename='restaurant')
 
 urlpatterns = [
+    path('res-nearly/', api.RetaurantNearlyAPIView.as_view(), name='res-nearly'),
+    path('recomend/', api.RecommendItemsAPIView.as_view(), name='recomend'),
     path('create-res/', api.CreateRestaurantAPIView.as_view(), name='create-res'),
     path('lenmon/', api.LenmonAppAPIView.as_view(), name='lenmon'),
     path('qr_login/', api.QR_loginAPIView.as_view(), name='qr_login'),

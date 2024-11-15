@@ -27,9 +27,12 @@ import string
 from .filters import *
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.exceptions import AuthenticationFailed
+from django.db.models import Count
 import time
 from django.db import transaction
 import uuid  # Thư viện để tạo khóa ngẫu nhiên
+from geopy.distance import geodesic
+import random
 
 sio = socketio.Client()
 def connect_to_server():
@@ -124,7 +127,198 @@ class QR_loginAPIView(APIView):
             file_path = exc_tb.tb_frame.f_code.co_filename
             file_name = os.path.basename(file_path)
             return Response({"Error":f"[{file_name}_{lineno}] {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
+ 
+def log_user_action(user, action_type, menu_item=None, search_term=None, category=None):
+    UserActionLog.objects.create(
+        user=user,
+        action_type=action_type,
+        menu_item=menu_item,
+        search_term=search_term,
+        category=category,
+        created_at=timezone.now()
+    )
+# log_user_action(user=request.user, action_type='click', menu_item=selected_menu_item)
+# log_user_action(user=request.user, action_type='search', search_term=search_query)
+# log_user_action(user=request.user, action_type='category_view', category=selected_category)
+def get_popular_menu_items(): # Được bấm vào nhiều nhất
+    popular_items = UserActionLog.objects.filter(action_type='click') \
+                    .values('menu_item') \
+                    .annotate(click_count=Count('menu_item')) \
+                    .order_by('-click_count')[:5]
+    return Restaurant_menu_items.objects.filter(id__in=[item['menu_item'] for item in popular_items])
+
+def get_popular_search_terms(): # Phổ biến tìm kiếm
+    popular_searches = UserActionLog.objects.filter(action_type='search') \
+                       .values('search_term') \
+                       .annotate(search_count=Count('search_term')) \
+                       .order_by('-search_count')[:5]
+    return [term['search_term'] for term in popular_searches]
+
+def get_user_favorite_categories(user):  # Lấy danh mục phổ biến nhất của người dùng
+    # Lọc các mục UserActionLog theo user và loại hành động là 'click'
+    favorite_categories = UserActionLog.objects.filter(user=user, action_type='click', menu_item__isnull=False) \
+                        .values('menu_item__group') \
+                        .annotate(count=Count('menu_item__group')) \
+                        .order_by('-count')[:5]  # Lấy 5 mục phổ biến nhất
+
+    # Nếu có kết quả, trả về danh sách tên các danh mục yêu thích
+    if favorite_categories:
+        return [
+            Restaurant_menu_groups.objects.get(id=category['menu_item__group']).name
+            for category in favorite_categories
+        ]
+
+    # Nếu không có dữ liệu, lấy 5 danh mục ngẫu nhiên từ Restaurant_menu_groups
+    all_categories = list(Restaurant_menu_groups.objects.all())
+    if all_categories:
+        random_categories = random.sample(all_categories, min(5, len(all_categories)))  # Lấy tối đa 5 danh mục ngẫu nhiên
+        return [category.name for category in random_categories]
+
+    return []  # Nếu không có danh mục nào trong database, trả về danh sách rỗng
+def get_nearby_favorite_category(user_latitude, user_longitude, radius_km=5):
+    # Lấy tất cả các hành động nhấn vào món ăn từ người dùng khác
+    nearby_users_actions = UserActionLog.objects.filter(action_type='click', menu_item__isnull=False)
+    # Lọc các người dùng có vị trí gần người dùng hiện tại
+    nearby_categories = []
+    for action in nearby_users_actions:
+        if hasattr(action.user, 'profile') and action.user.profile.lat_pos and action.user.profile.long_pos:
+            # Lấy tọa độ của người dùng từ profile
+            action_lat = float(action.user.profile.lat_pos)
+            action_long = float(action.user.profile.long_pos)
+            # Tính khoảng cách giữa người dùng hiện tại và người dùng hành động
+            user_coords = (user_latitude, user_longitude)
+            action_coords = (action_lat, action_long)
+            distance = geodesic(user_coords, action_coords).kilometers
+            # Nếu người dùng đó nằm trong bán kính cho phép, thêm vào danh mục của họ
+            if distance <= radius_km:
+                nearby_categories.append(action.menu_item.group)
+    # Đếm số lượng danh mục để tìm danh mục phổ biến nhất
+    if nearby_categories:
+        popular_category = (
+            UserActionLog.objects.filter(menu_item__group__in=nearby_categories)
+            .values('menu_item__group')
+            .annotate(category_count=Count('menu_item__group'))
+            .order_by('-category_count')
+            .first()
+        )
+        if popular_category:
+            return Restaurant_menu_groups.objects.get(id=popular_category['menu_item__group']).name
+    return None  # Trả về None nếu không tìm thấy danh mục nào
+
+def get_nearby_restaurants(user, user_latitude, user_longitude, radius_km=15):
+    favorite_category = get_user_favorite_categories(user)  # Sử dụng hàm này từ code trước để lấy danh mục yêu thích của người dùng
+    # Nếu người dùng không có danh mục yêu thích, trả về danh sách rỗng
+    if not favorite_category:
+        favorite_category=get_nearby_favorite_category(user_latitude, user_longitude, radius_km)
+        if not favorite_category:
+            return []
+    # Lấy các nhà hàng có chứa danh mục yêu thích của người dùng
+    nearby_restaurants = []
+    restaurants = Restaurant.objects.filter(is_active=True)  # Lọc các nhà hàng đang hoạt động
+    for restaurant in restaurants:
+        # Kiểm tra nếu nhà hàng có danh mục yêu thích của người dùng
+        qs_menu=Restaurant_menu_groups.objects.filter(menu__restaurant=restaurant, name=favorite_category)
+        if Restaurant_menu_groups.objects.filter(menu__restaurant=restaurant, name__in=favorite_category).exists():
+            # Lấy tọa độ của nhà hàng từ address_details
+            address_details = restaurant.address_details
+            if address_details and 'lat' in address_details and 'long' in address_details:
+                restaurant_coords = (address_details['lat'], address_details['long'])
+                user_coords = (user_latitude, user_longitude)
+                # Tính khoảng cách giữa người dùng và nhà hàng
+                distance = geodesic(user_coords, restaurant_coords).kilometers
+                # Kiểm tra nếu nhà hàng nằm trong bán kính cho phép
+                if distance <= radius_km:
+                    nearby_restaurants.append({
+                        "restaurant": restaurant,
+                        "distance_km": round(distance, 2)
+                    })
+    return sorted(nearby_restaurants, key=lambda x: x['distance_km'])
+
+
+class RetaurantNearlyAPIView(APIView):  # Các nhà hàng ở gần
+    authentication_classes = [OAuth2Authentication]  # Kiểm tra xác thực OAuth2
+    permission_classes = [IsAuthenticated]  # Đảm bảo người dùng phải đăng nhập (token hợp lệ)
+
+    def get(self, request):
+        if request.user.is_authenticated:
+            user = request.user
+            # Lấy vị trí người dùng từ request (hoặc bạn có thể lấy từ profile của user nếu đã lưu)
+            user_latitude = request.query_params.get('latitude', None)
+            user_longitude = request.query_params.get('longitude', None)
+
+            # Kiểm tra nếu tọa độ người dùng có sẵn
+            if user_latitude and user_longitude:
+                user_latitude = float(user_latitude)
+                user_longitude = float(user_longitude)
+                
+                # Lấy danh mục yêu thích cá nhân của người dùng
+                favorite_category = get_user_favorite_categories(user)
+                
+                # Nếu không có danh mục yêu thích cá nhân, tìm danh mục phổ biến ở gần
+                if not favorite_category:
+                    favorite_category = get_nearby_favorite_category(user_latitude, user_longitude)
+
+                # Gợi ý nhà hàng gần vị trí người dùng
+                nearby_restaurants = get_nearby_restaurants(user, user_latitude, user_longitude)
+
+                # Trả về kết quả gợi ý
+                suggestions = {
+                    "nearby_restaurants": [
+                        {
+                            "name": item["restaurant"].name,
+                            "address": item["restaurant"].address,
+                            "avatar": item["restaurant"].avatar,
+                            "phone_number": item["restaurant"].phone_number,
+                            "distance_km": item["distance_km"]
+                        }
+                        for item in nearby_restaurants
+                    ],
+                    "favorite_category": favorite_category
+                }
+                return Response(suggestions)
+            else:
+                # Nếu không có thông tin vị trí, trả về 4 nhà hàng ngẫu nhiên
+                random_restaurants = self.get_random_restaurants()
+                suggestions = {
+                    "nearby_restaurants": random_restaurants,
+                    "favorite_category": None  # Hoặc có thể lấy danh mục ngẫu nhiên ở đây
+                }
+                return Response(suggestions)
+
+        return Response({"Error": "User is not authenticated"}, status=401)
+
+    def get_random_restaurants(self):
+        """Lấy 4 nhà hàng ngẫu nhiên từ cơ sở dữ liệu, nếu có ít hơn 4 thì lấy tất cả"""
+        all_restaurants = list(Restaurant.objects.all())
+        num_restaurants_to_get = min(4, len(all_restaurants))  # Đảm bảo không lấy quá số nhà hàng có sẵn
+        random_restaurants = random.sample(all_restaurants, num_restaurants_to_get)
         
+        return [
+            {
+                "name": restaurant.name,
+                "address": restaurant.address,
+                "phone_number": restaurant.phone_number,
+                "distance_km": None
+            }
+            for restaurant in random_restaurants
+        ]
+        
+class RecommendItemsAPIView(APIView):
+    authentication_classes = [OAuth2Authentication]  # Kiểm tra xác thực OAuth2
+    permission_classes = [IsAuthenticated]  # Đảm bảo người dùng phải đăng nhập (token hợp lệ)
+    def get(self, request):
+        if request.user.is_authenticated:
+            user = request.user
+            popular_items = get_popular_menu_items()
+            popular_search_terms = get_popular_search_terms()
+            favorite_category = get_user_favorite_categories(user)
+            suggestions = {
+                "popular_items": popular_items,
+                "popular_search_terms": popular_search_terms,
+                "user_favorite_category": favorite_category,
+            }
+            return Response(suggestions,status=status.HTTP_200_OK)
+            
 class CreateRestaurantAPIView(APIView):
     authentication_classes = [OAuth2Authentication]  # Kiểm tra xác thực OAuth2
     permission_classes = [IsAuthenticated]  # Đảm bảo người dùng phải đăng nhập (token hợp lệ)
