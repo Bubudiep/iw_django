@@ -60,7 +60,34 @@ class UserSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'password': {'write_only': True}
         }
-        
+    
+class ProfileLenmonSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Profile
+        fields = [
+            "user",
+            "avatar",
+            "wallpaper",
+            "zalo_id",
+            "zalo_name",
+            "zalo_avatar"
+        ]
+  
+class UserLenmonSerializer(serializers.ModelSerializer):
+    profile = serializers.SerializerMethodField()
+    def get_profile(self, user):
+        try:
+            qs_user=Profile.objects.get(user=user)
+            return ProfileLenmonSerializer(qs_user,many=False).data
+        except:
+            return []
+    class Meta:
+        model = User
+        fields = ['first_name','groups','email','date_joined','profile']
+        extra_kwargs = {
+            'password': {'write_only': True}
+        }
+       
 class AlbumSerializer(serializers.ModelSerializer):
     class Meta:
         model = Album
