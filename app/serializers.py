@@ -2,7 +2,7 @@ from rest_framework import serializers
 from django.contrib.auth.models import User
 from .models import *
 from django.db import transaction
-from django.db.models import Max
+from django.db.models import Max,Sum
 
 class RegisterSerializer(serializers.ModelSerializer):
     # Bạn có thể thêm các trường zalo_name và zalo_id vào đây
@@ -630,11 +630,70 @@ class RestaurantSocketSerializer(serializers.ModelSerializer):
     class Meta:
         model = Restaurant_socket
         fields = ['id', 'name', 'is_active', 'description', 'QRKey', 'created_at', 'updated_at']
+class RestaurantMenuMarksSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Restaurant_menu_marks
+        fields = ['id', 'name']  # Adjust based on the fields you need from the Restaurant_menu_marks model
 
-class Restaurant_menu_itemsSerializer(serializers.ModelSerializer):
+class RestaurantMenuGroupsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Restaurant_menu_groups
+        fields = ['id', 'name']
+        
+class Restaurant_menu_itemsLTESerializer(serializers.ModelSerializer):
+    mark = RestaurantMenuMarksSerializer(many=True)  # Serialize 'mark' (ManyToMany)
+    group = RestaurantMenuGroupsSerializer(many=True)  # Serialize 'group' (ManyToMany)
     class Meta:
         model = Restaurant_menu_items
-        fields = '__all__'
+        fields = [
+            'id', 'mark', 'group', 'name', 'price', 
+            'is_hot', 'is_new', 'is_online', 'is_ship', 
+            'is_available',
+            'is_active', 'image64_mini', 'short_description'
+        ]
+    
+class Restaurant_menu_itemsRCMSerializer(serializers.ModelSerializer):
+    restaurant = serializers.SerializerMethodField(read_only=True)
+    paidQTY = serializers.SerializerMethodField(read_only=True)
+    class Meta:
+        model = Restaurant_menu_items
+        fields = [
+            'id', 'name', 'price', 'image64_mini', 'short_description','restaurant','paidQTY'
+        ]
+    def get_paidQTY(self, obj):
+        qs_order=Restaurant_order_items.objects.filter(items=obj,Order__is_paided=True
+                                        ).aggregate(total_quantity=Sum('quantity'))['total_quantity']
+        return qs_order
+    def get_restaurant(self, obj):
+        res=obj.menu.restaurant
+        return {
+            "avatar":res.avatar,
+            "name":res.name
+        }
+    
+class Restaurant_menu_itemsSTSerializer(serializers.ModelSerializer):
+    restaurant = serializers.SerializerMethodField(read_only=True)
+    paidQTY = serializers.SerializerMethodField(read_only=True)
+    totalRate = serializers.SerializerMethodField(read_only=True)
+    class Meta:
+        model = Restaurant_menu_items
+        fields = [
+            'id', 'name', 'price', 'image64_mini', 
+            'short_description','restaurant','paidQTY','totalRate'
+        ]
+    def get_totalRate(self, obj):
+        return 0
+    def get_paidQTY(self, obj):
+        qs_order=Restaurant_order_items.objects.filter(items=obj,Order__is_paided=True
+                                        ).aggregate(total_quantity=Sum('quantity'))['total_quantity']
+        return qs_order
+    def get_restaurant(self, obj):
+        res=obj.menu.restaurant
+        return {
+            "avatar":res.avatar,
+            "name":res.name,
+            "address":res.address_details
+        }
     
 class RestaurantMenuItemsSerializer(serializers.ModelSerializer):
     group = serializers.ListField(child=serializers.CharField(), write_only=True)

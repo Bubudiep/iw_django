@@ -140,12 +140,18 @@ def log_user_action(user, action_type, menu_item=None, search_term=None, categor
 # log_user_action(user=request.user, action_type='click', menu_item=selected_menu_item)
 # log_user_action(user=request.user, action_type='search', search_term=search_query)
 # log_user_action(user=request.user, action_type='category_view', category=selected_category)
-def get_popular_menu_items(): # Được bấm vào nhiều nhất
+def get_popular_menu_items(user): # Được bấm vào nhiều nhất
     popular_items = UserActionLog.objects.filter(action_type='click') \
                     .values('menu_item') \
                     .annotate(click_count=Count('menu_item')) \
-                    .order_by('-click_count')[:5]
-    return Restaurant_menu_items.objects.filter(id__in=[item['menu_item'] for item in popular_items])
+                    .order_by('-click_count')[:6]
+    if len(popular_items)>0:
+        return Restaurant_menu_items.objects.filter(id__in=[item['menu_item'] for item in popular_items])
+    else:
+        list_group=get_user_favorite_categories(user)
+        return Restaurant_menu_items.objects.filter(group__name__in=list_group
+                                                    # ,is_delete=False,is_active=True
+                                                    ).order_by('?')[:6]
 
 def get_popular_search_terms(): # Phổ biến tìm kiếm
     popular_searches = UserActionLog.objects.filter(action_type='search') \
@@ -159,7 +165,7 @@ def get_user_favorite_categories(user):  # Lấy danh mục phổ biến nhất 
     favorite_categories = UserActionLog.objects.filter(user=user, action_type='click', menu_item__isnull=False) \
                         .values('menu_item__group') \
                         .annotate(count=Count('menu_item__group')) \
-                        .order_by('-count')[:5]  # Lấy 5 mục phổ biến nhất
+                        .order_by('-count')[:6]  # Lấy 5 mục phổ biến nhất
 
     # Nếu có kết quả, trả về danh sách tên các danh mục yêu thích
     if favorite_categories:
@@ -303,17 +309,59 @@ class RetaurantNearlyAPIView(APIView):  # Các nhà hàng ở gần
             for restaurant in random_restaurants
         ]
         
+class LenmonNewsItemsAPIView(APIView):
+    authentication_classes = [OAuth2Authentication]  # Kiểm tra xác thực OAuth2
+    permission_classes = [IsAuthenticated]  # Đảm bảo người dùng phải đăng nhập (token hợp lệ)
+    def get(self, request):
+        if request.user.is_authenticated:
+            user = request.user
+            new=Restaurant_menu_items.objects.filter(name__isnull=False,
+                                                     is_online=True,
+                                                     is_active=True,
+                                                     is_delete=False,
+                                                     menu__is_online=True)[:6]
+            return Response(Restaurant_menu_itemsSTSerializer(new,many=True).data,
+                            status=status.HTTP_200_OK)
+            
+class RestaurantMenuItemsViewSet(viewsets.ModelViewSet):
+    queryset = Restaurant_menu_items.objects.all()
+    serializer_class = Restaurant_menu_itemsSTSerializer
+    authentication_classes = [OAuth2Authentication]
+    permission_classes = [IsAuthenticated]
+    pagination_class = StandardResultsSetPagination
+    http_method_names = ['get']
+
+    def get_queryset(self):
+        # Lọc các món ăn từ nhiều quán khác nhau
+        diverse_items=Restaurant_menu_items.objects.filter(is_active=True,
+                                                           is_delete=False,
+                                                           is_available=True
+                                                           ).order_by('?')
+        return diverse_items
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        queryset = self.filter_queryset(queryset)  # Áp dụng bộ lọc cho queryset
+        page_size = self.request.query_params.get('page_size')
+        if page_size is not None:
+            self.pagination_class.page_size = int(page_size)
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+    
 class RecommendItemsAPIView(APIView):
     authentication_classes = [OAuth2Authentication]  # Kiểm tra xác thực OAuth2
     permission_classes = [IsAuthenticated]  # Đảm bảo người dùng phải đăng nhập (token hợp lệ)
     def get(self, request):
         if request.user.is_authenticated:
             user = request.user
-            popular_items = get_popular_menu_items()
+            popular_items = get_popular_menu_items(user)
             popular_search_terms = get_popular_search_terms()
             favorite_category = get_user_favorite_categories(user)
             suggestions = {
-                "popular_items": popular_items,
+                "popular_items": Restaurant_menu_itemsRCMSerializer(popular_items,many=True).data,
                 "popular_search_terms": popular_search_terms,
                 "user_favorite_category": favorite_category,
             }
@@ -594,6 +642,7 @@ class KiemtraTroAPIView(APIView):
             except Nhatro.DoesNotExist:
                 return Response({"error": "Không thấy nhà trọ!"}, status=status.HTTP_400_BAD_REQUEST)
         return Response({"error": "KEY parameter is missing or invalid."}, status=status.HTTP_400_BAD_REQUEST)
+    
 class XacnhanThanhtoanAPIView(APIView):
     authentication_classes = [OAuth2Authentication]  # Kiểm tra xác thực OAuth2
     permission_classes = [IsAuthenticated]  # Đảm bảo người dùng phải đăng nhập (token hợp lệ)

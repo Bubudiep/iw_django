@@ -26,9 +26,11 @@ router.register(r'dsdilam', api.DanhsachDilamViewSet, basename='dsdilam')
 router.register(r'danhsachadmin', api.DanhsachAdminViewSet, basename='danhsachadmin')
 router.register(r'res-items', api.Restaurant_menu_itemsViewSet, basename='res-items')
 router.register(r'restaurant', api.RestaurantViewSet, basename='restaurant')
+router.register(r'res-all-items', api.RestaurantMenuItemsViewSet, basename='res-all-items')
 
 urlpatterns = [
     path('res-nearly/', api.RetaurantNearlyAPIView.as_view(), name='res-nearly'),
+    path('res-new/', api.LenmonNewsItemsAPIView.as_view(), name='res-nearly'),
     path('recomend/', api.RecommendItemsAPIView.as_view(), name='recomend'),
     path('create-res/', api.CreateRestaurantAPIView.as_view(), name='create-res'),
     path('lenmon/', api.LenmonAppAPIView.as_view(), name='lenmon'),
