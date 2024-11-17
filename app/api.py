@@ -272,6 +272,7 @@ class RetaurantNearlyAPIView(APIView):  # Các nhà hàng ở gần
                 suggestions = {
                     "nearby_restaurants": [
                         {
+                            "id": item["restaurant"].id,
                             "name": item["restaurant"].name,
                             "address": item["restaurant"].address,
                             "avatar": item["restaurant"].avatar,
@@ -1713,6 +1714,69 @@ class Restaurant_menu_itemsViewSet(viewsets.ModelViewSet):
             return Restaurant_menu_items.objects.all()
         qs_res=Restaurant_staff.objects.filter(user=user,is_Active=True).values_list("restaurant__id",flat=True)
         return Restaurant_menu_items.objects.filter(menu__restaurant__id__in=qs_res)
+
+    def create(self, request, *args, **kwargs):
+        # Set the user to the authenticated user
+        user = request.user  # Retrieve the authenticated user
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            allowed_restaurants = Restaurant_staff.objects.filter(
+                user=user,
+                is_Active=True,
+            ).values_list("restaurant__id",flat=True)
+            qs_items=Restaurant_menu_items.objects.filter(
+                menu=serializer.validated_data.get('menu'),
+                is_delete=False
+            )
+            if qs_items.count() >= 25:
+                return Response(
+                    {"Error": "Tối đa 25 món trên một menu!"},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            menu_restaurant_id = serializer.validated_data.get("menu").restaurant.id
+            if menu_restaurant_id in allowed_restaurants:
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            else:
+                return Response(
+                    {"Error": "Bạn không có quyền!"},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            return Response(serializer.data, status=201)
+        return Response(serializer.errors, status=400)
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        queryset = self.filter_queryset(queryset)  # Áp dụng bộ lọc cho queryset
+        
+        page_size = self.request.query_params.get('page_size')
+        if page_size is not None:
+            self.pagination_class.page_size = int(page_size)
+            
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+class Restaurant_menu_itemsDetailsViewSet(viewsets.ModelViewSet):
+    serializer_class = RestaurantMenuItemsSerializer
+    authentication_classes = [OAuth2Authentication]
+    permission_classes = [IsAuthenticated]
+    filter_backends = (DjangoFilterBackend,)
+    filterset_class = RestaurantMenuItemsFilter
+    pagination_class = StandardResultsSetPagination
+    # Chỉ cho phép GET
+    http_method_names = ['get']
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_superuser:
+            return Restaurant_menu_items.objects.all()
+        return Restaurant_menu_items.objects.filter(
+                is_delete=False,is_active=False
+            )
 
     def create(self, request, *args, **kwargs):
         # Set the user to the authenticated user

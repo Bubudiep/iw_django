@@ -740,7 +740,8 @@ class RestaurantMenuItemsSerializer(serializers.ModelSerializer):
                 mark, created = Restaurant_menu_marks.objects.get_or_create(name=name)
                 marks.append(mark)
             menu_item.mark.set(marks)
-        
+     
+     
 class Restaurant_menu_groupsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Restaurant_menu_groups
@@ -824,3 +825,24 @@ class RestaurantDetailsSerializer(serializers.ModelSerializer):
             ]
             Restaurant_menu_groups.objects.bulk_create(groups)
         return super().to_representation(instance)
+    
+class RestaurantMenuItemsDetailsSerializer(serializers.ModelSerializer):
+    group_names = serializers.SerializerMethodField(read_only=True)
+    mark_names = serializers.SerializerMethodField(read_only=True)
+    restaurant = serializers.SerializerMethodField(read_only=True)
+    class Meta:
+        model = Restaurant_menu_items
+        fields = ['id','is_ship',
+            'menu', 'name', 'price', 'is_hot', 'is_new', 'is_online','is_active',
+            'image64_mini', 'image64_full', 'short_description', 'description', 
+            'is_available', 'group', 'mark', 'group_names', 'mark_names','is_delete'
+        ]
+    def get_group_names(self, obj):
+        return [group.name for group in obj.group.all()]
+
+    def get_mark_names(self, obj):
+        return [mark.name for mark in obj.mark.all()]
+    
+    def restaurant(self, obj):
+        return RestaurantDetailsSerializer(obj.menu.restaurant).data
+ 
