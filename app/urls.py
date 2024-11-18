@@ -27,6 +27,7 @@ router.register(r'danhsachadmin', api.DanhsachAdminViewSet, basename='danhsachad
 router.register(r'res-items', api.Restaurant_menu_itemsViewSet, basename='res-items')
 router.register(r'res-items-details', api.Restaurant_menu_itemsDetailsViewSet, basename='res-items-details')
 router.register(r'restaurant', api.RestaurantViewSet, basename='restaurant')
+router.register(r'restaurant-view', api.RestaurantViewViewSet, basename='restaurant-view')
 router.register(r'res-all-items', api.RestaurantMenuItemsViewSet, basename='res-all-items')
 
 urlpatterns = [

@@ -799,7 +799,6 @@ class Restaurant(models.Model):
     isRate = models.BooleanField(default=True)
     isChat = models.BooleanField(default=True)
     is_active = models.BooleanField(default=True)
-    is_active = models.BooleanField(default=True)
     description = models.TextField(blank=True, null=True)  # Mô tả thêm về quán ăn
     created_at = models.DateTimeField(auto_now_add=True)  # Ngày tạo
     updated_at = models.DateTimeField(auto_now=True)  # Ngày cập nhật
@@ -827,6 +826,18 @@ class Restaurant_socket(models.Model):
             self.QRKey = uuid.uuid4().hex.upper()  # Tạo UUID, xóa dấu '-' và chuyển sang viết hoa
         super(Restaurant_socket, self).save(*args, **kwargs)
     
+class Restaurant_socket_user(models.Model): # Danh sách người kết nối đến user
+    socket = models.ForeignKey(Restaurant_socket, on_delete=models.CASCADE, null=True, blank=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
+    is_active = models.BooleanField(default=True)
+    description = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    def __str__(self):
+        return self.name
+    class Meta:
+        ordering = ['-id']
+        
 class Restaurant_layout(models.Model):
     restaurant = models.ForeignKey(Restaurant, on_delete=models.CASCADE, null=True, blank=True)
     name = models.CharField(max_length=100, default="Tầng 1")  # Mô tả thêm về quán ăn

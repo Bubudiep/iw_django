@@ -836,9 +836,21 @@ class RestaurantDetailsLTESerializer(serializers.ModelSerializer):
             'coupons', 'address_details'
         ]
     
+class RestaurantViewsSerializer(serializers.ModelSerializer):
+    coupons = RestaurantCouponSerializer(many=True, source='restaurant_counpon_set')  # Đảm bảo lấy tất cả các coupon liên kết
+    layouts = RestaurantLayoutSerializer(many=True, source='restaurant_layout_set')  # Đảm bảo lấy tất cả các layout liên kết
+    menu = Restaurant_menuSerializer(many=True, source='restaurant_menu_set')  # Đảm bảo lấy tất cả các coupon liên kết
+    class Meta:
+        model = Restaurant
+        fields = [
+            'id', 'name', 'address', 'phone_number', 'avatar', 'Oder_online',
+            'Takeaway', 'isRate', 'isChat', 'is_active', 'description', 'created_at',
+            'coupons', 'address_details','layouts','mohinh','menu'
+        ]
+    
 class RestaurantMenuItemsDetailsSerializer(serializers.ModelSerializer):
-    group_names = serializers.SerializerMethodField(read_only=True)
-    mark_names = serializers.SerializerMethodField(read_only=True)
+    group_names = serializers.SerializerMethodField(read_only=True) #Danh mục trong menu
+    mark_names = serializers.SerializerMethodField(read_only=True) #Loại
     restaurant = serializers.SerializerMethodField(read_only=True)
     class Meta:
         model = Restaurant_menu_items

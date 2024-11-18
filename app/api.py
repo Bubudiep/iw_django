@@ -419,7 +419,8 @@ class CreateRestaurantAPIView(APIView):
                     Restaurant_menu_groups(menu=menu, name="Khác"),
                 ]
                 Restaurant_menu_groups.objects.bulk_create(groups)
-                room=Restaurant_socket.objects.create(restaurant=restaurant,QRKey=uuid.uuid4().hex.upper())
+                room=Restaurant_socket.objects.create(restaurant=restaurant,
+                                                      QRKey=uuid.uuid4().hex.upper())
                 staff=Restaurant_staff.objects.create(user=user,
                                                 restaurant=restaurant,
                                                 is_Admin=True,is_Active=True)
@@ -465,6 +466,11 @@ class LenmonAppAPIView(APIView):
             qs_staff=Restaurant_staff.objects.filter(user=user,is_Active=True).values_list("restaurant__id",flat=True)
             print(qs_staff)
             restaurants = Restaurant.objects.filter(id__in=qs_staff)
+            for rest in restaurants:
+                qs_socket=Restaurant_socket.objects.filter(restaurant=rest)
+                if len(qs_socket)==0:
+                    socket=Restaurant_socket.objects.create(restaurant=rest,QRKey=uuid.uuid4().hex.upper())
+                    socket.save()
             return Response({
                 "count":len(restaurants),
                 "data":RestaurantDetailsSerializer(restaurants,many=True).data
@@ -815,17 +821,20 @@ class ZaloLoginAPIView(APIView):
         valid_token = existing_tokens.filter(expires__gt=now).first()
         if valid_token:
             if key is not None:
-                qs_key=QR_Login.objects.get(QRKey=key)
-                if qs_key:
-                    sio.emit("backend-event",{
-                        "token":valid_token.token,
-                        "expires_in":int((valid_token.expires - now).total_seconds()),
-                        "room":qs_key.QRKey,
-                        "status":"PASS"
-                    })
-                    qs_key.user=user
-                    qs_key.isSuccess=True
-                    qs_key.save()
+                try:
+                    qs_key=QR_Login.objects.get(QRKey=key)
+                    if qs_key:
+                        sio.emit("backend-event",{
+                            "token":valid_token.token,
+                            "expires_in":int((valid_token.expires - now).total_seconds()),
+                            "room":qs_key.QRKey,
+                            "status":"PASS"
+                        })
+                        qs_key.user=user
+                        qs_key.isSuccess=True
+                        qs_key.save()
+                except QR_Login.DoesNotExist:
+                    return Response({'Error': 'Có lỗi xảy ra!'}, status=status.HTTP_403_FORBIDDEN)
             return JsonResponse({
                 'access_token': valid_token.token,
                 'expires_in': int((valid_token.expires - now).total_seconds()),
@@ -1830,6 +1839,32 @@ class Restaurant_menu_itemsDetailsViewSet(viewsets.ModelViewSet):
             serializer = self.get_serializer(page, many=True)
             return self.get_paginated_response(serializer.data)
 
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+class RestaurantViewViewSet(viewsets.ModelViewSet):
+    serializer_class = RestaurantViewsSerializer
+    authentication_classes = [OAuth2Authentication]
+    permission_classes = [IsAuthenticated]
+    filter_backends = (DjangoFilterBackend,)
+    filterset_class = RestaurantFilter
+    pagination_class = StandardResultsSetPagination
+    http_method_names = ['get']
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_superuser:
+            return Restaurant_menu_items.objects.all()
+        return Restaurant.objects.filter(is_active=True)
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        queryset = self.filter_queryset(queryset)  # Áp dụng bộ lọc cho queryset
+        page_size = self.request.query_params.get('page_size')
+        if page_size is not None:
+            self.pagination_class.page_size = int(page_size)
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 
