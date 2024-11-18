@@ -826,6 +826,16 @@ class RestaurantDetailsSerializer(serializers.ModelSerializer):
             Restaurant_menu_groups.objects.bulk_create(groups)
         return super().to_representation(instance)
     
+class RestaurantDetailsLTESerializer(serializers.ModelSerializer):
+    coupons = RestaurantCouponSerializer(many=True, source='restaurant_counpon_set')  # Đảm bảo lấy tất cả các coupon liên kết
+    class Meta:
+        model = Restaurant
+        fields = [
+            'id', 'name', 'address', 'phone_number', 'avatar', 'Oder_online',
+            'Takeaway', 'isRate', 'isChat', 'is_active', 'description', 'created_at',
+            'coupons', 'address_details'
+        ]
+    
 class RestaurantMenuItemsDetailsSerializer(serializers.ModelSerializer):
     group_names = serializers.SerializerMethodField(read_only=True)
     mark_names = serializers.SerializerMethodField(read_only=True)
@@ -846,6 +856,5 @@ class RestaurantMenuItemsDetailsSerializer(serializers.ModelSerializer):
     
     def get_restaurant(self, obj):
         rest=obj.menu.restaurant
-        # return None
-        return RestaurantDetailsSerializer(rest,many=False).data
+        return RestaurantDetailsLTESerializer(rest,many=False).data
  
