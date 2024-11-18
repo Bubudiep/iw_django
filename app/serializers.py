@@ -835,7 +835,8 @@ class RestaurantMenuItemsDetailsSerializer(serializers.ModelSerializer):
         fields = ['id','is_ship',
             'menu', 'name', 'price', 'is_hot', 'is_new', 'is_online','is_active',
             'image64_mini', 'image64_full', 'short_description', 'description', 
-            'is_available', 'group', 'mark', 'group_names', 'mark_names','is_delete'
+            'is_available', 'group', 'mark', 'group_names', 'mark_names','image64_sub1',
+            'image64_sub2','image64_sub3','restaurant'
         ]
     def get_group_names(self, obj):
         return [group.name for group in obj.group.all()]
@@ -843,6 +844,8 @@ class RestaurantMenuItemsDetailsSerializer(serializers.ModelSerializer):
     def get_mark_names(self, obj):
         return [mark.name for mark in obj.mark.all()]
     
-    def restaurant(self, obj):
-        return RestaurantDetailsSerializer(obj.menu.restaurant).data
+    def get_restaurant(self, obj):
+        rest=obj.menu.restaurant
+        # return None
+        return RestaurantDetailsSerializer(rest,many=False).data
  

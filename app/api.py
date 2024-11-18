@@ -1771,7 +1771,7 @@ class Restaurant_menu_itemsViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 class Restaurant_menu_itemsDetailsViewSet(viewsets.ModelViewSet):
-    serializer_class = RestaurantMenuItemsSerializer
+    serializer_class = RestaurantMenuItemsDetailsSerializer
     authentication_classes = [OAuth2Authentication]
     permission_classes = [IsAuthenticated]
     filter_backends = (DjangoFilterBackend,)
@@ -1784,7 +1784,7 @@ class Restaurant_menu_itemsDetailsViewSet(viewsets.ModelViewSet):
         if user.is_superuser:
             return Restaurant_menu_items.objects.all()
         return Restaurant_menu_items.objects.filter(
-                is_delete=False,is_active=False
+                is_delete=False,is_active=True
             )
 
     def create(self, request, *args, **kwargs):
