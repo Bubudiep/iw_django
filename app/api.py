@@ -26,41 +26,14 @@ from datetime import datetime, timedelta
 import string
 from .filters import *
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework.exceptions import AuthenticationFailed
+from rest_framework.exceptions import AuthenticationFailed, NotFound
 from django.db.models import Count
 import time
 from django.db import transaction
 import uuid  # Thư viện để tạo khóa ngẫu nhiên
 from geopy.distance import geodesic
 import random
-
-sio = socketio.Client()
-def connect_to_server():
-    try:
-        sio.connect('http://localhost:3009', wait=True, wait_timeout=5)
-        print("Successfully connected to the server.")
-    except socketio.exceptions.ConnectionError as e:
-        reconnect()
-def reconnect(max_retries=5, delay=5):
-    attempts = 0
-    print(f"Attempting to reconnect ({attempts + 1}/{max_retries})...")
-    while attempts < max_retries:
-        try:
-            sio.connect('http://localhost:3009', wait=True, wait_timeout=5)
-            return
-        except socketio.exceptions.ConnectionError as e:
-            attempts += 1
-            time.sleep(delay)
-@sio.event
-def connect():
-    print("Connected to the server.")
-
-@sio.event
-def disconnect():
-    print("Disconnected from server.")
-    reconnect()
-connect_to_server()
-  
+from .socket import send_socket
 class StandardResultsSetPagination(PageNumberPagination):
     page_size = 50  # Số lượng đối tượng trên mỗi trang
     page_size_query_param = 'page_size'
@@ -101,6 +74,7 @@ def generate_refresh_token(length=32):
     """Tạo refresh token ngắn với độ dài cụ thể."""
     characters = string.ascii_letters + string.digits
     return ''.join(secrets.choice(characters) for _ in range(length))
+
 class QR_loginAPIView(APIView):
     def post(self, request):
         data = request.data
@@ -128,13 +102,205 @@ class QR_loginAPIView(APIView):
             file_name = os.path.basename(file_path)
             return Response({"Error":f"[{file_name}_{lineno}] {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
  
-def log_user_action(user, action_type, menu_item=None, search_term=None, category=None):
+def log_user_action(user, action_type, menu_item=None, search_term=None, category=None,restaurant_item=None):
     UserActionLog.objects.create(
         user=user,
         action_type=action_type,
         menu_item=menu_item,
         search_term=search_term,
         category=category,
+        restaurant_item=restaurant_item,
+        created_at=timezone.now()
+    )
+       
+class UpdateSocketAPIView(APIView):
+    authentication_classes = [OAuth2Authentication]  # Kiểm tra xác thực OAuth2
+    permission_classes = [IsAuthenticated]  # Đảm bảo người dùng phải đăng nhập (token hợp lệ)
+    def post(self, request):
+        if request.user.is_authenticated:
+            try:
+                data = request.data
+                qs_profile=Profile.objects.get(user=request.user)
+                qs_profile.socket_id=data.get("socket",None)
+                qs_profile.save()
+                return Response(data={"result":"PASS"},status=status.HTTP_200_OK)
+            except Exception as e:
+                return Response(data={"result":"FAIL"},status=status.HTTP_403_FORBIDDEN)
+            
+class RemoveSocketAPIView(APIView):
+    def post(self, request):
+        data = request.data
+        if data.get("socket",None) is not None:
+            try:
+                qs_profile=Profile.objects.get(socket_id=data.get("socket"))
+                qs_profile.socket_id=None
+                qs_profile.save()
+                return Response(data={"result":"PASS"},status=status.HTTP_200_OK)
+            except Exception as e:
+                return Response(data={"result":"FAIL"},status=status.HTTP_403_FORBIDDEN)
+            
+class UserCreateOrderAPIView(APIView):
+    authentication_classes = [OAuth2Authentication]  # Kiểm tra xác thực OAuth2
+    permission_classes = [IsAuthenticated]  # Đảm bảo người dùng phải đăng nhập (token hợp lệ)
+    def post(self, request):
+        if request.user.is_authenticated:
+            data = request.data
+            try:
+                user = request.user
+                item_id=data.get("items",None)
+                qty=data.get("qty",None)
+                coupon=data.get("coupon",None)
+                phone=data.get("userphone",None)
+                address=data.get("address",None)
+                notes=data.get("notes",None)
+                time=data.get("time",None)
+                is_use_coupon=False
+                if item_id is not None and qty is not None and address is not None:
+                    qs_item=Restaurant_menu_items.objects.get(id=item_id)
+                    if coupon is not None:
+                        ...
+                        # qs_coupon=
+                    if qs_item.is_delete==True:
+                        return Response(data={"Error":"Sản phẩm đã bị xóa!"},
+                                        status=status.HTTP_400_BAD_REQUEST)
+                    if qs_item.is_active==False:
+                        return Response(data={"Error":"Sản phẩm đã bị gỡ xuống!"},
+                                        status=status.HTTP_400_BAD_REQUEST)
+                    if qs_item.is_available==False:
+                        return Response(data={"Error":"Sản phẩm hiện không khả dụng!"},
+                                        status=status.HTTP_400_BAD_REQUEST)
+                    if qs_item.is_online==False:
+                        return Response(data={"Error":"Sản phẩm không cho đặt online!"},
+                                        status=status.HTTP_400_BAD_REQUEST)
+                    cr_oder=Restaurant_order.objects.create(OrderKey=uuid.uuid4().hex.upper(),
+                                                            restaurant=qs_item.menu.restaurant,
+                                                            user_order=user,
+                                                            status="CREATED",
+                                                            is_use_coupon=is_use_coupon,
+                                                            is_online=True,
+                                                            is_paid=False,
+                                                            is_paided=False,
+                                                            custom_notes=notes,
+                                                            custom_phone=phone,
+                                                            custom_address=address.get("all",None),
+                                                            custom_lat=address.get("lat",None),
+                                                            custom_long=address.get("lon",None),
+                                                            custom_time=time)
+                    cr_item=Restaurant_order_items.objects.create(Order=cr_oder,
+                                                                items=qs_item,
+                                                                price=qs_item.price,
+                                                                name=qs_item.name,
+                                                                quantity=qty)
+                    qs_staff=Restaurant_staff.objects.filter(restaurant=qs_item.menu.restaurant,
+                                                             is_Active=True).values_list("user__id",flat=True)
+                    qs_profile=Profile.objects.filter(user__id__in=qs_staff).values_list("socket_id",flat=True)
+                    alert=LenmonAlert.objects.create(is_private=True,
+                                                     user=user,alert_type="oder",
+                                                     alert_sub_type="create",
+                                                     title="Đặt hàng",
+                                                     message="Bạn đã đặt hàng thành công!",
+                                                     target_type="key",
+                                                     target=cr_oder.OrderKey,
+                                                     is_checked=False)
+                    data_socket={
+                        "send_to":list(qs_profile),
+                        "type":"order",
+                        "from":"online",
+                        "action":"create",
+                        "order_key":cr_oder.OrderKey,
+                        "data":Restaurant_orderSerializer(cr_oder).data
+                    }
+                    send_socket("backend-enduser-event",data_socket)
+                    return Response(data={
+                        "result":"PASS",
+                        "data":Restaurant_orderSerializer(cr_oder).data
+                    },status=status.HTTP_200_OK)
+                else:
+                    return Response(data={"Error":"Thiếu dữ liệu!"},status=status.HTTP_400_BAD_REQUEST)
+            except Exception as e:
+                exc_type, exc_obj, exc_tb = sys.exc_info()
+                lineno = exc_tb.tb_lineno
+                file_path = exc_tb.tb_frame.f_code.co_filename
+                file_name = os.path.basename(file_path)
+                res_data = generate_response_json("FAIL", f"[{file_name}_{lineno}] {str(e)}")
+                return Response(data=res_data, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response(data={"Error":"Yêu cầu đăng nhập!"}, status=status.HTTP_403_FORBIDDEN)
+        
+class UserActionLogAPIView(APIView):
+    authentication_classes = [OAuth2Authentication]  # Kiểm tra xác thực OAuth2
+    permission_classes = [IsAuthenticated]  # Đảm bảo người dùng phải đăng nhập (token hợp lệ)
+
+    def post(self, request):
+        if request.user.is_authenticated:
+            data = request.data
+        try:
+            user = request.user  # user hiện tại từ request
+            action_type=data.get("type",None) #like/follow
+            action_is=data.get("action",None) #yes/no
+            target=data.get("target",None) #restaurant/menu_item
+            items=data.get("item",None) #id of item
+            if action_type is not None and action_is is not None and target is not None and items is not None:
+                if target=="restaurant": #nhà hàng
+                    qs_res=Restaurant.objects.get(id=items)
+                    if action_is=="yes":
+                        qs_his=UserLikeLog.objects.filter(user=user,
+                                                        restaurant_item=qs_res,
+                                                        action_type=action_type)
+                        if len(qs_his)==0:
+                            log_user_like(user=user,
+                                        action_type=action_type,
+                                        restaurant_item=qs_res,
+                                        menu_item=None)
+                        return Response(data={"Pass":f"Đã {action_type}","data":True}, status=status.HTTP_200_OK)
+                    if action_is=="no":
+                        qs_his=UserLikeLog.objects.filter(user=user,
+                                                        restaurant_item=qs_res,
+                                                        action_type=action_type)
+                        for log in qs_his:
+                            log.delete()
+                        return Response(data={"Pass":f"Đã hủy {action_type}","data":False}, status=status.HTTP_200_OK)
+                elif target=="menu_item": #item
+                    qs_item=Restaurant_menu_items.objects.get(id=items)
+                    if action_is=="yes":
+                        qs_his=UserLikeLog.objects.filter(user=user,
+                                                        menu_item=qs_item,
+                                                        action_type=action_type)
+                        if len(qs_his)==0:
+                            log_user_like(user=user,
+                                        action_type=action_type,
+                                        menu_item=qs_item,
+                                        restaurant_item=None)
+                        return Response(data={"Pass":f"Đã {action_type}","data":True}, status=status.HTTP_200_OK)
+                    if action_is=="no":
+                        qs_his=UserLikeLog.objects.filter(user=user,
+                                                        menu_item=qs_item,
+                                                        action_type=action_type)
+                        for log in qs_his:
+                            log.delete()
+                        return Response(data={"Pass":f"Đã hủy {action_type}","data":False}, status=status.HTTP_200_OK)
+                else:
+                    return Response(data={"Error":"Chưa hỗ trợ hạng mục này"}, status=status.HTTP_400_BAD_REQUEST)
+            else:
+                return Response(data={"Error":"Chưa đủ thông tin"}, status=status.HTTP_400_BAD_REQUEST)
+        except Restaurant.DoesNotExist:
+            return Response(data={"Error":"Không tìm thấy nhà hàng này"}, status=status.HTTP_400_BAD_REQUEST)
+        except Restaurant_menu_items.DoesNotExist:
+            return Response(data={"Error":"Không tìm thấy sản phẩm này"}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            lineno = exc_tb.tb_lineno
+            file_path = exc_tb.tb_frame.f_code.co_filename
+            file_name = os.path.basename(file_path)
+            res_data = generate_response_json("FAIL", f"[{file_name}_{lineno}] {str(e)}")
+            return Response(data=res_data, status=status.HTTP_400_BAD_REQUEST)
+        
+def log_user_like(user, action_type, menu_item=None,restaurant_item=None):
+    UserLikeLog.objects.create(
+        user=user,
+        action_type=action_type,
+        menu_item=menu_item,
+        restaurant_item=restaurant_item,
         created_at=timezone.now()
     )
 # log_user_action(user=request.user, action_type='click', menu_item=selected_menu_item)
@@ -179,13 +345,22 @@ def get_user_favorite_categories(user):  # Lấy danh mục phổ biến nhất 
         favorite_categories = UserActionLog.objects.filter(action_type='click', menu_item__isnull=False) \
                             .values('menu_item__group') \
                             .annotate(count=Count('menu_item__group')) \
-                            .order_by('-count')[:6]  # Lấy 5 mục phổ biến nhất
-    # Nếu có kết quả, trả về danh sách tên các danh mục yêu thích
+                            .order_by('-count')[:6]  # Lấy 5 mục phổ biến nhất   
     if favorite_categories:
-        return [
-            Restaurant_menu_groups.objects.get(id=category['menu_item__group']).name
-            for category in favorite_categories
-        ]
+        categories = []
+        for category in favorite_categories:
+            try:
+                group_id = category['menu_item__group']
+                if group_id is not None:
+                    group = Restaurant_menu_groups.objects.get(id=group_id)
+                    categories.append(group.name)
+            except Restaurant_menu_groups.DoesNotExist:
+                print(f"Group with ID {group_id} does not exist.")
+                categories.append(None)  # Add None or a default value if not found
+            except Exception as e:
+                print(f"An error occurred: {e}")
+                categories.append(None)  # Add None or handle the error gracefully
+        return categories
 
     # Nếu không có dữ liệu, lấy 5 danh mục ngẫu nhiên từ Restaurant_menu_groups
     all_categories = list(Restaurant_menu_groups.objects.all())
@@ -311,7 +486,52 @@ class RetaurantNearlyAPIView(APIView):  # Các nhà hàng ở gần
                 "distance_km": None  # Không tính khoảng cách nếu không có vị trí
             }
             for restaurant in random_restaurants
-        ]      
+        ]        
+class MyListOrderAPIView(APIView):
+    authentication_classes = [OAuth2Authentication]  # Kiểm tra xác thực OAuth2
+    permission_classes = [IsAuthenticated]  # Đảm bảo người dùng phải đăng nhập (token hợp lệ)
+    def get(self, request):
+        if request.user.is_authenticated:
+            user=request.user
+            result = {}
+            for status_code, status_display in Restaurant_order.ORDER_STATUS_CHOICES:
+                total_count = Restaurant_order.objects.filter(status=status_code,
+                                                              user_order=user).count()
+                recent_orders = Restaurant_order.objects.filter(status=status_code,
+                                                                user_order=user).order_by('-created_at')[:3]
+                result[status_code] = {
+                    "status_code": status_code,
+                    "status_display": status_display,
+                    "total_count": total_count,
+                    "recent_orders": [
+                        {
+                            "id":order.id,
+                            "OrderKey": order.OrderKey,
+                            "restaurant": order.restaurant.name,
+                            "is_paid": order.is_paid,
+                            "is_paided": order.is_paided,
+                            "custom_notes":order.custom_notes,
+                            "created_at": order.created_at,
+                            "updated_at": order.updated_at,
+                            "items": [
+                                {
+                                    "name": item.name,
+                                    "price": item.price,
+                                    "quantity": item.quantity,
+                                    "created_at": item.created_at,
+                                    "updated_at": item.updated_at,
+                                }
+                                for item in Restaurant_order_items.objects.filter(Order=order)
+                            ],
+                        }
+                        for order in recent_orders
+                    ],
+                }
+            
+            return Response(result, status=200)
+        else:
+            return Response({"detail": "Authentication required."}, status=401)
+            
 class LenmonNewsItemsAPIView(APIView):
     authentication_classes = [OAuth2Authentication]  # Kiểm tra xác thực OAuth2
     permission_classes = []  # Đảm bảo người dùng phải đăng nhập (token hợp lệ)
@@ -824,7 +1044,7 @@ class ZaloLoginAPIView(APIView):
                 try:
                     qs_key=QR_Login.objects.get(QRKey=key)
                     if qs_key:
-                        sio.emit("backend-event",{
+                        send_socket("backend-event",{
                             "token":valid_token.token,
                             "expires_in":int((valid_token.expires - now).total_seconds()),
                             "room":qs_key.QRKey,
@@ -865,7 +1085,7 @@ class ZaloLoginAPIView(APIView):
         if key is not None:
             qs_key=QR_Login.objects.get(QRKey=key)
             if qs_key:
-                sio.emit("backend-event",{
+                send_socket("backend-event",{
                     "token":access_token_str,
                     "expires_in":expires_in_seconds,
                     "room":qs_key.QRKey,
@@ -924,7 +1144,7 @@ class ZaloLogin_Lemon_APIView(APIView):
             if key is not None:
                 qs_key=QR_Login.objects.get(QRKey=key)
                 if qs_key:
-                    sio.emit("backend-event",{
+                    send_socket("backend-event",{
                         "token":valid_token.token,
                         "expires_in":int((valid_token.expires - now).total_seconds()),
                         "room":qs_key.QRKey,
@@ -963,7 +1183,7 @@ class ZaloLogin_Lemon_APIView(APIView):
         if key is not None:
             qs_key=QR_Login.objects.get(QRKey=key)
             if qs_key:
-                sio.emit("backend-event",{
+                send_socket("backend-event",{
                     "token":access_token_str,
                     "expires_in":expires_in_seconds,
                     "room":qs_key.QRKey,
@@ -1796,49 +2016,32 @@ class Restaurant_menu_itemsDetailsViewSet(viewsets.ModelViewSet):
                 is_delete=False,is_active=True
             )
 
-    def create(self, request, *args, **kwargs):
-        # Set the user to the authenticated user
-        user = request.user  # Retrieve the authenticated user
-        serializer = self.get_serializer(data=request.data)
-        if serializer.is_valid():
-            allowed_restaurants = Restaurant_staff.objects.filter(
-                user=user,
-                is_Active=True,
-            ).values_list("restaurant__id",flat=True)
-            qs_items=Restaurant_menu_items.objects.filter(
-                menu=serializer.validated_data.get('menu'),
-                is_delete=False
-            )
-            if qs_items.count() >= 25:
-                return Response(
-                    {"Error": "Tối đa 25 món trên một menu!"},
-                    status=status.HTTP_403_FORBIDDEN
-                )
-            menu_restaurant_id = serializer.validated_data.get("menu").restaurant.id
-            if menu_restaurant_id in allowed_restaurants:
-                serializer.save()
-                return Response(serializer.data, status=status.HTTP_201_CREATED)
-            else:
-                return Response(
-                    {"Error": "Bạn không có quyền!"},
-                    status=status.HTTP_403_FORBIDDEN
-                )
-            return Response(serializer.data, status=201)
-        return Response(serializer.errors, status=400)
-
+    def retrieve(self, request, *args, **kwargs):
+        # Lấy id từ kwargs
+        queryset = self.get_queryset()
+        queryset = self.filter_queryset(queryset)  # Áp dụng bộ lọc cho queryset
+        item_id = kwargs.get('pk')
+        user = self.request.user
+        try:
+            menu_item = queryset.get(pk=item_id)
+            fromClick = self.request.query_params.get('from')
+            if fromClick is not None:
+                log_user_action(user=user, action_type='click', menu_item=menu_item)
+        except Restaurant_menu_items.DoesNotExist:
+            raise NotFound(detail="Menu item not found", code=status.HTTP_404_NOT_FOUND)
+        serializer = self.get_serializer(menu_item)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
         queryset = self.filter_queryset(queryset)  # Áp dụng bộ lọc cho queryset
-        
         page_size = self.request.query_params.get('page_size')
         if page_size is not None:
             self.pagination_class.page_size = int(page_size)
-            
         page = self.paginate_queryset(queryset)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
             return self.get_paginated_response(serializer.data)
-
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 
@@ -1853,8 +2056,51 @@ class RestaurantViewViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = self.request.user
         if user.is_superuser:
-            return Restaurant_menu_items.objects.all()
+            return Restaurant.objects.all()
         return Restaurant.objects.filter(is_active=True)
+    
+    def retrieve(self, request, *args, **kwargs):
+        # Lấy id từ kwargs
+        queryset = self.get_queryset()
+        queryset = self.filter_queryset(queryset)  # Áp dụng bộ lọc cho queryset
+        item_id = kwargs.get('pk')
+        user = self.request.user
+        try:
+            restaurant = queryset.get(pk=item_id)
+            fromClick = self.request.query_params.get('from')
+            if fromClick is not None:
+                log_user_action(user=user, action_type='click', restaurant_item=restaurant)
+        except Restaurant.DoesNotExist:
+            raise NotFound(detail="Restaurant not found", code=status.HTTP_404_NOT_FOUND)
+        serializer = self.get_serializer(restaurant)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        queryset = self.filter_queryset(queryset)  # Áp dụng bộ lọc cho queryset
+        page_size = self.request.query_params.get('page_size')
+        if page_size is not None:
+            self.pagination_class.page_size = int(page_size)
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+class Restaurant_order_userViewSet(viewsets.ModelViewSet):
+    serializer_class = Restaurant_orderSerializer
+    authentication_classes = [OAuth2Authentication]
+    permission_classes = [IsAuthenticated]
+    filter_backends = (DjangoFilterBackend,)
+    filterset_class = Restaurant_orderFilter
+    pagination_class = StandardResultsSetPagination
+    http_method_names = ['get']
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_superuser:
+            return Restaurant_order.objects.all()
+        return Restaurant_order.objects.filter(user_order=user)
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
         queryset = self.filter_queryset(queryset)  # Áp dụng bộ lọc cho queryset

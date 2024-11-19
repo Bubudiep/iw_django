@@ -157,6 +157,23 @@ class RestaurantAdmin(admin.ModelAdmin):
     save_as = True  # Kích hoạt Save as new
     list_filter = ('created_at',)
     ordering = ('-created_at',)
+@admin.register(UserActionLog)
+class UserActionLogAdmin(admin.ModelAdmin):
+    save_as = True  # Kích hoạt Save as new
+    list_filter = ('created_at',)
+    ordering = ('-created_at',)
+@admin.register(UserLikeLog)
+class UserLikeLogAdmin(admin.ModelAdmin):
+    save_as = True  # Kích hoạt Save as new
+    list_filter = ('created_at',)
+    ordering = ('-created_at',)
+
+@admin.register(Restaurant_menu_groups)
+class Restaurant_menu_groupsAdmin(admin.ModelAdmin):
+    save_as = True  # Kích hoạt Save as new
+    list_filter = ('created_at',)
+    ordering = ('-created_at',)
+    
 @admin.register(Restaurant_socket)
 class Restaurant_socketAdmin(admin.ModelAdmin):
     save_as = True  # Kích hoạt Save as new

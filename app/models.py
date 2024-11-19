@@ -4,7 +4,7 @@ from django.contrib.auth.models import User
 import datetime
 from datetime import time
 import uuid  # Thư viện để tạo khóa ngẫu nhiên
-
+from .socket import send_socket
 def get_current_date():
     return timezone.now().date()
 
@@ -50,6 +50,7 @@ class Profile(models.Model):
     lat_pos = models.CharField(max_length=50, null=True, blank=True)
     level = models.IntegerField(default=0, null=True, blank=True)
     is_Chutro=models.BooleanField(default=False)
+    socket_id = models.CharField(max_length=150, null=True, blank=True)
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     class Meta:
@@ -846,6 +847,8 @@ class Restaurant_layout(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)  # Ngày tạo
     updated_at = models.DateTimeField(auto_now=True)  # Ngày cập nhật
     
+    class Meta:
+        ordering = ['-id']
     def __str__(self):
         return self.name
     
@@ -858,6 +861,8 @@ class Restaurant_space_group(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)  # Ngày tạo
     updated_at = models.DateTimeField(auto_now=True)  # Ngày cập nhật
     
+    class Meta:
+        ordering = ['-id']
     def __str__(self):
         return self.name
     
@@ -871,6 +876,8 @@ class Restaurant_space(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)  # Ngày tạo
     updated_at = models.DateTimeField(auto_now=True)  # Ngày cập nhật
     
+    class Meta:
+        ordering = ['-id']
     def __str__(self):
         return self.name
     
@@ -893,6 +900,8 @@ class Restaurant_counpon(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)  # Ngày tạo
     updated_at = models.DateTimeField(auto_now=True)  # Ngày cập nhật
     
+    class Meta:
+        ordering = ['-id']
     def __str__(self):
         return self.title
     
@@ -905,6 +914,8 @@ class Restaurant_staff(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)  # Ngày tạo
     updated_at = models.DateTimeField(auto_now=True)  # Ngày cập nhật
     
+    class Meta:
+        ordering = ['-id']
     def __str__(self):
         return self.user.username if self.user is not None else None
     
@@ -913,7 +924,11 @@ class Restaurant_menu(models.Model):
     name = models.CharField(max_length=100)  # Tên memu
     is_online = models.BooleanField(default=True)  # Trạng thái có sẵn hay không
     description = models.TextField(blank=True, null=True)  # Mô tả món ăn
+    created_at = models.DateTimeField(auto_now_add=True)  # Ngày tạo
+    updated_at = models.DateTimeField(auto_now=True)  # Ngày cập nhật
     
+    class Meta:
+        ordering = ['-id']
     def __str__(self):
         return f"{self.name} - {self.restaurant.name}"
     
@@ -922,7 +937,11 @@ class Restaurant_menu_groups(models.Model):
     name = models.CharField(max_length=100)  # Tên memu
     is_online = models.BooleanField(default=True)  # Trạng thái có sẵn hay không
     description = models.TextField(blank=True, null=True)  # Mô tả món ăn
+    created_at = models.DateTimeField(auto_now_add=True)  # Ngày tạo
+    updated_at = models.DateTimeField(auto_now=True)  # Ngày cập nhật
     
+    class Meta:
+        ordering = ['-id']
     def __str__(self):
         return f"{self.name}"
     
@@ -931,7 +950,11 @@ class Restaurant_menu_marks(models.Model):
     name = models.CharField(max_length=100)  # Tên memu
     is_online = models.BooleanField(default=True)  # Trạng thái có sẵn hay không
     description = models.TextField(blank=True, null=True)  # Mô tả món ăn
+    created_at = models.DateTimeField(auto_now_add=True)  # Ngày tạo
+    updated_at = models.DateTimeField(auto_now=True)  # Ngày cập nhật
     
+    class Meta:
+        ordering = ['-id']
     def __str__(self):
         return f"{self.name}"
     
@@ -955,16 +978,34 @@ class Restaurant_menu_items(models.Model):
     image64_sub3 = models.TextField(null=True, blank=True)
     short_description = models.TextField(blank=True, null=True)  # Mô tả món ăn
     description = models.TextField(blank=True, null=True)  # Mô tả món ăn
-    def __str__(self):
-        return f"{self.name} - {self.price}"
+    created_at = models.DateTimeField(auto_now_add=True)  # Ngày tạo
+    updated_at = models.DateTimeField(auto_now=True)  # Ngày cập nhật
     class Meta:
         ordering = ['-id']
+    def __str__(self):
+        return f"{self.name} - {self.price}"
         
+class UserLikeLog(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
+    menu_item = models.ForeignKey(Restaurant_menu_items, on_delete=models.SET_NULL, null=True, blank=True)
+    restaurant_item = models.ForeignKey(Restaurant, on_delete=models.SET_NULL, null=True, blank=True)
+    action_type = models.CharField(max_length=50, choices=[
+        ('like', 'Like'),
+        ('follow', 'Follow')
+    ])
+    created_at = models.DateTimeField(auto_now_add=True)
+    class Meta:
+        ordering = ['-id']
+    def __str__(self):
+        return f"{self.user} - {self.action_type} - {self.created_at}"
+    
 class UserActionLog(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
-    menu_item = models.ForeignKey(Restaurant_menu_items, on_delete=models.CASCADE, null=True, blank=True)
-    search_term = models.CharField(max_length=255, null=True, blank=True)
+    menu_item = models.ForeignKey(Restaurant_menu_items, on_delete=models.SET_NULL, null=True, blank=True)
+    restaurant_item = models.ForeignKey(Restaurant, on_delete=models.SET_NULL, null=True, blank=True)
     category = models.ForeignKey(Restaurant_menu_groups, on_delete=models.CASCADE, null=True, blank=True)
+    action_from = models.CharField(max_length=255, null=True, blank=True)
+    search_term = models.CharField(max_length=255, null=True, blank=True)
     action_type = models.CharField(max_length=50, choices=[
         ('click', 'Click'),
         ('search', 'Search'),
@@ -990,9 +1031,19 @@ class Restaurant_order(models.Model):
     is_use_coupon = models.BooleanField(default=True)  # Trạng thái có sẵn hay không
     is_takeaway = models.BooleanField(default=True)  # Mang về
     is_online = models.BooleanField(default=True)  # Đơn online
-    is_paid = models.BooleanField(default=True)  # Thanh toán
-    is_paided = models.BooleanField(default=True)  # Xác nhận thanh toán
+    is_paid = models.BooleanField(default=False)  # Thanh toán
+    is_paided = models.BooleanField(default=False)  # Xác nhận thanh toán
+    custom_notes = models.CharField(max_length=225,null=True,blank=True)
+    custom_phone = models.CharField(max_length=225,null=True,blank=True)
+    custom_address = models.CharField(max_length=225,null=True,blank=True)
+    custom_lat = models.CharField(max_length=225,null=True,blank=True)
+    custom_long = models.CharField(max_length=225,null=True,blank=True)
+    custom_time = models.DateTimeField(default=timezone.now)
+    created_at = models.DateTimeField(auto_now_add=True)  # Ngày tạo
+    updated_at = models.DateTimeField(auto_now=True)  # Ngày cập nhật
     
+    class Meta:
+        ordering = ['-id']
     def __str__(self):
         return f"{self.OrderKey} - {self.is_paid} - {self.is_paided}"
     def save(self, *args, **kwargs):
@@ -1006,7 +1057,11 @@ class Restaurant_order_items(models.Model):
     name = models.CharField(max_length=100)
     price = models.FloatField(default=0)
     quantity = models.IntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)  # Ngày tạo
+    updated_at = models.DateTimeField(auto_now=True)  # Ngày cập nhật
     
+    class Meta:
+        ordering = ['-id']
     def __str__(self):
         return f"{self.Order.OrderKey}_{self.items.name}"
     
@@ -1018,6 +1073,8 @@ class Restaurant_counpon_history(models.Model):
     discount=models.IntegerField(default=0) # giảm thực tế
     created_at = models.DateTimeField(auto_now_add=True)  # Ngày tạo
     updated_at = models.DateTimeField(auto_now=True)  # Ngày cập nhật
+    class Meta:
+        ordering = ['-id']
     def __str__(self):
         return f"{self.Order.OrderKey}_{self.items.name}"
     
@@ -1027,4 +1084,23 @@ class Restaurant_counpon_history(models.Model):
             if self.counpon:
                 self.counpon_count = Restaurant_counpon_history.objects.filter(counpon=self.counpon).count() + 1
         super(Restaurant_counpon_history, self).save(*args, **kwargs)
+        
+class LenmonAlert(models.Model):
+    is_private = models.BooleanField(default=False)
+    restaurant = models.ForeignKey(Restaurant, on_delete=models.SET_NULL, null=True, blank=True)
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    alert_type = models.CharField(max_length=100)
+    alert_sub_type = models.CharField(max_length=100)
+    title = models.CharField(max_length=100,null=True,blank=True)
+    message = models.TextField(null=True,blank=True)
+    target_type = models.CharField(max_length=100,null=True,blank=True)
+    target = models.CharField(max_length=100,null=True,blank=True)
+    data = models.JSONField(blank=True, null=True)
+    is_checked = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    class Meta:
+        ordering = ['-id']
+    def __str__(self):
+        return f"{self.title}"
         

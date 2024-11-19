@@ -3,6 +3,8 @@ from django.contrib.auth.models import User
 from .models import *
 from django.db import transaction
 from django.db.models import Max,Sum
+from rest_framework.permissions import IsAuthenticated
+from django.utils.functional import cached_property
 
 class RegisterSerializer(serializers.ModelSerializer):
     # Bạn có thể thêm các trường zalo_name và zalo_id vào đây
@@ -840,26 +842,82 @@ class RestaurantViewsSerializer(serializers.ModelSerializer):
     coupons = RestaurantCouponSerializer(many=True, source='restaurant_counpon_set')  # Đảm bảo lấy tất cả các coupon liên kết
     layouts = RestaurantLayoutSerializer(many=True, source='restaurant_layout_set')  # Đảm bảo lấy tất cả các layout liên kết
     menu = Restaurant_menuSerializer(many=True, source='restaurant_menu_set')  # Đảm bảo lấy tất cả các coupon liên kết
+    isLike=serializers.SerializerMethodField(read_only=True)
+    totalLike=serializers.SerializerMethodField(read_only=True)
+    isFollow=serializers.SerializerMethodField(read_only=True)
+    totalFollow=serializers.SerializerMethodField(read_only=True)
+    
+    @cached_property
+    def user(self):
+        return self.context['request'].user
+    def get_totalLike(self, obj):
+        return UserLikeLog.objects.filter(
+            restaurant_item=obj,
+            action_type="like"
+        ).count()
+    def get_isLike(self, obj):
+        if self.user.is_authenticated:
+            return UserLikeLog.objects.filter(
+                user=self.user,
+                restaurant_item=obj,
+                action_type="like"
+            ).exists()
+        return False
+    def get_isFollow(self, obj):
+        if self.user.is_authenticated:
+            return UserLikeLog.objects.filter(
+                user=self.user,
+                restaurant_item=obj,
+                action_type="follow"
+            ).exists()
+        return False
+    def get_totalFollow(self, obj):
+        return UserLikeLog.objects.filter(
+            restaurant_item=obj,
+            action_type="follow"
+        ).count()
+
+
     class Meta:
         model = Restaurant
         fields = [
-            'id', 'name', 'address', 'phone_number', 'avatar', 'Oder_online',
-            'Takeaway', 'isRate', 'isChat', 'is_active', 'description', 'created_at',
-            'coupons', 'address_details','layouts','mohinh','menu'
+            'id', 'name', 'address', 'phone_number', 'avatar', 'Oder_online','totalLike',
+            'Takeaway', 'isRate', 'isChat', 'is_active', 'description', 'created_at','totalFollow',
+            'coupons', 'address_details','layouts','mohinh','menu','isLike','isFollow'
         ]
     
 class RestaurantMenuItemsDetailsSerializer(serializers.ModelSerializer):
     group_names = serializers.SerializerMethodField(read_only=True) #Danh mục trong menu
     mark_names = serializers.SerializerMethodField(read_only=True) #Loại
     restaurant = serializers.SerializerMethodField(read_only=True)
+    isLike=serializers.SerializerMethodField(read_only=True)
+    totalLike=serializers.SerializerMethodField(read_only=True)
     class Meta:
         model = Restaurant_menu_items
         fields = ['id','is_ship',
             'menu', 'name', 'price', 'is_hot', 'is_new', 'is_online','is_active',
             'image64_mini', 'image64_full', 'short_description', 'description', 
             'is_available', 'group', 'mark', 'group_names', 'mark_names','image64_sub1',
-            'image64_sub2','image64_sub3','restaurant'
+            'image64_sub2','image64_sub3','restaurant','isLike','totalLike'
         ]
+    
+    @cached_property
+    def user(self):
+        return self.context['request'].user
+    def get_totalLike(self, obj):
+        return UserLikeLog.objects.filter(
+            menu_item=obj,
+            action_type="like"
+        ).count()
+    def get_isLike(self, obj):
+        if self.user.is_authenticated:
+            return UserLikeLog.objects.filter(
+                user=self.user,
+                menu_item=obj,
+                action_type="like"
+            ).exists()
+        return False
+    
     def get_group_names(self, obj):
         return [group.name for group in obj.group.all()]
 
@@ -869,4 +927,9 @@ class RestaurantMenuItemsDetailsSerializer(serializers.ModelSerializer):
     def get_restaurant(self, obj):
         rest=obj.menu.restaurant
         return RestaurantDetailsLTESerializer(rest,many=False).data
- 
+  
+class Restaurant_orderSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Restaurant_order
+        fields = '__all__'
+     

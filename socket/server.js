@@ -18,31 +18,47 @@ const rooms = {},
   rooms_data = {};
 // Handle connections from other WebSocket clients (like WinForms)
 io.on("connection", (socket) => {
-  // Khi người dùng kết nối
-  var name = "";
+  var token = "";
   if (socket.handshake.headers.cookie) {
-    try {
-      var cookie = socket.handshake.headers.cookie.split(";");
-      cookie.forEach((items) => {
-        var its = items.trim().split("=");
-        if (its[0] == "user_name") {
-          name = its[1];
-        }
-      });
-    } catch (e) {
-      socket.emit("error", "please login!");
-      return false;
-    }
-    if (!Object.values(users).includes(name)) {
-      users[socket.id] = name;
-    }
+    var cookie = socket?.handshake?.headers?.cookie?.split(";");
+    cookie.forEach((items) => {
+      var its = items.trim().split("=");
+      if (its[0] == "lenmon_token") {
+        token = its[1];
+        const post_data = {
+          socket: socket.id, // Send socket ID in the body
+        };
+        const headers = {
+          Authorization: `Bearer ${token}`, // Include token in Authorization header
+        };
+        axios
+          .post("http://localhost:5005/api/update-socket/", post_data, {
+            headers,
+          })
+          .then((response) => {
+            console.log(`Successfully updated socket info: ${response.data}`);
+          })
+          .catch((error) => {
+            console.error(`Failed to update socket info: ${error}`);
+          });
+      }
+    });
   } else {
-    name = "backend";
+    token = "backend";
   }
-  console.log(name + " is connected");
-  socket.emit("user online", users);
-  io.emit("user connected", users);
+  console.log(socket.id + " is connected:", token);
   socket.on("disconnect", () => {
+    axios
+      .post("http://localhost:5005/api/close-socket/", {
+        socket: socket.id, // Send socket ID in the body
+      })
+      .then((response) => {
+        console.log(`Successfully close socket info: ${response.data}`);
+      })
+      .catch((error) => {
+        console.error(`Failed to close socket info: ${error}`);
+      });
+    console.log(socket.id + " is disconnected");
     io.emit("user disconnected", socket.id);
     for (const room in rooms) {
       if (rooms.hasOwnProperty(room)) {
@@ -51,20 +67,27 @@ io.on("connection", (socket) => {
       }
     }
   });
-
+  socket.on("backend-enduser-event", (data) => {
+    console.log(data);
+    if (data.send_to.length > 0) {
+      data.send_to.forEach((recipientSocketId) => {
+        io.to(recipientSocketId).emit("message", {
+          data: data,
+        });
+      });
+    }
+  });
   socket.on("join room", (room, data) => {
     console.log(room);
     socket.join(room);
     socket.to(room).emit("message", data);
   });
-
   socket.on("notice", (data) => {
     socket.to(data.room).emit("notice", socket.id);
   });
   socket.on("room_data", (data) => {
     io.to(socket.id).emit("room_data", rooms_data);
   });
-
   socket.on("leave room", (room) => {
     socket.leave(room);
     if (rooms[room]) {
