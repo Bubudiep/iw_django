@@ -67,7 +67,7 @@ class ProfileLenmonSerializer(serializers.ModelSerializer):
     class Meta:
         model = Profile
         fields = [
-            "user",
+            "user","zalo_phone",
             "avatar",
             "wallpaper",
             "zalo_id",
@@ -654,6 +654,13 @@ class Restaurant_menu_itemsLTESerializer(serializers.ModelSerializer):
             'is_active', 'image64_mini', 'short_description'
         ]
     
+class Restaurant_menu_itemsLTESSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Restaurant_menu_items
+        fields = [
+            'id','price','name','image64_mini'
+        ]
+    
 class Restaurant_menu_itemsRCMSerializer(serializers.ModelSerializer):
     restaurant = serializers.SerializerMethodField(read_only=True)
     paidQTY = serializers.SerializerMethodField(read_only=True)
@@ -764,6 +771,15 @@ class Restaurant_menuSerializer(serializers.ModelSerializer):
     class Meta:
         model = Restaurant_menu
         fields = ['id', 'items', 'group', 'mark', 'name', 'is_online', 'description']
+        
+class Restaurant_menuViewSerializer(serializers.ModelSerializer):
+    items = serializers.SerializerMethodField()  # Use SerializerMethodField to filter items
+    def get_items(self, obj):
+        active_items = obj.restaurant_menu_items_set.filter(is_delete=False,is_active=True)
+        return Restaurant_menu_itemsLTESSerializer(active_items, many=True).data
+    class Meta:
+        model = Restaurant_menu
+        fields = ['id', 'items', 'name', 'is_online', 'description']
         
 class RestaurantSpaceSerializer(serializers.ModelSerializer):
     class Meta:
@@ -885,7 +901,6 @@ class RestaurantViewsSerializer(serializers.ModelSerializer):
             'Takeaway', 'isRate', 'isChat', 'is_active', 'description', 'created_at','totalFollow',
             'coupons', 'address_details','layouts','mohinh','menu','isLike','isFollow'
         ]
-    
 class RestaurantMenuItemsDetailsSerializer(serializers.ModelSerializer):
     group_names = serializers.SerializerMethodField(read_only=True) #Danh mục trong menu
     mark_names = serializers.SerializerMethodField(read_only=True) #Loại

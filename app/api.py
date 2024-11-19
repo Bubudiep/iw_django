@@ -312,19 +312,20 @@ def get_popular_menu_items(user): # Được bấm vào nhiều nhất
                     .annotate(click_count=Count('menu_item')) \
                     .order_by('-click_count')[:6]
     if len(popular_items)>0:
-        return Restaurant_menu_items.objects.filter(id__in=[item['menu_item'] for item in popular_items])
+        return Restaurant_menu_items.objects.filter(id__in=[item['menu_item'] for item in popular_items],
+                                                    is_delete=False,is_active=True)
     else:
         if user is not None:
             list_group=get_user_favorite_categories(user)
             print(list_group)
             return Restaurant_menu_items.objects.filter(group__name__in=list_group
-                                                        # ,is_delete=False,is_active=True
+                                                        ,is_delete=False,is_active=True
                                                         ).order_by('?')[:6]
         else:
             list_group=get_user_favorite_categories(None)
             print(list_group)
             return Restaurant_menu_items.objects.filter(group__name__in=list_group
-                                                        # ,is_delete=False,is_active=True
+                                                        ,is_delete=False,is_active=True
                                                         ).order_by('?')[:6]
 
 def get_popular_search_terms(): # Phổ biến tìm kiếm
