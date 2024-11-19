@@ -370,7 +370,7 @@ def get_user_favorite_categories(user):  # Lấy danh mục phổ biến nhất 
         return [category.name for category in random_categories]
 
     return []  # Nếu không có danh mục nào trong database, trả về danh sách rỗng
-def get_nearby_favorite_category(user_latitude, user_longitude, radius_km=5):
+def get_nearby_favorite_category(user_latitude, user_longitude, radius_km=25):
     # Lấy tất cả các hành động nhấn vào món ăn từ người dùng khác
     nearby_users_actions = UserActionLog.objects.filter(action_type='click', menu_item__isnull=False)
     # Lọc các người dùng có vị trí gần người dùng hiện tại
@@ -400,7 +400,7 @@ def get_nearby_favorite_category(user_latitude, user_longitude, radius_km=5):
             return Restaurant_menu_groups.objects.get(id=popular_category['menu_item__group']).name
     return None  # Trả về None nếu không tìm thấy danh mục nào
 
-def get_nearby_restaurants(user, user_latitude, user_longitude, radius_km=15):
+def get_nearby_restaurants(user, user_latitude, user_longitude, radius_km=25):
     favorite_category = get_user_favorite_categories(user)  # Sử dụng hàm này từ code trước để lấy danh mục yêu thích của người dùng
     # Nếu người dùng không có danh mục yêu thích, trả về danh sách rỗng
     if not favorite_category:
@@ -448,6 +448,13 @@ class RetaurantNearlyAPIView(APIView):  # Các nhà hàng ở gần
                 favorite_category = get_nearby_favorite_category(user_latitude, user_longitude)
             # Gợi ý nhà hàng gần vị trí
             nearby_restaurants = get_nearby_restaurants(user, user_latitude, user_longitude)
+            if len(nearby_restaurants)==0:
+                # Nếu không có vị trí, trả về danh sách ngẫu nhiên
+                random_restaurants = self.get_random_restaurants()
+                suggestions = {
+                    "nearby_restaurants": random_restaurants,
+                    "favorite_category": None  # Không có danh mục yêu thích nếu không cung cấp vị trí
+                }
             suggestions = {
                 "nearby_restaurants": [
                     {
