@@ -155,6 +155,72 @@ class UserCreateOrderAPIView(APIView):
                 notes=data.get("notes",None)
                 time=data.get("time",None)
                 is_use_coupon=False
+                takeaway=data.get("takeaway",None)
+                if takeaway is not None:
+                    items=data.get("items",None)
+                    notes=data.get("notes",None)
+                    restaurant=data.get("restaurant",None)
+                    groupId=data.get("groupId",None)
+                    spaceId=data.get("spaceId",None)
+                    with transaction.atomic():
+                        qs_restaurant=Restaurant.objects.get(id=restaurant)
+                        qs_space=None
+                        qs_group=None
+                        if spaceId is not None:
+                            qs_space=Restaurant_space.objects.get(id=spaceId)
+                            qs_group=qs_space.group
+                        cr_oder=Restaurant_order.objects.create(OrderKey=uuid.uuid4().hex.upper(),
+                                                                restaurant=qs_restaurant,
+                                                                user_order=user,
+                                                                status="CREATED",
+                                                                is_use_coupon=is_use_coupon,
+                                                                is_online=False,
+                                                                space=qs_space,
+                                                                group=qs_group,
+                                                                is_paid=False,
+                                                                is_paided=False,
+                                                                custom_notes=notes)
+                        for item in items:
+                            print(item)
+                            qs_item=Restaurant_menu_items.objects.get(id=item.get("id"))
+                            if qs_item.is_delete==True:
+                                return Response(data={"Error":f"{qs_item.name} đã bị xóa!"},
+                                                status=status.HTTP_400_BAD_REQUEST)
+                            if qs_item.is_active==False:
+                                return Response(data={"Error":f"{qs_item.name} đã bị gỡ xuống!"},
+                                                status=status.HTTP_400_BAD_REQUEST)
+                            if qs_item.is_available==False:
+                                return Response(data={"Error":f"{qs_item.name} hiện không khả dụng!"},
+                                                status=status.HTTP_400_BAD_REQUEST)
+                            cr_item=Restaurant_order_items.objects.create(Order=cr_oder,
+                                                                        items=qs_item,
+                                                                        price=qs_item.price,
+                                                                        name=qs_item.name,
+                                                                        quantity=item.get("quantity"))
+                        qs_staff=Restaurant_staff.objects.filter(restaurant=qs_item.menu.restaurant,
+                                                                is_Active=True).values_list("user__id",flat=True)
+                        qs_profile=Profile.objects.filter(user__id__in=qs_staff).values_list("socket_id",flat=True)
+                        alert=LenmonAlert.objects.create(is_private=True,
+                                                        user=user,alert_type="oder",
+                                                        alert_sub_type="create",
+                                                        title="Đặt hàng",
+                                                        message="Bạn đã đặt hàng thành công!",
+                                                        target_type="key",
+                                                        target=cr_oder.OrderKey,
+                                                        is_checked=False)
+                        data_socket={
+                            "send_to":list(qs_profile),
+                            "type":"order",
+                            "from":"offline",
+                            "action":"create",
+                            "order_key":cr_oder.OrderKey,
+                            "data":Restaurant_orderSerializer(cr_oder).data
+                        }
+                        send_socket("backend-enduser-event",data_socket)
+                        return Response(data={
+                            "result":"PASS",
+                            "data":Restaurant_orderSerializer(cr_oder).data
+                        },status=status.HTTP_200_OK)
                 if item_id is not None and qty is not None and address is not None:
                     qs_item=Restaurant_menu_items.objects.get(id=item_id)
                     if coupon is not None:
