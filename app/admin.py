@@ -168,6 +168,22 @@ class UserLikeLogAdmin(admin.ModelAdmin):
     list_filter = ('created_at',)
     ordering = ('-created_at',)
 
+@admin.register(Restaurant_menu_items)
+class Restaurant_menu_itemsAdmin(admin.ModelAdmin):
+    save_as = True  # Kích hoạt Save as new
+    list_display = ("name",
+        "price",
+        "is_hot",
+        "is_new",
+        "is_online",
+        "is_ship",
+        "is_available",
+        "is_active",
+        "is_delete",
+        "is_validate")
+    list_filter = ('created_at',)
+    ordering = ('-created_at',)
+    
 @admin.register(Restaurant_menu_groups)
 class Restaurant_menu_groupsAdmin(admin.ModelAdmin):
     save_as = True  # Kích hoạt Save as new

@@ -19,30 +19,37 @@ const rooms = {},
 // Handle connections from other WebSocket clients (like WinForms)
 io.on("connection", (socket) => {
   var token = "";
-  if (socket.handshake.headers.cookie) {
+  if (socket.handshake.headers.cookie || socket.handshake.auth.token) {
     var cookie = socket?.handshake?.headers?.cookie?.split(";");
-    cookie.forEach((items) => {
-      var its = items.trim().split("=");
-      if (its[0] == "lenmon_token") {
-        token = its[1];
-        const post_data = {
-          socket: socket.id, // Send socket ID in the body
-        };
-        const headers = {
-          Authorization: `Bearer ${token}`, // Include token in Authorization header
-        };
-        axios
-          .post("http://localhost:5005/api/update-socket/", post_data, {
-            headers,
-          })
-          .then((response) => {
-            console.log(`Successfully updated socket info: ${response.data}`);
-          })
-          .catch((error) => {
-            console.error(`Failed to update socket info: ${error}`);
-          });
-      }
-    });
+    if (cookie) {
+      cookie.forEach((items) => {
+        var its = items.trim().split("=");
+        if (its[0] == "lenmon_token") {
+          token = its[1];
+        }
+      });
+    }
+    if (token == "") {
+      token = socket.handshake.auth.token;
+    }
+    if (token != "") {
+      const post_data = {
+        socket: socket.id, // Send socket ID in the body
+      };
+      const headers = {
+        Authorization: `Bearer ${token}`, // Include token in Authorization header
+      };
+      axios
+        .post("http://localhost:5005/api/update-socket/", post_data, {
+          headers,
+        })
+        .then((response) => {
+          console.log(`Successfully updated socket info: ${response.data}`);
+        })
+        .catch((error) => {
+          console.error(`Failed to update socket info: ${error}`);
+        });
+    }
   } else {
     token = "backend";
   }

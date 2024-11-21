@@ -157,6 +157,7 @@ class UserCreateOrderAPIView(APIView):
                 is_use_coupon=False
                 takeaway=data.get("takeaway",None)
                 if takeaway is not None:
+                    is_takeaway=True
                     items=data.get("items",None)
                     notes=data.get("notes",None)
                     restaurant=data.get("restaurant",None)
@@ -167,6 +168,7 @@ class UserCreateOrderAPIView(APIView):
                         qs_space=None
                         qs_group=None
                         if spaceId is not None:
+                            is_takeaway=False
                             qs_space=Restaurant_space.objects.get(id=spaceId)
                             qs_group=qs_space.group
                         cr_oder=Restaurant_order.objects.create(OrderKey=uuid.uuid4().hex.upper(),
@@ -175,13 +177,13 @@ class UserCreateOrderAPIView(APIView):
                                                                 status="CREATED",
                                                                 is_use_coupon=is_use_coupon,
                                                                 is_online=False,
+                                                                is_takeaway=is_takeaway,
                                                                 space=qs_space,
                                                                 group=qs_group,
                                                                 is_paid=False,
                                                                 is_paided=False,
                                                                 custom_notes=notes)
                         for item in items:
-                            print(item)
                             qs_item=Restaurant_menu_items.objects.get(id=item.get("id"))
                             if qs_item.is_delete==True:
                                 return Response(data={"Error":f"{qs_item.name} đã bị xóa!"},
@@ -214,12 +216,12 @@ class UserCreateOrderAPIView(APIView):
                             "from":"offline",
                             "action":"create",
                             "order_key":cr_oder.OrderKey,
-                            "data":Restaurant_orderSerializer(cr_oder).data
+                            "data":Restaurant_order_detailsSerializer(cr_oder).data
                         }
                         send_socket("backend-enduser-event",data_socket)
                         return Response(data={
                             "result":"PASS",
-                            "data":Restaurant_orderSerializer(cr_oder).data
+                            "data":Restaurant_order_detailsSerializer(cr_oder).data
                         },status=status.HTTP_200_OK)
                 if item_id is not None and qty is not None and address is not None:
                     qs_item=Restaurant_menu_items.objects.get(id=item_id)
@@ -274,12 +276,12 @@ class UserCreateOrderAPIView(APIView):
                         "from":"online",
                         "action":"create",
                         "order_key":cr_oder.OrderKey,
-                        "data":Restaurant_orderSerializer(cr_oder).data
+                        "data":Restaurant_order_detailsSerializer(cr_oder).data
                     }
                     send_socket("backend-enduser-event",data_socket)
                     return Response(data={
                         "result":"PASS",
-                        "data":Restaurant_orderSerializer(cr_oder).data
+                        "data":Restaurant_order_detailsSerializer(cr_oder).data
                     },status=status.HTTP_200_OK)
                 else:
                     return Response(data={"Error":"Thiếu dữ liệu!"},status=status.HTTP_400_BAD_REQUEST)
@@ -293,6 +295,47 @@ class UserCreateOrderAPIView(APIView):
         else:
             return Response(data={"Error":"Yêu cầu đăng nhập!"}, status=status.HTTP_403_FORBIDDEN)
         
+class UserCancelOrderAPIView(APIView):
+    authentication_classes = [OAuth2Authentication]  # Kiểm tra xác thực OAuth2
+    permission_classes = [IsAuthenticated]  # Đảm bảo người dùng phải đăng nhập (token hợp lệ)
+    def post(self, request):
+        if request.user.is_authenticated:
+            data = request.data
+            try:
+                order_id=data.get("id",None);
+                qs_order=Restaurant_order.objects.get(id=order_id,user_order=request.user)
+                if qs_order.status=="COMPLETE" or qs_order.status=="NOT" or qs_order.status=="CANCEL":
+                    return Response(data={"Error":"Trạng thái hiện tại đã hoàn tất"},status=status.HTTP_403_FORBIDDEN)
+                if qs_order.status=="CREATED":
+                    qs_order.cancel_status="CREATED"
+                    qs_order.status="CANCEL"
+                if qs_order.status=="SHIPPING":
+                    qs_order.cancel_status="SHIPPING"
+                    qs_order.status="CANCEL"
+                if qs_order.status=="RECEIVED":
+                    qs_order.cancel_status="RECEIVED"
+                    qs_order.status="CANCEL"
+                qs_order.save()
+                
+                qs_staff=Restaurant_staff.objects.filter(restaurant=qs_order.restaurant,
+                                                            is_Active=True).values_list("user__id",flat=True)
+                qs_profile=Profile.objects.filter(user__id__in=qs_staff).values_list("socket_id",flat=True)
+                isfrom="offline"
+                if qs_order.is_online==True:
+                    isfrom="online"
+                data_socket={
+                    "send_to":list(qs_profile),
+                    "type":"order",
+                    "from":isfrom,
+                    "action":"cancel",
+                    "order_key":qs_order.OrderKey,
+                    "data":Restaurant_order_detailsSerializer(qs_order).data
+                }
+                send_socket("backend-enduser-event",data_socket)
+                return Response(data={"result":"PASS"},status=status.HTTP_200_OK)
+            except Exception as e:
+                return Response(data={"Error":"Xảy ra lỗi khi cập nhập"},status=status.HTTP_403_FORBIDDEN)
+            
 class UserActionLogAPIView(APIView):
     authentication_classes = [OAuth2Authentication]  # Kiểm tra xác thực OAuth2
     permission_classes = [IsAuthenticated]  # Đảm bảo người dùng phải đăng nhập (token hợp lệ)
@@ -379,19 +422,29 @@ def get_popular_menu_items(user): # Được bấm vào nhiều nhất
                     .order_by('-click_count')[:6]
     if len(popular_items)>0:
         return Restaurant_menu_items.objects.filter(id__in=[item['menu_item'] for item in popular_items],
-                                                    is_delete=False,is_active=True)
+                                                    is_delete=False,is_active=True,
+                                                    is_validate=True,name__isnull=False,
+                                                    image64_mini__isnull=False,
+                                                    image64_full__isnull=False
+                                                )
     else:
         if user is not None:
             list_group=get_user_favorite_categories(user)
             print(list_group)
             return Restaurant_menu_items.objects.filter(group__name__in=list_group
-                                                        ,is_delete=False,is_active=True
+                                                        ,is_delete=False,is_active=True,
+                                                        is_validate=True,name__isnull=False,
+                                                        image64_mini__isnull=False,
+                                                        image64_full__isnull=False
                                                         ).order_by('?')[:6]
         else:
             list_group=get_user_favorite_categories(None)
             print(list_group)
             return Restaurant_menu_items.objects.filter(group__name__in=list_group
-                                                        ,is_delete=False,is_active=True
+                                                        ,is_delete=False,is_active=True,
+                                                        is_validate=True,name__isnull=False,
+                                                        image64_mini__isnull=False,
+                                                        image64_full__isnull=False
                                                         ).order_by('?')[:6]
 
 def get_popular_search_terms(): # Phổ biến tìm kiếm
@@ -610,11 +663,15 @@ class LenmonNewsItemsAPIView(APIView):
     authentication_classes = [OAuth2Authentication]  # Kiểm tra xác thực OAuth2
     permission_classes = []  # Đảm bảo người dùng phải đăng nhập (token hợp lệ)
     def get(self, request):
-        new=Restaurant_menu_items.objects.filter(name__isnull=False,
-                                                    is_online=True,
-                                                    is_active=True,
-                                                    is_delete=False,
-                                                    menu__is_online=True)[:6]
+        new=Restaurant_menu_items.objects.filter(
+            is_online=True,
+            is_active=True,
+            is_delete=False,
+            menu__is_online=True,
+            name__isnull=False, # phải có tên
+            image64_mini__isnull=False, #phải có ảnh đại diện
+            is_validate=True, # phải được phê duyệt
+        )[:6]
         return Response(Restaurant_menu_itemsSTSerializer(new,many=True).data,
                         status=status.HTTP_200_OK)
             
@@ -628,10 +685,14 @@ class RestaurantMenuItemsViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         # Lọc các món ăn từ nhiều quán khác nhau
-        diverse_items=Restaurant_menu_items.objects.filter(is_active=True,
-                                                           is_delete=False,
-                                                           is_available=True
-                                                           ).order_by('?')
+        diverse_items=Restaurant_menu_items.objects.filter(
+            is_active=True,
+            is_delete=False,
+            is_available=True,
+            name__isnull=False, # phải có tên
+            image64_mini__isnull=False, #phải có ảnh đại diện
+            is_validate=True, # phải được phê duyệt
+        ).order_by('?')
         return diverse_items
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()

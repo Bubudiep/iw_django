@@ -658,7 +658,8 @@ class Restaurant_menu_itemsLTESSerializer(serializers.ModelSerializer):
     class Meta:
         model = Restaurant_menu_items
         fields = [
-            'id','price','name','image64_mini'
+            'id','price','name','image64_mini','is_active',
+            'is_available','is_delete'
         ]
     
 class Restaurant_menu_itemsRCMSerializer(serializers.ModelSerializer):
@@ -711,7 +712,7 @@ class RestaurantMenuItemsSerializer(serializers.ModelSerializer):
     mark_names = serializers.SerializerMethodField(read_only=True)
     class Meta:
         model = Restaurant_menu_items
-        fields = ['id','is_ship',
+        fields = ['id','is_ship','is_validate',
             'menu', 'name', 'price', 'is_hot', 'is_new', 'is_online','is_active',
             'image64_mini', 'image64_full', 'short_description', 'description', 
             'is_available', 'group', 'mark', 'group_names', 'mark_names','is_delete'
@@ -740,16 +741,17 @@ class RestaurantMenuItemsSerializer(serializers.ModelSerializer):
         if group_names is not None:
             groups = []
             for name in group_names:
-                group, created = Restaurant_menu_groups.objects.get_or_create(name=name)
+                group, created = Restaurant_menu_groups.objects.get_or_create(name=name,
+                                                                              menu=menu_item.menu)
                 groups.append(group)
             menu_item.group.set(groups)
         if mark_names is not None:
             marks = []
             for name in mark_names:
-                mark, created = Restaurant_menu_marks.objects.get_or_create(name=name)
+                mark, created = Restaurant_menu_marks.objects.get_or_create(name=name,
+                                                                            menu=menu_item.menu)
                 marks.append(mark)
             menu_item.mark.set(marks)
-     
      
 class Restaurant_menu_groupsSerializer(serializers.ModelSerializer):
     class Meta:
@@ -775,7 +777,13 @@ class Restaurant_menuSerializer(serializers.ModelSerializer):
 class Restaurant_menuViewSerializer(serializers.ModelSerializer):
     items = serializers.SerializerMethodField()  # Use SerializerMethodField to filter items
     def get_items(self, obj):
-        active_items = obj.restaurant_menu_items_set.filter(is_delete=False,is_active=True)
+        active_items = obj.restaurant_menu_items_set.filter(
+            is_delete=False,
+            is_active=True,
+            name__isnull=False, # phải có tên
+            image64_mini__isnull=False, #phải có ảnh đại diện
+            is_validate=True, # phải được phê duyệt
+        )
         return Restaurant_menu_itemsLTESSerializer(active_items, many=True).data
     class Meta:
         model = Restaurant_menu
@@ -858,15 +866,23 @@ class RestaurantDetailsLTESerializer(serializers.ModelSerializer):
 class RestaurantViewsSerializer(serializers.ModelSerializer):
     coupons = RestaurantCouponSerializer(many=True, source='restaurant_counpon_set')  # Đảm bảo lấy tất cả các coupon liên kết
     layouts = RestaurantLayoutSerializer(many=True, source='restaurant_layout_set')  # Đảm bảo lấy tất cả các layout liên kết
-    menu = Restaurant_menuSerializer(many=True, source='restaurant_menu_set')  # Đảm bảo lấy tất cả các coupon liên kết
+    menu = Restaurant_menuViewSerializer(many=True, source='restaurant_menu_set')  # Đảm bảo lấy tất cả các coupon liên kết
     isLike=serializers.SerializerMethodField(read_only=True)
     totalLike=serializers.SerializerMethodField(read_only=True)
     isFollow=serializers.SerializerMethodField(read_only=True)
     totalFollow=serializers.SerializerMethodField(read_only=True)
+    myOrder=serializers.SerializerMethodField(read_only=True)
     
     @cached_property
     def user(self):
         return self.context['request'].user
+    def get_myOrder(self, obj):
+        if self.user.is_authenticated:
+            qs_order=Restaurant_order.objects.filter(user_order=self.user,
+                                                     restaurant=obj)
+            return Restaurant_order_detailsSerializer(qs_order,many=True).data
+        return False
+    
     def get_totalLike(self, obj):
         return UserLikeLog.objects.filter(
             restaurant_item=obj,
@@ -898,9 +914,12 @@ class RestaurantViewsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Restaurant
         fields = [
-            'id', 'name', 'address', 'phone_number', 'avatar','wallpaper', 'Oder_online','totalLike',
-            'Takeaway', 'isRate', 'isChat', 'is_active', 'description', 'created_at','totalFollow',
-            'coupons', 'address_details','layouts','mohinh','menu','isLike','isFollow'
+            'id', 'name','myOrder', 'address', 'phone_number', 
+            'avatar','wallpaper', 'Oder_online','totalLike',
+            'Takeaway', 'isRate', 'isChat', 'is_active', 'description', 
+            'created_at','totalFollow',
+            'coupons', 'address_details','layouts','mohinh',
+            'menu','isLike','isFollow'
         ]
 class RestaurantMenuItemsDetailsSerializer(serializers.ModelSerializer):
     group_names = serializers.SerializerMethodField(read_only=True) #Danh mục trong menu
@@ -949,3 +968,13 @@ class Restaurant_orderSerializer(serializers.ModelSerializer):
         model = Restaurant_order
         fields = '__all__'
      
+class Restaurant_order_itemsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Restaurant_order_items
+        fields = '__all__'
+     
+class Restaurant_order_detailsSerializer(serializers.ModelSerializer):
+    items = Restaurant_order_itemsSerializer(many=True, source='order_items')
+    class Meta:
+        model = Restaurant_order
+        fields = '__all__'

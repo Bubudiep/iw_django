@@ -32,6 +32,7 @@ router.register(r'restaurant-view', api.RestaurantViewViewSet, basename='restaur
 router.register(r'res-all-items', api.RestaurantMenuItemsViewSet, basename='res-all-items')
 
 urlpatterns = [
+    path('cancel-order/', api.UserCancelOrderAPIView.as_view(), name='cancel-order'),
     path('my-list-order/', api.MyListOrderAPIView.as_view(), name='my-list-order'),
     path('oder-fast/', api.UserCreateOrderAPIView.as_view(), name='oder-fast'),
     path('close-socket/', api.RemoveSocketAPIView.as_view(), name='close-socket'),

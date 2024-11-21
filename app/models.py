@@ -972,6 +972,7 @@ class Restaurant_menu_items(models.Model):
     is_available = models.BooleanField(default=True)
     is_active = models.BooleanField(default=True)
     is_delete = models.BooleanField(default=False)
+    is_validate = models.BooleanField(default=False)
     image64_mini = models.TextField(null=True, blank=True)
     image64_full = models.TextField(null=True, blank=True)
     image64_sub1 = models.TextField(null=True, blank=True)
@@ -986,6 +987,27 @@ class Restaurant_menu_items(models.Model):
     def __str__(self):
         return f"{self.name} - {self.price}"
         
+class Restaurant_menu_items_actions_Log(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
+    restaurant = models.ForeignKey(Restaurant, on_delete=models.SET_NULL, null=True, blank=True)
+    item = models.ForeignKey(Restaurant_menu_items, on_delete=models.SET_NULL, null=True, blank=True)
+    action_type = models.CharField(max_length=50, choices=[
+        ('create', 'Create'),
+        ('apply', 'apply'),
+        ('block', 'block'),
+        ('reject', 'reject'),
+        ('delete', 'delete'),
+        ('update', 'update'),
+        ('hide', 'hide')
+    ])
+    is_pass = models.BooleanField(default=False)
+    notes = models.TextField(blank=True, null=True) 
+    created_at = models.DateTimeField(auto_now_add=True)
+    class Meta:
+        ordering = ['-id']
+    def __str__(self):
+        return f"{self.user} - {self.action_type} - {self.created_at}"
+    
 class UserLikeLog(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
     menu_item = models.ForeignKey(Restaurant_menu_items, on_delete=models.SET_NULL, null=True, blank=True)
@@ -1024,13 +1046,18 @@ class Restaurant_order(models.Model):
         ('RECEIVED', 'Đã nhận'),
         ('SHIPPING', 'Đang ship'),
         ('DELIVERED', 'Đã giao'),
+        ('PAIDING', 'Đang thanh toán'),
+        ('COMPLETE', 'Hoàn thành'),
+        ('NOT', 'Không nhận'),
+        ('CANCEL', 'Người dùng hủy'),
     ]
     OrderKey = models.CharField(max_length=32, unique=True, editable=False, blank=True, null=True)
     restaurant = models.ForeignKey(Restaurant, on_delete=models.SET_NULL, null=True, blank=True)
     user_order = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True) 
     group = models.ForeignKey(Restaurant_space_group, on_delete=models.SET_NULL, null=True, blank=True) 
     space = models.ForeignKey(Restaurant_space, on_delete=models.SET_NULL, null=True, blank=True) 
-    status = models.CharField(max_length=10, choices=ORDER_STATUS_CHOICES, default='CREATED')
+    status = models.CharField(max_length=20, choices=ORDER_STATUS_CHOICES, default='CREATED')
+    cancel_status = models.CharField(max_length=20, default=None,null=True,blank=True)
     is_use_coupon = models.BooleanField(default=True)  # Trạng thái có sẵn hay không
     is_takeaway = models.BooleanField(default=True)  # Mang về
     is_online = models.BooleanField(default=True)  # Đơn online
@@ -1055,7 +1082,9 @@ class Restaurant_order(models.Model):
         super(Restaurant_order, self).save(*args, **kwargs)
         
 class Restaurant_order_items(models.Model):
-    Order = models.ForeignKey(Restaurant_order, on_delete=models.SET_NULL, null=True, blank=True)
+    Order = models.ForeignKey(Restaurant_order, on_delete=models.SET_NULL, 
+                            null=True, blank=True,
+                            related_name='order_items')
     items = models.ForeignKey(Restaurant_menu_items, on_delete=models.CASCADE)  # Liên kết với quán ăn
     name = models.CharField(max_length=100)
     price = models.FloatField(default=0)
