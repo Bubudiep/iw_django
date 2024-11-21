@@ -782,9 +782,10 @@ class Restaurant_menuViewSerializer(serializers.ModelSerializer):
         fields = ['id', 'items', 'name', 'is_online', 'description']
         
 class RestaurantSpaceSerializer(serializers.ModelSerializer):
+    group_name = serializers.CharField(source='group.name', read_only=True)
     class Meta:
         model = Restaurant_space
-        fields = ['id', 'name', 'is_active', 'is_ordering', 'description', 'created_at', 'updated_at']
+        fields = ['id', 'name','group_name', 'is_active', 'is_ordering', 'description', 'created_at', 'updated_at']
 
 class RestaurantSpaceGroupSerializer(serializers.ModelSerializer):
     spaces = RestaurantSpaceSerializer(many=True, source='restaurant_space_set')  # Đảm bảo trường liên kết đúng
