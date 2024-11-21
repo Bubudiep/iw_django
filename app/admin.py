@@ -195,3 +195,24 @@ class Restaurant_socketAdmin(admin.ModelAdmin):
     save_as = True  # Kích hoạt Save as new
     list_filter = ('created_at',)
     ordering = ('-created_at',)
+    
+@admin.register(Restaurant_space)
+class Restaurant_spaceAdmin(admin.ModelAdmin):
+    save_as = True  # Kích hoạt Save as new
+    list_display_links = ("name",) 
+    list_editable=(
+        "is_inuse",
+        "is_active",
+        "is_ordering",)
+    list_display = ("name",
+        "group",
+        "user_use",
+        "is_inuse",
+        "is_active",
+        "is_ordering",
+        "description",
+        "created_at",
+        "updated_at")
+    readonly_fields = ("created_at", "updated_at")
+    list_filter = ('created_at',)
+    ordering = ('-created_at',)

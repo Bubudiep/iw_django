@@ -29,9 +29,13 @@ router.register(r'res-items', api.Restaurant_menu_itemsViewSet, basename='res-it
 router.register(r'res-items-details', api.Restaurant_menu_itemsDetailsViewSet, basename='res-items-details')
 router.register(r'restaurant', api.RestaurantViewSet, basename='restaurant')
 router.register(r'restaurant-view', api.RestaurantViewViewSet, basename='restaurant-view')
+router.register(r'restaurant-space', api.Restaurant_spaceDetailsViewSet, basename='restaurant-space')
 router.register(r'res-all-items', api.RestaurantMenuItemsViewSet, basename='res-all-items')
 
 urlpatterns = [
+    path('res-thutien/', api.ResPaidOrderAPIView.as_view(), name='res-thutien'),
+    path('res-giaohang/', api.ResDeliveryOrderAPIView.as_view(), name='res-giaohang'),
+    path('res-nhandon/', api.ResAcceptOrderAPIView.as_view(), name='res-nhandon'),
     path('cancel-order/', api.UserCancelOrderAPIView.as_view(), name='cancel-order'),
     path('my-list-order/', api.MyListOrderAPIView.as_view(), name='my-list-order'),
     path('oder-fast/', api.UserCreateOrderAPIView.as_view(), name='oder-fast'),

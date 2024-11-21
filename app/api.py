@@ -169,8 +169,23 @@ class UserCreateOrderAPIView(APIView):
                         qs_group=None
                         if spaceId is not None:
                             is_takeaway=False
-                            qs_space=Restaurant_space.objects.get(id=spaceId)
-                            qs_group=qs_space.group
+                            try:
+                                qs_user_table=Restaurant_space.objects.filter(user_use=user,is_inuse=True)
+                                if len(qs_user_table)>0:
+                                    return Response(data={"Error":"Bạn đang sử dụng một bàn khác"}, status=status.HTTP_400_BAD_REQUEST)
+                                qs_space=Restaurant_space.objects.get(id=spaceId,is_active=True)
+                                qs_group=qs_space.group
+                                if qs_space is not None and is_takeaway==False:
+                                    if qs_space.is_inuse==True:
+                                        return Response(data={"Error":"Bàn đang được sử dụng"}, status=status.HTTP_400_BAD_REQUEST)
+                                    qs_space.is_inuse=True
+                                    qs_space.user_use=user
+                                    qs_space.save()
+                            except Restaurant_space.DoesNotExist:
+                                return Response(data={"Error":"Vị trí bàn không tồn tại"}, status=status.HTTP_400_BAD_REQUEST)
+                        qs_old_order=Restaurant_order.objects.filter(restaurant=qs_restaurant,user_order=user,status="CREATED")
+                        if len(qs_old_order)>=3:
+                            return Response(data={"Error":"Tối đa 3 đơn hàng chờ duyệt"}, status=status.HTTP_400_BAD_REQUEST)
                         cr_oder=Restaurant_order.objects.create(OrderKey=uuid.uuid4().hex.upper(),
                                                                 restaurant=qs_restaurant,
                                                                 user_order=user,
@@ -264,7 +279,7 @@ class UserCreateOrderAPIView(APIView):
                     qs_profile=Profile.objects.filter(user__id__in=qs_staff).values_list("socket_id",flat=True)
                     alert=LenmonAlert.objects.create(is_private=True,
                                                      user=user,alert_type="oder",
-                                                     alert_sub_type="create",
+                                                     alert_sub_type="CREATED",
                                                      title="Đặt hàng",
                                                      message="Bạn đã đặt hàng thành công!",
                                                      target_type="key",
@@ -294,7 +309,199 @@ class UserCreateOrderAPIView(APIView):
                 return Response(data=res_data, status=status.HTTP_400_BAD_REQUEST)
         else:
             return Response(data={"Error":"Yêu cầu đăng nhập!"}, status=status.HTTP_403_FORBIDDEN)
-        
+            
+class ResPaidOrderAPIView(APIView):
+    authentication_classes = [OAuth2Authentication]  # Kiểm tra xác thực OAuth2
+    permission_classes = [IsAuthenticated]  # Đảm bảo người dùng phải đăng nhập (token hợp lệ)
+    def post(self, request):
+        if request.user.is_authenticated:
+            data = request.data
+            try:
+                order_id=data.get("id",None);
+                donban=data.get("donban",None);
+                try:
+                    qs_order=Restaurant_order.objects.get(id=order_id)
+                    qs_admin=Restaurant_staff.objects.get(user=request.user,is_Active=True,
+                                restaurant=qs_order.restaurant)
+                    
+                    if donban and qs_order.space is not None:
+                        qs_order.space.is_inuse=False
+                        qs_order.space.user_use=None
+                        qs_order.space.save()
+                        if qs_order.status=="COMPLETE":
+                            return Response(data={
+                                        "result":"PASS", 
+                                        "data":Restaurant_order_detailsSerializer(qs_order).data
+                                    },status=status.HTTP_200_OK)
+                    if qs_order.status=="COMPLETE" or qs_order.status=="NOT" or qs_order.status=="CANCEL":
+                        return Response(data={"Error":"Trạng thái hiện tại đã hoàn tất"},status=status.HTTP_400_BAD_REQUEST)
+                    if qs_order.status=="CREATED":
+                        return Response(data={"Error":"Chưa nhận đơn hàng"},status=status.HTTP_400_BAD_REQUEST)
+                    if qs_order.status=="RECEIVED":
+                        return Response(data={"Error":"Chưa giao đơn"},status=status.HTTP_400_BAD_REQUEST)
+                    if qs_order.status=="DELIVERED" or qs_order.status=="PAIDING":
+                        qs_order.status = "COMPLETE"
+                        qs_order.save()
+                        alert=LenmonAlert.objects.create(is_private=True,
+                                                        user=qs_order.user_order,alert_type="oder",
+                                                        alert_sub_type="COMPLETE",
+                                                        title="Thanh toán",
+                                                        message="Thanh toán đơn hàng thành công!",
+                                                        target_type="key",
+                                                        target=qs_order.OrderKey,
+                                                        is_checked=False)
+                        isfrom="offline"
+                        if qs_order.is_online==True:
+                            isfrom="online"
+                        qs_profile=Profile.objects.get(user=qs_order.user_order)
+                        print(f"{qs_profile.socket_id}")
+                        data_socket={
+                            "send_to":[qs_profile.socket_id],
+                            "type":"order",
+                            "from":isfrom,
+                            "action":"COMPLETE",
+                            "order_key":qs_order.OrderKey,
+                            "data":Restaurant_order_detailsSerializer(qs_order).data
+                        }
+                        send_socket("backend-enduser-event",data_socket)
+                    return Response(data={
+                                    "result":"PASS", 
+                                    "data":Restaurant_order_detailsSerializer(qs_order).data
+                                },status=status.HTTP_200_OK)
+                except Restaurant_order.DoesNotExist:
+                    return Response(data={"Error":"Không thấy order"},status=status.HTTP_400_BAD_REQUEST)
+                except Restaurant_staff.DoesNotExist:
+                    return Response(data={"Error":"Bạn không phải nhân viên của quán"},status=status.HTTP_400_BAD_REQUEST)
+            except Exception as e:
+                exc_type, exc_obj, exc_tb = sys.exc_info()
+                lineno = exc_tb.tb_lineno
+                file_path = exc_tb.tb_frame.f_code.co_filename
+                file_name = os.path.basename(file_path)
+                res_data = generate_response_json("Error", f"[{file_name}_{lineno}] {str(e)}")
+                return Response(data=res_data, status=status.HTTP_400_BAD_REQUEST)
+   
+class ResDeliveryOrderAPIView(APIView):
+    authentication_classes = [OAuth2Authentication]  # Kiểm tra xác thực OAuth2
+    permission_classes = [IsAuthenticated]  # Đảm bảo người dùng phải đăng nhập (token hợp lệ)
+    def post(self, request):
+        if request.user.is_authenticated:
+            data = request.data
+            try:
+                order_id=data.get("id",None);
+                itemIds=data.get("itemIds",None);
+                is_giao=data.get("is_giao",None);
+                try:
+                    qs_order=Restaurant_order.objects.get(id=order_id)
+                    qs_admin=Restaurant_staff.objects.get(user=request.user,is_Active=True,
+                                restaurant=qs_order.restaurant)
+                    if qs_order.status=="COMPLETE" or qs_order.status=="NOT" or qs_order.status=="CANCEL":
+                        return Response(data={"Error":"Trạng thái hiện tại đã hoàn tất"},status=status.HTTP_400_BAD_REQUEST)
+                    if qs_order.status=="CREATED":
+                        return Response(data={"Error":"Chưa nhận đơn hàng"},status=status.HTTP_400_BAD_REQUEST)
+                    for item in itemIds:
+                        qs_item=Restaurant_order_items.objects.get(id=item,Order=qs_order)
+                        if qs_item.status=='WAIT':
+                            if is_giao==True:
+                                qs_item.status="DONE"
+                            elif is_giao==False:
+                                qs_item.status="CANCEL"
+                        qs_item.save()
+                    if not Restaurant_order_items.objects.filter(Order=qs_order, status="WAIT").exists():
+                        qs_order.status = "DELIVERED"
+                        qs_order.save()
+                        alert=LenmonAlert.objects.create(is_private=True,
+                                                        user=qs_order.user_order,alert_type="oder",
+                                                        alert_sub_type="DELIVERED",
+                                                        title="Giao hàng",
+                                                        message="Hoàn thành đơn hàng!",
+                                                        target_type="key",
+                                                        target=qs_order.OrderKey,
+                                                        is_checked=False)
+                        isfrom="offline"
+                        if qs_order.is_online==True:
+                            isfrom="online"
+                        qs_profile=Profile.objects.get(user=qs_order.user_order)
+                        print(f"{qs_profile.socket_id}")
+                        data_socket={
+                            "send_to":[qs_profile.socket_id],
+                            "type":"order",
+                            "from":isfrom,
+                            "action":"DELIVERED",
+                            "order_key":qs_order.OrderKey,
+                            "data":Restaurant_order_detailsSerializer(qs_order).data
+                        }
+                        send_socket("backend-enduser-event",data_socket)
+                    return Response(data={
+                                    "result":"PASS", 
+                                    "data":Restaurant_order_detailsSerializer(qs_order).data
+                                },status=status.HTTP_200_OK)
+                except Restaurant_order.DoesNotExist:
+                    return Response(data={"Error":"Không thấy order"},status=status.HTTP_400_BAD_REQUEST)
+                except Restaurant_staff.DoesNotExist:
+                    return Response(data={"Error":"Bạn không phải nhân viên của quán"},status=status.HTTP_400_BAD_REQUEST)
+            except Exception as e:
+                exc_type, exc_obj, exc_tb = sys.exc_info()
+                lineno = exc_tb.tb_lineno
+                file_path = exc_tb.tb_frame.f_code.co_filename
+                file_name = os.path.basename(file_path)
+                res_data = generate_response_json("Error", f"[{file_name}_{lineno}] {str(e)}")
+                return Response(data=res_data, status=status.HTTP_400_BAD_REQUEST)
+            
+class ResAcceptOrderAPIView(APIView):
+    authentication_classes = [OAuth2Authentication]  # Kiểm tra xác thực OAuth2
+    permission_classes = [IsAuthenticated]  # Đảm bảo người dùng phải đăng nhập (token hợp lệ)
+    def post(self, request):
+        if request.user.is_authenticated:
+            data = request.data
+            try:
+                order_id=data.get("id",None);
+                try:
+                    qs_order=Restaurant_order.objects.get(id=order_id)
+                    qs_admin=Restaurant_staff.objects.get(user=request.user,is_Active=True,
+                                restaurant=qs_order.restaurant)
+                    if qs_order.status=="COMPLETE" or qs_order.status=="NOT" or qs_order.status=="CANCEL":
+                        return Response(data={"Error":"Trạng thái hiện tại đã hoàn tất"},status=status.HTTP_400_BAD_REQUEST)
+                    if qs_order.status=="CREATED":
+                        qs_order.status="RECEIVED"
+                    qs_order.save()
+                    alert=LenmonAlert.objects.create(is_private=True,
+                                                    user=qs_order.user_order,alert_type="oder",
+                                                    alert_sub_type="RECEIVED",
+                                                    title="Đặt hàng",
+                                                    message="Đơn hàng của bạn đã được chấp nhận!",
+                                                    target_type="key",
+                                                    target=qs_order.OrderKey,
+                                                    is_checked=False)
+                    isfrom="offline"
+                    if qs_order.is_online==True:
+                        isfrom="online"
+                    qs_profile=Profile.objects.get(user=qs_order.user_order)
+                    print(f"{qs_profile.socket_id}")
+                    data_socket={
+                        "send_to":[qs_profile.socket_id],
+                        "type":"order",
+                        "from":isfrom,
+                        "action":"RECEIVED",
+                        "order_key":qs_order.OrderKey,
+                        "data":Restaurant_order_detailsSerializer(qs_order).data
+                    }
+                    send_socket("backend-enduser-event",data_socket)
+                    return Response(data={
+                                    "result":"PASS", 
+                                    "data":Restaurant_order_detailsSerializer(qs_order).data
+                                },status=status.HTTP_200_OK)
+                except Restaurant_order.DoesNotExist:
+                    return Response(data={"Error":"Không thấy order"},status=status.HTTP_400_BAD_REQUEST)
+                except Restaurant_staff.DoesNotExist:
+                    return Response(data={"Error":"Bạn không phải nhân viên của quán"},status=status.HTTP_400_BAD_REQUEST)
+            except Exception as e:
+                exc_type, exc_obj, exc_tb = sys.exc_info()
+                lineno = exc_tb.tb_lineno
+                file_path = exc_tb.tb_frame.f_code.co_filename
+                file_name = os.path.basename(file_path)
+                res_data = generate_response_json("Error", f"[{file_name}_{lineno}] {str(e)}")
+                return Response(data=res_data, status=status.HTTP_400_BAD_REQUEST)
+            
 class UserCancelOrderAPIView(APIView):
     authentication_classes = [OAuth2Authentication]  # Kiểm tra xác thực OAuth2
     permission_classes = [IsAuthenticated]  # Đảm bảo người dùng phải đăng nhập (token hợp lệ)
@@ -2131,6 +2338,46 @@ class Restaurant_menu_itemsViewSet(viewsets.ModelViewSet):
             serializer = self.get_serializer(page, many=True)
             return self.get_paginated_response(serializer.data)
 
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+class Restaurant_spaceDetailsViewSet(viewsets.ModelViewSet):
+    serializer_class = RestaurantSpaceSerializer
+    authentication_classes = [OAuth2Authentication]
+    permission_classes = [IsAuthenticated]
+    filter_backends = (DjangoFilterBackend,)
+    pagination_class = StandardResultsSetPagination
+    # Chỉ cho phép GET
+    http_method_names = ['get']
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_superuser:
+            return Restaurant_space.objects.all()
+        qs_res=Restaurant_staff.objects.filter(user=user,is_Active=True).values_list("restaurant__id",flat=True)
+        return Restaurant_space.objects.filter(
+                group__layout__restaurant__in=qs_res
+            )
+
+    def retrieve(self, request, *args, **kwargs):
+        # Lấy id từ kwargs
+        queryset = self.get_queryset()
+        queryset = self.filter_queryset(queryset)  # Áp dụng bộ lọc cho queryset
+        item_id = kwargs.get('pk')
+        user = self.request.user
+        menu_item = queryset.get(pk=item_id)
+        serializer = self.get_serializer(menu_item)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        queryset = self.filter_queryset(queryset)  # Áp dụng bộ lọc cho queryset
+        page_size = self.request.query_params.get('page_size')
+        if page_size is not None:
+            self.pagination_class.page_size = int(page_size)
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 

@@ -871,6 +871,8 @@ class Restaurant_space(models.Model):
     layout = models.ForeignKey(Restaurant_layout, on_delete=models.CASCADE, null=True, blank=True)
     name = models.CharField(max_length=100, default="Vị trí 1")  # Mô tả thêm về quán ăn
     group = models.ForeignKey(Restaurant_space_group, on_delete=models.SET_NULL, null=True, blank=True)
+    user_use = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    is_inuse = models.BooleanField(default=False) # bật
     is_active = models.BooleanField(default=True) # bật
     is_ordering = models.BooleanField(default=False) # đã đặt trước
     description = models.TextField(blank=True, null=True)  # Mô tả thêm về quán ăn
@@ -1052,7 +1054,7 @@ class Restaurant_order(models.Model):
         ('CANCEL', 'Người dùng hủy'),
     ]
     OrderKey = models.CharField(max_length=32, unique=True, editable=False, blank=True, null=True)
-    restaurant = models.ForeignKey(Restaurant, on_delete=models.SET_NULL, null=True, blank=True)
+    restaurant = models.ForeignKey(Restaurant, on_delete=models.SET_NULL, null=True, blank=True, related_name="restaurant_order_set")
     user_order = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True) 
     group = models.ForeignKey(Restaurant_space_group, on_delete=models.SET_NULL, null=True, blank=True) 
     space = models.ForeignKey(Restaurant_space, on_delete=models.SET_NULL, null=True, blank=True) 
@@ -1082,10 +1084,16 @@ class Restaurant_order(models.Model):
         super(Restaurant_order, self).save(*args, **kwargs)
         
 class Restaurant_order_items(models.Model):
+    ORDER_STATUS_CHOICES = [
+        ('WAIT', 'Chưa giao'),
+        ('DONE', 'Đã giao'),
+        ('CANCEL', 'Hết hàng'),
+    ]
     Order = models.ForeignKey(Restaurant_order, on_delete=models.SET_NULL, 
                             null=True, blank=True,
                             related_name='order_items')
-    items = models.ForeignKey(Restaurant_menu_items, on_delete=models.CASCADE)  # Liên kết với quán ăn
+    items = models.ForeignKey(Restaurant_menu_items, on_delete=models.CASCADE) 
+    status = models.CharField(max_length=20, choices=ORDER_STATUS_CHOICES, default='WAIT')
     name = models.CharField(max_length=100)
     price = models.FloatField(default=0)
     quantity = models.IntegerField(default=0)

@@ -793,7 +793,7 @@ class RestaurantSpaceSerializer(serializers.ModelSerializer):
     group_name = serializers.CharField(source='group.name', read_only=True)
     class Meta:
         model = Restaurant_space
-        fields = ['id', 'name','group_name', 'is_active', 'is_ordering', 'description', 'created_at', 'updated_at']
+        fields = ['id', 'name','group_name','is_inuse','user_use', 'is_active', 'is_ordering', 'description', 'created_at', 'updated_at']
 
 class RestaurantSpaceGroupSerializer(serializers.ModelSerializer):
     spaces = RestaurantSpaceSerializer(many=True, source='restaurant_space_set')  # Đảm bảo trường liên kết đúng
@@ -818,41 +818,7 @@ class RestaurantCouponSerializer(serializers.ModelSerializer):
             'max_use', 'start_use', 'end_use', 'title', 'description',
             'description_short', 'created_at', 'updated_at'
         ]
-
-class RestaurantDetailsSerializer(serializers.ModelSerializer):
-    sockets = RestaurantSocketSerializer(many=True, source='restaurant_socket_set')  # Đảm bảo lấy tất cả các socket liên kết
-    layouts = RestaurantLayoutSerializer(many=True, source='restaurant_layout_set')  # Đảm bảo lấy tất cả các layout liên kết
-    coupons = RestaurantCouponSerializer(many=True, source='restaurant_counpon_set')  # Đảm bảo lấy tất cả các coupon liên kết
-    menu = Restaurant_menuSerializer(many=True, source='restaurant_menu_set')  # Đảm bảo lấy tất cả các coupon liên kết
-    class Meta:
-        model = Restaurant
-        fields = [
-            'id', 'name', 'address', 'phone_number', 'avatar','wallpaper', 'Oder_online','menu',
-            'Takeaway', 'isRate', 'isChat', 'is_active', 'description', 'created_at',
-            'updated_at', 'sockets', 'layouts', 'coupons', 'address_details'
-        ]
-    def to_representation(self, instance):
-        if instance.restaurant_menu_set.count() == 0:
-            menu=Restaurant_menu.objects.create(restaurant=instance,name="Default")
-            # Tạo các "mark" (đánh dấu)
-            marks = [
-                Restaurant_menu_marks(menu=menu, name="Mới"),
-                Restaurant_menu_marks(menu=menu, name="Tiêu biểu"),
-            ]
-            Restaurant_menu_marks.objects.bulk_create(marks)
-            # Tạo các "group" (nhóm)
-            groups = [
-                Restaurant_menu_groups(menu=menu, name="Món chính"),
-                Restaurant_menu_groups(menu=menu, name="Món phụ"),
-                Restaurant_menu_groups(menu=menu, name="Món gọi thêm"),
-                Restaurant_menu_groups(menu=menu, name="Nước uống"),
-                Restaurant_menu_groups(menu=menu, name="Ăn vặt"),
-                Restaurant_menu_groups(menu=menu, name="Món gọi kèm"),
-                Restaurant_menu_groups(menu=menu, name="Khác"),
-            ]
-            Restaurant_menu_groups.objects.bulk_create(groups)
-        return super().to_representation(instance)
-    
+  
 class RestaurantDetailsLTESerializer(serializers.ModelSerializer):
     coupons = RestaurantCouponSerializer(many=True, source='restaurant_counpon_set')  # Đảm bảo lấy tất cả các coupon liên kết
     class Meta:
@@ -975,6 +941,44 @@ class Restaurant_order_itemsSerializer(serializers.ModelSerializer):
      
 class Restaurant_order_detailsSerializer(serializers.ModelSerializer):
     items = Restaurant_order_itemsSerializer(many=True, source='order_items')
+    space_name = serializers.CharField(source='space.name', read_only=True, allow_null=True)
+    is_inuse = serializers.CharField(source='space.is_inuse', read_only=True, allow_null=True)
     class Meta:
         model = Restaurant_order
         fields = '__all__'
+        
+class RestaurantDetailsSerializer(serializers.ModelSerializer):
+    sockets = RestaurantSocketSerializer(many=True, source='restaurant_socket_set')  # Đảm bảo lấy tất cả các socket liên kết
+    layouts = RestaurantLayoutSerializer(many=True, source='restaurant_layout_set')  # Đảm bảo lấy tất cả các layout liên kết
+    coupons = RestaurantCouponSerializer(many=True, source='restaurant_counpon_set')  # Đảm bảo lấy tất cả các coupon liên kết
+    menu = Restaurant_menuSerializer(many=True, source='restaurant_menu_set')  # Đảm bảo lấy tất cả các coupon liên kết
+    orders = Restaurant_order_detailsSerializer(many=True, source='restaurant_order_set')  # Đảm bảo lấy tất cả các coupon liên kết
+    class Meta:
+        model = Restaurant
+        fields = [
+            'id', 'name', 'address', 'phone_number', 'avatar','wallpaper', 'Oder_online','menu',
+            'Takeaway', 'isRate', 'isChat', 'is_active', 'description', 'created_at',
+            'updated_at', 'sockets', 'layouts', 'coupons', 'address_details','orders'
+        ]
+    def to_representation(self, instance):
+        if instance.restaurant_menu_set.count() == 0:
+            menu=Restaurant_menu.objects.create(restaurant=instance,name="Default")
+            # Tạo các "mark" (đánh dấu)
+            marks = [
+                Restaurant_menu_marks(menu=menu, name="Mới"),
+                Restaurant_menu_marks(menu=menu, name="Tiêu biểu"),
+            ]
+            Restaurant_menu_marks.objects.bulk_create(marks)
+            # Tạo các "group" (nhóm)
+            groups = [
+                Restaurant_menu_groups(menu=menu, name="Món chính"),
+                Restaurant_menu_groups(menu=menu, name="Món phụ"),
+                Restaurant_menu_groups(menu=menu, name="Món gọi thêm"),
+                Restaurant_menu_groups(menu=menu, name="Nước uống"),
+                Restaurant_menu_groups(menu=menu, name="Ăn vặt"),
+                Restaurant_menu_groups(menu=menu, name="Món gọi kèm"),
+                Restaurant_menu_groups(menu=menu, name="Khác"),
+            ]
+            Restaurant_menu_groups.objects.bulk_create(groups)
+        return super().to_representation(instance)
+  
