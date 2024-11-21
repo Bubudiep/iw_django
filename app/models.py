@@ -795,6 +795,7 @@ class Restaurant(models.Model):
     phone_number = models.CharField(max_length=15)  # Số điện thoại quán ăn
     mohinh = models.CharField(max_length=200,blank=True, null=True)
     avatar = models.TextField(blank=True, null=True)
+    wallpaper = models.TextField(blank=True, null=True)
     Oder_online = models.BooleanField(default=True)
     Takeaway = models.BooleanField(default=True)
     isRate = models.BooleanField(default=True)
