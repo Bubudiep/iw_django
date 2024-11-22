@@ -208,6 +208,18 @@ class Restaurant_orderAdmin(admin.ModelAdmin):
     list_filter = ('created_at',)
     ordering = ('-created_at',)
     
+@admin.register(Restaurant_space_group)
+class Restaurant_space_groupAdmin(admin.ModelAdmin):
+    save_as = True  # Kích hoạt Save as new
+    list_filter = ('created_at',)
+    ordering = ('-created_at',)
+    
+@admin.register(Restaurant_layout)
+class Restaurant_layoutAdmin(admin.ModelAdmin):
+    save_as = True  # Kích hoạt Save as new
+    list_filter = ('created_at',)
+    ordering = ('-created_at',)
+    
 @admin.register(Restaurant_staff)
 class Restaurant_staffAdmin(admin.ModelAdmin):
     save_as = True  # Kích hoạt Save as new
