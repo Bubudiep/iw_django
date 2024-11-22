@@ -873,6 +873,7 @@ class RestaurantViewsSerializer(serializers.ModelSerializer):
     isFollow=serializers.SerializerMethodField(read_only=True)
     totalFollow=serializers.SerializerMethodField(read_only=True)
     myOrder=serializers.SerializerMethodField(read_only=True)
+    mySpace=serializers.SerializerMethodField(read_only=True)
     
     @cached_property
     def user(self):
@@ -882,6 +883,19 @@ class RestaurantViewsSerializer(serializers.ModelSerializer):
             qs_order=Restaurant_order.objects.filter(user_order=self.user,
                                                      restaurant=obj)
             return Restaurant_order_detailsSerializer(qs_order,many=True).data
+        return False
+    
+    def get_mySpace(self, obj):
+        if self.user.is_authenticated:
+            qs_space=Restaurant_order.objects.filter(user_order=self.user,
+                restaurant=obj,is_clear=True,space__isnull=False)
+            if len(qs_space)>0:
+                return {
+                    "space":qs_space[0].space.id,
+                    "group":qs_space[0].group.id
+                }
+            else:
+                return False
         return False
     
     def get_totalLike(self, obj):
@@ -920,7 +934,7 @@ class RestaurantViewsSerializer(serializers.ModelSerializer):
             'Takeaway', 'isRate', 'isChat', 'is_active', 'description', 
             'created_at','totalFollow',
             'coupons', 'address_details','layouts','mohinh',
-            'menu','isLike','isFollow'
+            'menu','isLike','isFollow','mySpace'
         ]
 class RestaurantMenuItemsDetailsSerializer(serializers.ModelSerializer):
     group_names = serializers.SerializerMethodField(read_only=True) #Danh mục trong menu

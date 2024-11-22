@@ -170,13 +170,13 @@ class UserCreateOrderAPIView(APIView):
                         if spaceId is not None:
                             is_takeaway=False
                             try:
-                                qs_user_table=Restaurant_space.objects.filter(user_use=user,is_inuse=True)
+                                qs_user_table=Restaurant_space.objects.filter(user_use=user,is_inuse=True).exclude(id=spaceId)
                                 if len(qs_user_table)>0:
                                     return Response(data={"Error":"Bạn đang sử dụng một bàn khác"}, status=status.HTTP_400_BAD_REQUEST)
                                 qs_space=Restaurant_space.objects.get(id=spaceId,is_active=True)
                                 qs_group=qs_space.group
                                 if qs_space is not None and is_takeaway==False:
-                                    if qs_space.is_inuse==True:
+                                    if qs_space.is_inuse==True and qs_space.user_use!=user:
                                         return Response(data={"Error":"Bàn đang được sử dụng"}, status=status.HTTP_400_BAD_REQUEST)
                                     qs_space.is_inuse=True
                                     qs_space.user_use=user
@@ -1359,99 +1359,107 @@ class ZaloLoginAPIView(APIView):
         zalo_name = request.data.get('zalo_name',None)
         zalo_avatar = request.data.get('zalo_avatar',None)
 
-        if not zalo_id:
-            return Response({'detail': 'Zalo ID is required'}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            if not zalo_id:
+                return Response({'detail': 'Zalo ID is required'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Xác thực người dùng qua zalo_id
-        profile = get_object_or_404(Profile, zalo_id=zalo_id)
-        if zalo_name is not None and profile.zalo_name!=zalo_name:
-            profile.zalo_name=zalo_name
-        if zalo_avatar is not None and profile.zalo_avatar!=zalo_avatar:
-            profile.zalo_avatar=zalo_avatar
-        if (profile.zalo_phone is None or profile.zalo_phone.strip()=="") and zalo_phone is not None:
-            profile.zalo_phone=zalo_phone
-        profile.save()
-        user = profile.user
-        qs_app = Application.objects.first()
-        expires_in_seconds = settings.OAUTH2_PROVIDER.get('ACCESS_TOKEN_EXPIRE_SECONDS', 360000)
-        
-        # Lấy thời gian hiện tại
-        now = timezone.now()
+            # Xác thực người dùng qua zalo_id
+            profile = get_object_or_404(Profile, zalo_id=zalo_id)
+            if zalo_name is not None and profile.zalo_name!=zalo_name:
+                profile.zalo_name=zalo_name
+            if zalo_avatar is not None and profile.zalo_avatar!=zalo_avatar:
+                profile.zalo_avatar=zalo_avatar
+            if (profile.zalo_phone is None or profile.zalo_phone.strip()=="") and zalo_phone is not None:
+                profile.zalo_phone=zalo_phone
+            profile.save()
+            user = profile.user
+            qs_app = Application.objects.first()
+            expires_in_seconds = settings.OAUTH2_PROVIDER.get('ACCESS_TOKEN_EXPIRE_SECONDS', 360000)
+            
+            # Lấy thời gian hiện tại
+            now = timezone.now()
 
-        # Kiểm tra xem có token nào còn hạn không
-        existing_tokens = AccessToken.objects.filter(user=user, application=qs_app)
+            # Kiểm tra xem có token nào còn hạn không
+            existing_tokens = AccessToken.objects.filter(user=user, application=qs_app)
 
-        # Xóa token nào đã hết hạn
-        for token in existing_tokens:
-            if token.expires < now:
-                token.delete()
+            # Xóa token nào đã hết hạn
+            for token in existing_tokens:
+                if token.expires < now:
+                    token.delete()
 
-        # Nếu còn token hợp lệ, trả về token đó
-        key = request.data.get('key',None)
-        valid_token = existing_tokens.filter(expires__gt=now).first()
-        if valid_token:
+            # Nếu còn token hợp lệ, trả về token đó
+            key = request.data.get('key',None)
+            valid_token = existing_tokens.filter(expires__gt=now).first()
+            if valid_token:
+                if key is not None:
+                    try:
+                        qs_key=QR_Login.objects.get(QRKey=key)
+                        if qs_key:
+                            send_socket("backend-event",{
+                                "token":valid_token.token,
+                                "expires_in":int((valid_token.expires - now).total_seconds()),
+                                "room":qs_key.QRKey,
+                                "status":"PASS"
+                            })
+                            qs_key.user=user
+                            qs_key.isSuccess=True
+                            qs_key.save()
+                    except QR_Login.DoesNotExist:
+                        return Response({'Error': 'Có lỗi xảy ra!'}, status=status.HTTP_403_FORBIDDEN)
+                return JsonResponse({
+                    'access_token': valid_token.token,
+                    'expires_in': int((valid_token.expires - now).total_seconds()),
+                    'token_type': 'Bearer',
+                    'scope': valid_token.scope,
+                    'refresh_token': 'existing_refresh_token',  # Add your logic to handle refresh tokens
+                    'user':UserSerializer(user,many=False).data
+                })
+
+            # Nếu không có token hợp lệ, tạo token mới
+            expires_at = now + timedelta(seconds=expires_in_seconds)
+
+            # Tạo token mới cho người dùng
+            access_token_str = generate_short_token(length=32)  # Token ngắn
+            refresh_token_str = generate_refresh_token(length=32)  # Refresh token ngắn
+
+            try:
+                token = AccessToken.objects.create(
+                    user=user,
+                    application=qs_app,
+                    token=access_token_str,
+                    expires=expires_at
+                )
+            except Exception as e:
+                return Response({'detail': 'Internal server error'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+            # Trả về token mới
             if key is not None:
-                try:
-                    qs_key=QR_Login.objects.get(QRKey=key)
-                    if qs_key:
-                        send_socket("backend-event",{
-                            "token":valid_token.token,
-                            "expires_in":int((valid_token.expires - now).total_seconds()),
-                            "room":qs_key.QRKey,
-                            "status":"PASS"
-                        })
-                        qs_key.user=user
-                        qs_key.isSuccess=True
-                        qs_key.save()
-                except QR_Login.DoesNotExist:
-                    return Response({'Error': 'Có lỗi xảy ra!'}, status=status.HTTP_403_FORBIDDEN)
+                qs_key=QR_Login.objects.get(QRKey=key)
+                if qs_key:
+                    send_socket("backend-event",{
+                        "token":access_token_str,
+                        "expires_in":expires_in_seconds,
+                        "room":qs_key.QRKey,
+                        "status":"PASS"
+                    })
+                    qs_key.user=user
+                    qs_key.isSuccess=True
+                    qs_key.save()
             return JsonResponse({
-                'access_token': valid_token.token,
-                'expires_in': int((valid_token.expires - now).total_seconds()),
+                'access_token': access_token_str,
+                'expires_in': expires_in_seconds,
                 'token_type': 'Bearer',
-                'scope': valid_token.scope,
-                'refresh_token': 'existing_refresh_token',  # Add your logic to handle refresh tokens
+                'scope': 'read write',
+                'refresh_token': refresh_token_str,
                 'user':UserSerializer(user,many=False).data
             })
-
-        # Nếu không có token hợp lệ, tạo token mới
-        expires_at = now + timedelta(seconds=expires_in_seconds)
-
-        # Tạo token mới cho người dùng
-        access_token_str = generate_short_token(length=32)  # Token ngắn
-        refresh_token_str = generate_refresh_token(length=32)  # Refresh token ngắn
-
-        try:
-            token = AccessToken.objects.create(
-                user=user,
-                application=qs_app,
-                token=access_token_str,
-                expires=expires_at
-            )
         except Exception as e:
-            return Response({'detail': 'Internal server error'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-        # Trả về token mới
-        if key is not None:
-            qs_key=QR_Login.objects.get(QRKey=key)
-            if qs_key:
-                send_socket("backend-event",{
-                    "token":access_token_str,
-                    "expires_in":expires_in_seconds,
-                    "room":qs_key.QRKey,
-                    "status":"PASS"
-                })
-                qs_key.user=user
-                qs_key.isSuccess=True
-                qs_key.save()
-        return JsonResponse({
-            'access_token': access_token_str,
-            'expires_in': expires_in_seconds,
-            'token_type': 'Bearer',
-            'scope': 'read write',
-            'refresh_token': refresh_token_str,
-            'user':UserSerializer(user,many=False).data
-        })
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            lineno = exc_tb.tb_lineno
+            file_path = exc_tb.tb_frame.f_code.co_filename
+            file_name = os.path.basename(file_path)
+            res_data = generate_response_json("FAIL", f"[{file_name}_{lineno}] {str(e)}")
+            return Response(data=res_data, status=status.HTTP_400_BAD_REQUEST)
    
 class ZaloLogin_Lemon_APIView(APIView):
     def post(self, request):
