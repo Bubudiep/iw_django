@@ -2564,9 +2564,10 @@ class RestaurantViewViewSet(viewsets.ModelViewSet):
     pagination_class = StandardResultsSetPagination
     http_method_names = ['get']
     def get_queryset(self):
-        user = self.request.user
-        if user.is_superuser:
-            return Restaurant.objects.all()
+        if self.request.user.is_authenticated:
+            user = self.request.user
+            if user.is_superuser:
+                return Restaurant.objects.all()
         return Restaurant.objects.filter(is_active=True)
     
     def retrieve(self, request, *args, **kwargs):
@@ -2574,12 +2575,12 @@ class RestaurantViewViewSet(viewsets.ModelViewSet):
         queryset = self.get_queryset()
         queryset = self.filter_queryset(queryset)  # Áp dụng bộ lọc cho queryset
         item_id = kwargs.get('pk')
-        user = self.request.user
         try:
             restaurant = queryset.get(pk=item_id)
             fromClick = self.request.query_params.get('from')
             if fromClick is not None:
-                log_user_action(user=user, action_type='click', restaurant_item=restaurant)
+                if self.request.user.is_authenticated:
+                    log_user_action(user=self.request.user, action_type='click', restaurant_item=restaurant)
         except Restaurant.DoesNotExist:
             raise NotFound(detail="Restaurant not found", code=status.HTTP_404_NOT_FOUND)
         serializer = self.get_serializer(restaurant)
