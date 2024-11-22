@@ -6,6 +6,41 @@ from django.db.models import Max,Sum
 from rest_framework.permissions import IsAuthenticated
 from django.utils.functional import cached_property
 
+class LenmonRegisterSerializer(serializers.ModelSerializer):
+    # Bạn có thể thêm các trường zalo_name và zalo_id vào đây
+    zalo_name = serializers.CharField(required=False)
+    zalo_phone = serializers.CharField(required=False)
+    zalo_avatar = serializers.CharField(required=False)
+    class Meta:
+        model = User
+        fields = ['username', 'password', 'email','zalo_name','zalo_phone','zalo_avatar']
+    def create(self, validated_data):
+        # Lấy các thông tin zalo_name và zalo_id từ dữ liệu đã xác thực
+        zalo_name = validated_data.pop('zalo_name', None)
+        zalo_id = f"GUEST-{uuid.uuid4().hex.upper()}"
+        zalo_phone = validated_data.pop('zalo_phone',None)
+        zalo_avatar = validated_data.pop('zalo_avatar',None)
+        # create_profile
+        print(zalo_name)
+        if zalo_name is not None:
+            qs_zalo_id=Profile.objects.filter(zalo_id=zalo_id).count()
+            if qs_zalo_id==0:
+                user = User.objects.create_user(username=validated_data['username'],
+                                                password=validated_data['password'],
+                                                email=validated_data['email'])
+                Profile.objects.create(
+                    user=user,
+                    zalo_name=zalo_name,
+                    zalo_id=zalo_id,
+                    zalo_phone=zalo_phone,
+                    zalo_avatar=zalo_avatar,
+                )
+            else:
+                raise serializers.ValidationError({
+                    'zalo_id': f"Zalo ID {zalo_id} đã tồn tại!"
+                })
+        return user
+    
 class RegisterSerializer(serializers.ModelSerializer):
     # Bạn có thể thêm các trường zalo_name và zalo_id vào đây
     zalo_name = serializers.CharField(required=False)

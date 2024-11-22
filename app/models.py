@@ -975,6 +975,7 @@ class Restaurant_menu_items(models.Model):
     is_active = models.BooleanField(default=True)
     is_delete = models.BooleanField(default=False)
     is_validate = models.BooleanField(default=False)
+    index=models.IntegerField(default=0)
     image64_mini = models.TextField(null=True, blank=True)
     image64_full = models.TextField(null=True, blank=True)
     image64_sub1 = models.TextField(null=True, blank=True)

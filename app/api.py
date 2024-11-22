@@ -1577,7 +1577,127 @@ class RegisterView(APIView):
             except Exception as e:
                 return Response({'detail': 'Internal server error'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                 
+class TokenLoginAPIView(APIView):
+    authentication_classes = [OAuth2Authentication]  # Kiểm tra xác thực OAuth2
+    permission_classes = [IsAuthenticated]  # Đảm bảo người dùng phải đăng nhập (token hợp lệ)
+    def post(self, request):
+        if request.user.is_authenticated:
+            user = request.user
+            qs_app = Application.objects.first()
+            expires_in_seconds = settings.OAUTH2_PROVIDER.get('ACCESS_TOKEN_EXPIRE_SECONDS', 360000)
+            now = timezone.now()
+            existing_tokens = AccessToken.objects.filter(user=user, application=qs_app)
+            for token in existing_tokens:
+                if token.expires < now:
+                    token.delete()
+            valid_token = existing_tokens.filter(expires__gt=now).first()
+            if valid_token:
+                return JsonResponse({
+                    'access_token': valid_token.token,
+                    'expires_in': int((valid_token.expires - now).total_seconds()),
+                    'token_type': 'Bearer',
+                    'scope': valid_token.scope,
+                    'refresh_token': 'existing_refresh_token',  # Add your logic to handle refresh tokens
+                    'user':UserLenmonSerializer(user,many=False).data
+                })
+            else:
+                expires_at = now + timedelta(seconds=expires_in_seconds)
+                access_token_str = generate_short_token(length=32)  # Token ngắn
+                refresh_token_str = generate_refresh_token(length=32)  # Refresh token ngắn
+                try:
+                    token = AccessToken.objects.create(
+                        user=user,
+                        application=qs_app,
+                        token=access_token_str,
+                        expires=expires_at
+                    )
+                except Exception as e:
+                    return Response({'detail': 'Internal server error'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                return JsonResponse({
+                    'access_token': access_token_str,
+                    'expires_in': expires_in_seconds,
+                    'token_type': 'Bearer',
+                    'scope': 'read write',
+                    'refresh_token': refresh_token_str,
+                    'user':UserSerializer(user,many=False).data
+                })
+class LenmonRegisterView(APIView):
+    permission_classes = [AllowAny]
+    def post(self, request):
+        data=request.data
+        profile=Profile.objects.filter(zalo_name=data.get("zalo_name"),
+                                     zalo_phone=data.get("zalo_phone"))
+        if len(profile)==1:
+            user = profile[0].user
+            qs_app = Application.objects.first()
+            expires_in_seconds = settings.OAUTH2_PROVIDER.get('ACCESS_TOKEN_EXPIRE_SECONDS', 360000)
+            now = timezone.now()
+            existing_tokens = AccessToken.objects.filter(user=user, application=qs_app)
+            for token in existing_tokens:
+                if token.expires < now:
+                    token.delete()
+            valid_token = existing_tokens.filter(expires__gt=now).first()
+            if valid_token:
+                return JsonResponse({
+                    'access_token': valid_token.token,
+                    'expires_in': int((valid_token.expires - now).total_seconds()),
+                    'token_type': 'Bearer',
+                    'scope': valid_token.scope,
+                    'refresh_token': 'existing_refresh_token',  # Add your logic to handle refresh tokens
+                    'user':UserLenmonSerializer(user,many=False).data
+                })
+            expires_at = now + timedelta(seconds=expires_in_seconds)
+            access_token_str = generate_short_token(length=32)  # Token ngắn
+            refresh_token_str = generate_refresh_token(length=32)  # Refresh token ngắn
+
+            try:
+                token = AccessToken.objects.create(
+                    user=user,
+                    application=qs_app,
+                    token=access_token_str,
+                    expires=expires_at
+                )
+            except Exception as e:
+                return Response({'detail': 'Internal server error'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return JsonResponse({
+                'access_token': access_token_str,
+                'expires_in': expires_in_seconds,
+                'token_type': 'Bearer',
+                'scope': 'read write',
+                'refresh_token': refresh_token_str,
+                'user':UserSerializer(user,many=False).data
+            })
+        serializer = LenmonRegisterSerializer(data=request.data)
+        if serializer.is_valid():
+            user = serializer.save()
+            profile=Profile.objects.get(user=user)
+            qs_app = Application.objects.first()
+            expires_in_seconds = settings.OAUTH2_PROVIDER.get('ACCESS_TOKEN_EXPIRE_SECONDS', 3600)
+            expires_at = timezone.now() + timedelta(seconds=expires_in_seconds)
+            access_token_str = generate_short_token(length=32)  # Token ngắn
+            refresh_token_str = generate_refresh_token(length=32)  # Refresh token ngắn
+            try:
+                token = AccessToken.objects.create(
+                    user=user,
+                    application=qs_app,
+                    token=access_token_str,
+                    expires=expires_at
+                )
+                # Trả về token
+                return JsonResponse({
+                    'access_token': token.token,
+                    'expires_in': expires_in_seconds,
+                    'token_type': 'Bearer',
+                    'scope': 'read write',
+                    'refresh_token': refresh_token_str,
+                    'user':UserSerializer(user,many=False).data
+                })
+            except Exception as e:
+                return Response({'detail': 'Internal server error'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
+
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()

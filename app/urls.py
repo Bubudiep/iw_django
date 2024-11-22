@@ -59,7 +59,9 @@ urlpatterns = [
     path('zlogin/', api.ZaloLoginAPIView.as_view(), name='zlogin'),
     path('zalo-login/', api.ZaloLogin_Lemon_APIView.as_view(), name='zalo-login'),
     path('login/', api.CustomTokenView.as_view(), name='login'),
+    path('token-check/', api.TokenLoginAPIView.as_view(), name='token-check'),
     path('register/', api.RegisterView.as_view(), name='register'),
+    path('lenmon-register/', api.LenmonRegisterView.as_view(), name='lenmon-register'),
     path('dilam/', api.DilamAPIView.as_view(), name='dilam'),
     path('', include(router.urls)),  # Thêm router vào urlpatterns
 ]
