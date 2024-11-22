@@ -2558,7 +2558,7 @@ class Restaurant_menu_itemsDetailsViewSet(viewsets.ModelViewSet):
 class RestaurantViewViewSet(viewsets.ModelViewSet):
     serializer_class = RestaurantViewsSerializer
     authentication_classes = [OAuth2Authentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = []
     filter_backends = (DjangoFilterBackend,)
     filterset_class = RestaurantFilter
     pagination_class = StandardResultsSetPagination
