@@ -181,6 +181,12 @@ class Restaurant_menu_itemsAdmin(admin.ModelAdmin):
         "is_active",
         "is_delete",
         "is_validate")
+    list_editable=(
+        "is_ship",
+        "is_available",
+        "is_active",
+        "is_delete",
+        "is_validate")
     list_filter = ('created_at',)
     ordering = ('-created_at',)
     
@@ -192,6 +198,12 @@ class Restaurant_menu_groupsAdmin(admin.ModelAdmin):
     
 @admin.register(Restaurant_socket)
 class Restaurant_socketAdmin(admin.ModelAdmin):
+    save_as = True  # Kích hoạt Save as new
+    list_filter = ('created_at',)
+    ordering = ('-created_at',)
+    
+@admin.register(Restaurant_order)
+class Restaurant_orderAdmin(admin.ModelAdmin):
     save_as = True  # Kích hoạt Save as new
     list_filter = ('created_at',)
     ordering = ('-created_at',)
