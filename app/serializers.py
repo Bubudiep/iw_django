@@ -888,7 +888,7 @@ class RestaurantViewsSerializer(serializers.ModelSerializer):
     def get_mySpace(self, obj):
         if self.user.is_authenticated:
             qs_space=Restaurant_order.objects.filter(user_order=self.user,
-                restaurant=obj,is_clear=True,space__isnull=False)
+                restaurant=obj,is_clear=True,space__isnull=False).exclude(status="CANCEL")
             if len(qs_space)>0:
                 return {
                     "space":qs_space[0].space.id,
