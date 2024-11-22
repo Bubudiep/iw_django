@@ -326,8 +326,10 @@ class ResPaidOrderAPIView(APIView):
                     
                     if donban and qs_order.space is not None:
                         qs_order.space.is_inuse=False
+                        qs_order.is_clear=True
                         qs_order.space.user_use=None
                         qs_order.space.save()
+                        qs_order.save()
                         if qs_order.status=="COMPLETE":
                             return Response(data={
                                         "result":"PASS", 

@@ -1058,6 +1058,7 @@ class Restaurant_order(models.Model):
     user_order = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True) 
     group = models.ForeignKey(Restaurant_space_group, on_delete=models.SET_NULL, null=True, blank=True) 
     space = models.ForeignKey(Restaurant_space, on_delete=models.SET_NULL, null=True, blank=True) 
+    is_clear = models.BooleanField(default=False)  # Trạng thái có sẵn hay không
     status = models.CharField(max_length=20, choices=ORDER_STATUS_CHOICES, default='CREATED')
     cancel_status = models.CharField(max_length=20, default=None,null=True,blank=True)
     is_use_coupon = models.BooleanField(default=True)  # Trạng thái có sẵn hay không
