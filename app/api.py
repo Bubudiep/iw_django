@@ -524,6 +524,12 @@ class UserCancelOrderAPIView(APIView):
                 if qs_order.status=="RECEIVED":
                     qs_order.cancel_status="RECEIVED"
                     qs_order.status="CANCEL"
+                if qs_order.space:
+                    qs_order.space.is_inuse=False
+                    qs_order.space.user_use=None
+                    qs_order.space.save()
+                    qs_order.is_clear=True
+                    qs_order.space=None
                 qs_order.save()
                 
                 qs_staff=Restaurant_staff.objects.filter(restaurant=qs_order.restaurant,
@@ -536,7 +542,7 @@ class UserCancelOrderAPIView(APIView):
                     "send_to":list(qs_profile),
                     "type":"order",
                     "from":isfrom,
-                    "action":"cancel",
+                    "action":"CANCEL",
                     "order_key":qs_order.OrderKey,
                     "data":Restaurant_order_detailsSerializer(qs_order).data
                 }

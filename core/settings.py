@@ -63,6 +63,7 @@ OAUTH2_PROVIDER = {
     }
 }
 CORS_ALLOWED_ORIGINS = [
+    'https://order.lenmon.cloud',
     'https://lenmon.cloud',
     'https://ipays.vn',
     'http://localhost:3001',
@@ -79,7 +80,9 @@ CORS_ALLOWED_ORIGINS = [
 ALLOWED_HOSTS = [
     'ipays.vn',
     'https://ipays.vn',
+    'https://order.lenmon.cloud',
     'https://lenmon.cloud',
+    'www.order.lenmon.cloud',
     'www.lenmon.cloud',
     'www.ipays.vn',
     'localhost',
