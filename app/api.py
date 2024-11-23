@@ -327,6 +327,7 @@ class ResPaidOrderAPIView(APIView):
                     if donban and qs_order.space is not None:
                         qs_order.space.is_inuse=False
                         qs_order.is_clear=True
+                        qs_order.is_paided=True
                         qs_order.space.user_use=None
                         qs_order.space.save()
                         qs_order.save()
@@ -343,6 +344,7 @@ class ResPaidOrderAPIView(APIView):
                         return Response(data={"Error":"Chưa giao đơn"},status=status.HTTP_400_BAD_REQUEST)
                     if qs_order.status=="DELIVERED" or qs_order.status=="PAIDING":
                         qs_order.status = "COMPLETE"
+                        qs_order.is_paided=True
                         qs_order.save()
                         alert=LenmonAlert.objects.create(is_private=True,
                                                         user=qs_order.user_order,alert_type="oder",
@@ -503,6 +505,39 @@ class ResAcceptOrderAPIView(APIView):
                 file_name = os.path.basename(file_path)
                 res_data = generate_response_json("Error", f"[{file_name}_{lineno}] {str(e)}")
                 return Response(data=res_data, status=status.HTTP_400_BAD_REQUEST)
+            
+
+class UserPaidOrderAPIView(APIView):
+    authentication_classes = [OAuth2Authentication]  # Kiểm tra xác thực OAuth2
+    permission_classes = [IsAuthenticated]  # Đảm bảo người dùng phải đăng nhập (token hợp lệ)
+    def post(self, request):
+        if request.user.is_authenticated:
+            data = request.data
+            try:
+                order_id=data.get("id",None);
+                qs_order=Restaurant_order.objects.get(id=order_id,user_order=request.user)
+                qs_order.is_paid=True
+                qs_order.save()
+                qs_staff=Restaurant_staff.objects.filter(restaurant=qs_order.restaurant,
+                                                            is_Active=True).values_list("user__id",flat=True)
+                qs_profile=Profile.objects.filter(user__id__in=qs_staff).values_list("socket_id",flat=True)
+                isfrom="offline"
+                if qs_order.is_online==True:
+                    isfrom="online"
+                if qs_order.is_paided==False:
+                    data_socket={
+                        "send_to":list(qs_profile),
+                        "type":"order",
+                        "from":isfrom,
+                        "action":"paid",
+                        "order_key":qs_order.OrderKey,
+                        "data":Restaurant_order_detailsSerializer(qs_order).data
+                    }
+                    send_socket("backend-enduser-event",data_socket)
+                return Response(data={"result":"PASS",
+                                      "data":Restaurant_order_detailsSerializer(qs_order).data},status=status.HTTP_200_OK)
+            except Exception as e:
+                return Response(data={"Error":"Xảy ra lỗi khi cập nhập"},status=status.HTTP_403_FORBIDDEN)
             
 class UserCancelOrderAPIView(APIView):
     authentication_classes = [OAuth2Authentication]  # Kiểm tra xác thực OAuth2
