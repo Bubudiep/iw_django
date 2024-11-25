@@ -765,6 +765,15 @@ class DanhsachNhanvien(models.Model):
     congty = models.ForeignKey(DanhsachCongty, on_delete=models.SET_NULL, null=True, blank=True)
     manhanvien = models.CharField(max_length=200, unique=True, null=True, blank=True)
     HovaTen =  models.CharField(max_length=200, null=True, blank=True)
+    calamviec =  models.CharField(max_length=50,default='cangay', choices=[
+        ('cangay', 'cangay'),
+        ('cadem', 'cadem'),
+        ('ca1', 'ca1'),
+        ('ca2', 'ca2'),
+        ('ca3', 'ca3'),
+        ('hanhchinh', 'hanhchinh'),
+        ('khac', 'khac')
+    ])
     nguoituyen =  models.CharField(max_length=200, null=True, blank=True)
     ghichu =  models.CharField(max_length=200, null=True, blank=True)
     created_at = models.DateTimeField(default=timezone.now)
