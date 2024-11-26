@@ -37,7 +37,7 @@ from .socket import send_socket
 class StandardResultsSetPagination(PageNumberPagination):
     page_size = 50  # Số lượng đối tượng trên mỗi trang
     page_size_query_param = 'page_size'
-    max_page_size = 100
+    max_page_size = 999
     
 def generate_response_json(result:str, message:str, data:dict={}):
     """_summary_
