@@ -1760,8 +1760,8 @@ class ChuyencaAPIView(APIView):
             if ngayapdung is None:
                 ngayapdung=datetime.datetime.now()
             qs_profile=Profile.objects.get(user=user)
-            qs_admin=DanhsachAdmin.objects.filter(zalo_id=qs_profile.zalo_id).values_list("id",flat=True)
-            qs_nvien=DanhsachNhanvien.objects.get(congty__id__in=qs_admin,id=id_nhanvien)
+            qs_admin=DanhsachAdmin.objects.filter(zalo_id=qs_profile.zalo_id)
+            qs_nvien=DanhsachNhanvien.objects.get(congty__in=qs_admin,id=id_nhanvien)
             his=DanhsachNhanvien_record.objects.create(nhanvien=qs_nvien,
                                                         user=user,column='calamviec',
                                                         ngayapdung=ngayapdung,
