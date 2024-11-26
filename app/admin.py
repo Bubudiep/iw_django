@@ -148,7 +148,7 @@ class DanhsachNhanvien_recordAdmin(admin.ModelAdmin):
     
 @admin.register(DanhsachnhanvienDilam)
 class DanhsachnhanvienDilamAdmin(admin.ModelAdmin):
-    ist_display = ('manhanvien',
+    list_display = ('manhanvien',
     'chamcongdi',
     'ngaydilam',
     'giochamcong','created_at')
