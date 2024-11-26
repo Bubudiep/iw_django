@@ -1671,6 +1671,7 @@ class TokenLoginAPIView(APIView):
                     'refresh_token': refresh_token_str,
                     'user':UserSerializer(user,many=False).data
                 })
+                
 class LenmonRegisterView(APIView):
     permission_classes = [AllowAny]
     def post(self, request):
@@ -1746,7 +1747,32 @@ class LenmonRegisterView(APIView):
                 return Response({'detail': 'Internal server error'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-
+class ChuyencaAPIView(APIView):
+    authentication_classes = [OAuth2Authentication]  # Kiểm tra xác thực OAuth2
+    permission_classes = [IsAuthenticated]  # Đảm bảo người dùng phải đăng nhập (token hợp lệ)
+    def post(self, request):
+        if request.user.is_authenticated:
+            user = request.user
+            id_nhanvien=request.data.get("id",None)
+            calamviec=request.data.get("calamviec",None)
+            ngayapdung=request.data.get("ngayapdung",None)
+            ghichu=request.data.get("ghichu",None)
+            if ngayapdung is None:
+                ngayapdung=datetime.datetime.now()
+            qs_profile=Profile.objects.get(user=user)
+            qs_admin=DanhsachAdmin.objects.filter(zalo_id=qs_profile.zalo_id).values_list("id",flat=True)
+            qs_nvien=DanhsachNhanvien.objects.get(congty__id__in=qs_admin,id=id_nhanvien)
+            his=DanhsachNhanvien_record.objects.create(nhanvien=qs_nvien,
+                                                        user=user,column='calamviec',
+                                                        ngayapdung=ngayapdung,
+                                                        old_value=qs_nvien.calamviec,
+                                                        new_value=calamviec,
+                                                        ghichu=ghichu,
+                                                    )
+            qs_nvien.calamviec=calamviec
+            qs_nvien.save()
+            return Response(DanhsachNhanvienSerializer(qs_nvien).data, status=status.HTTP_200_OK)
+        return Response({"Error":"Vui lòng đăng nhập"}, status=status.HTTP_401_UNAUTHORIZED)
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()

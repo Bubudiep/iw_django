@@ -33,6 +33,7 @@ router.register(r'restaurant-space', api.Restaurant_spaceDetailsViewSet, basenam
 router.register(r'res-all-items', api.RestaurantMenuItemsViewSet, basename='res-all-items')
 
 urlpatterns = [
+    path('cty/chuyenca/', api.ChuyencaAPIView.as_view(), name='cty/chuyenca'),
     path('res-thutien/', api.ResPaidOrderAPIView.as_view(), name='res-thutien'),
     path('res-giaohang/', api.ResDeliveryOrderAPIView.as_view(), name='res-giaohang'),
     path('res-nhandon/', api.ResAcceptOrderAPIView.as_view(), name='res-nhandon'),

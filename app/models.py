@@ -731,8 +731,6 @@ class ChiTietThanhToan(models.Model):
     def __str__(self):
         return f"{self.so_tien} VND"
 
-
-
 #### chấm công đi làm
 class DanhsachCongty(models.Model):
     congty =  models.CharField(max_length=200, null=True, blank=True)
@@ -765,6 +763,7 @@ class DanhsachNhanvien(models.Model):
     congty = models.ForeignKey(DanhsachCongty, on_delete=models.SET_NULL, null=True, blank=True)
     manhanvien = models.CharField(max_length=200, unique=True, null=True, blank=True)
     HovaTen =  models.CharField(max_length=200, null=True, blank=True)
+    nghiviec =  models.BooleanField(default=False)
     calamviec =  models.CharField(max_length=50,default='cangay', choices=[
         ('cangay', 'cangay'),
         ('cadem', 'cadem'),
@@ -783,7 +782,23 @@ class DanhsachNhanvien(models.Model):
 
     def __str__(self):
         return f"{self.congty}_{self.manhanvien}"
+    
+class DanhsachNhanvien_record(models.Model):
+    nhanvien = models.ForeignKey(DanhsachNhanvien, on_delete=models.SET_NULL, null=True, blank=True)
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    column =  models.CharField(max_length=200, null=True, blank=True)
+    old_value =  models.CharField(max_length=200, null=True, blank=True)
+    new_value =  models.CharField(max_length=200, null=True, blank=True)
+    ngayapdung =  models.DateField(null=True, blank=True)
+    ghichu =  models.CharField(max_length=200, null=True, blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+    class Meta:
+        ordering = ['-id']  # Sắp xếp theo 'id' mặc định
 
+    def __str__(self):
+        return f"{self.congty}_{self.manhanvien}"
+    
 class DanhsachnhanvienDilam(models.Model):
     manhanvien = models.ForeignKey(DanhsachNhanvien, on_delete=models.CASCADE)
     chamcongdi =  models.BooleanField(default=True, null=True, blank=True) # True là đi làm, False là đi về
