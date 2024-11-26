@@ -129,7 +129,11 @@ class DanhsachAdminAdmin(admin.ModelAdmin):
     
 @admin.register(DanhsachNhanvien)
 class DanhsachNhanvienAdmin(admin.ModelAdmin):
-    list_display = ('congty', 'manhanvien', 'HovaTen', 'nguoituyen', 'created_at')
+    list_display = ('congty', 'manhanvien', 'HovaTen','nghiviec','calamviec', 'nguoituyen', 'created_at')
+    list_editable=(
+        "manhanvien",
+        "nghiviec",
+        "calamviec")
     search_fields = ('congty__tencongty', 'manhanvien')
     save_as = True  # Kích hoạt Save as new
     list_filter = ('created_at',)
