@@ -148,6 +148,10 @@ class DanhsachNhanvien_recordAdmin(admin.ModelAdmin):
     
 @admin.register(DanhsachnhanvienDilam)
 class DanhsachnhanvienDilamAdmin(admin.ModelAdmin):
+    ist_display = ('manhanvien',
+    'chamcongdi',
+    'ngaydilam',
+    'giochamcong','created_at')
     save_as = True  # Kích hoạt Save as new
     list_filter = ('created_at',)
     ordering = ('-created_at',)
