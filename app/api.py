@@ -2317,6 +2317,10 @@ class DanhsachnhanvienDilamViewSet(viewsets.ModelViewSet):
         queryset = self.get_queryset()
         queryset = self.filter_queryset(queryset)  # Áp dụng bộ lọc cho queryset
         
+        thismonth = self.request.query_params.get('thismonth')
+        if thismonth is not None:
+            queryset=queryset.filter(ngaydilam__month=datetime.datetime.month)
+            
         page_size = self.request.query_params.get('page_size')
         if page_size is not None:
             self.pagination_class.page_size = int(page_size)
