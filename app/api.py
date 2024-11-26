@@ -34,6 +34,8 @@ import uuid  # Thư viện để tạo khóa ngẫu nhiên
 from geopy.distance import geodesic
 import random
 from .socket import send_socket
+from django.db.models import Q
+
 class StandardResultsSetPagination(PageNumberPagination):
     page_size = 50  # Số lượng đối tượng trên mỗi trang
     page_size_query_param = 'page_size'
@@ -2319,8 +2321,12 @@ class DanhsachnhanvienDilamViewSet(viewsets.ModelViewSet):
         
         thismonth = self.request.query_params.get('thismonth')
         if thismonth is not None:
-            queryset=queryset.filter(ngaydilam__month=datetime.datetime.month)
-            
+            today = datetime.date.today()
+            current_month = today.month
+            current_year = today.year
+            queryset=queryset.filter(
+                Q(ngaydilam__year=current_year) & Q(ngaydilam__month=current_month)
+            )
         page_size = self.request.query_params.get('page_size')
         if page_size is not None:
             self.pagination_class.page_size = int(page_size)
