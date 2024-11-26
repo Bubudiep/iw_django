@@ -1762,6 +1762,18 @@ class ChuyencaAPIView(APIView):
             qs_profile=Profile.objects.get(user=user)
             qs_admin=DanhsachAdmin.objects.filter(zalo_id=qs_profile.zalo_id).values_list("id",flat=True)
             qs_nvien=DanhsachNhanvien.objects.get(congty__id__in=qs_admin,id=id_nhanvien)
+            nghiviec=request.data.get("nghiviec",None)
+            if nghiviec is not None:
+                his=DanhsachNhanvien_record.objects.create(nhanvien=qs_nvien,
+                                                            user=user,column='nghiviec',
+                                                            ngayapdung=ngayapdung,
+                                                            old_value=qs_nvien.nghiviec,
+                                                            new_value=nghiviec,
+                                                            ghichu=ghichu,
+                                                        )
+                qs_nvien.nghiviec=nghiviec
+                qs_nvien.save()
+                return Response(DanhsachNhanvienSerializer(qs_nvien).data, status=status.HTTP_200_OK)
             his=DanhsachNhanvien_record.objects.create(nhanvien=qs_nvien,
                                                         user=user,column='calamviec',
                                                         ngayapdung=ngayapdung,
