@@ -797,7 +797,7 @@ class DanhsachNhanvien_record(models.Model):
         ordering = ['-id']  # Sắp xếp theo 'id' mặc định
 
     def __str__(self):
-        return f"{self.congty}_{self.manhanvien}"
+        return f"{self.nhanvien.manhanvien}"
     
 class DanhsachnhanvienDilam(models.Model):
     manhanvien = models.ForeignKey(DanhsachNhanvien, on_delete=models.CASCADE)
