@@ -112,7 +112,7 @@ class LichsuNguoitroAdmin(admin.ModelAdmin):
 class DanhsachAdminAdminInline(admin.TabularInline):  # Hoặc bạn có thể dùng StackedInline
     model = DanhsachAdmin
     extra = 1  # Số lượng bản ghi ChiTietThanhToan mặc định
-    list_display = ('congty__congty', 'zalo_id', 'isAdmin', 'isStaff', 'ghichu')
+    list_display = ('congty', 'zalo_id', 'isAdmin', 'isStaff', 'ghichu')
 @admin.register(DanhsachCongty)
 class DanhsachCongtyAdmin(admin.ModelAdmin):
     inlines = [DanhsachAdminAdminInline]
@@ -122,7 +122,7 @@ class DanhsachCongtyAdmin(admin.ModelAdmin):
     
 @admin.register(DanhsachAdmin)
 class DanhsachAdminAdmin(admin.ModelAdmin):
-    list_display = ('congty__congty', 'zalo_id', 'isAdmin', 'isStaff', 'ghichu')
+    list_display = ('congty', 'zalo_id', 'isAdmin', 'isStaff', 'ghichu')
     save_as = True  # Kích hoạt Save as new
     list_filter = ('created_at',)
     ordering = ('-created_at',)
