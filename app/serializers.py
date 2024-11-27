@@ -828,7 +828,7 @@ class RestaurantSpaceSerializer(serializers.ModelSerializer):
     group_name = serializers.CharField(source='group.name', read_only=True)
     class Meta:
         model = Restaurant_space
-        fields = ['id', 'name','group_name','is_inuse','user_use', 'is_active', 'is_ordering', 'description', 'created_at', 'updated_at']
+        fields = ['id', 'name','group','group_name','is_inuse','user_use', 'is_active', 'is_ordering', 'description', 'created_at', 'updated_at']
 
 class RestaurantSpaceGroupSerializer(serializers.ModelSerializer):
     spaces = RestaurantSpaceSerializer(many=True, source='restaurant_space_set')  # Đảm bảo trường liên kết đúng
@@ -873,6 +873,7 @@ class RestaurantViewsSerializer(serializers.ModelSerializer):
     isFollow=serializers.SerializerMethodField(read_only=True)
     totalFollow=serializers.SerializerMethodField(read_only=True)
     myOrder=serializers.SerializerMethodField(read_only=True)
+    mySpace=serializers.SerializerMethodField(read_only=True)
     
     @cached_property
     def user(self):
@@ -882,6 +883,25 @@ class RestaurantViewsSerializer(serializers.ModelSerializer):
             qs_order=Restaurant_order.objects.filter(user_order=self.user,
                                                      restaurant=obj)
             return Restaurant_order_detailsSerializer(qs_order,many=True).data
+        return []
+    
+    def get_mySpace(self, obj):
+        if self.user.is_authenticated:
+            qs_space=Restaurant_order.objects.filter(
+                user_order=self.user,
+                restaurant=obj,
+                is_clear=True,
+                space__isnull=False,
+                cancel_status__isnull=False,
+            ).exclude(status="CANCEL")
+            print(f"{qs_space}")
+            if len(qs_space)>0:
+                return {
+                    "space":qs_space[0].space.id,
+                    "group":qs_space[0].group.id
+                }
+            else:
+                return False
         return False
     
     def get_totalLike(self, obj):
@@ -920,7 +940,7 @@ class RestaurantViewsSerializer(serializers.ModelSerializer):
             'Takeaway', 'isRate', 'isChat', 'is_active', 'description', 
             'created_at','totalFollow',
             'coupons', 'address_details','layouts','mohinh',
-            'menu','isLike','isFollow'
+            'menu','isLike','isFollow','mySpace','bankCode','bankValue','bankName'
         ]
 class RestaurantMenuItemsDetailsSerializer(serializers.ModelSerializer):
     group_names = serializers.SerializerMethodField(read_only=True) #Danh mục trong menu
@@ -993,7 +1013,7 @@ class RestaurantDetailsSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'name', 'address', 'phone_number', 'avatar','wallpaper', 'Oder_online','menu',
             'Takeaway', 'isRate', 'isChat', 'is_active', 'description', 'created_at',
-            'updated_at', 'sockets', 'layouts', 'coupons', 'address_details','orders'
+            'updated_at', 'sockets', 'layouts', 'coupons', 'address_details','orders','bankCode','bankValue'
         ]
     def to_representation(self, instance):
         if instance.restaurant_menu_set.count() == 0:

@@ -40,7 +40,7 @@ io.on("connection", (socket) => {
         Authorization: `Bearer ${token}`, // Include token in Authorization header
       };
       axios
-        .post("http://localhost:8000/api/update-socket/", post_data, {
+        .post("http://localhost:5005/api/update-socket/", post_data, {
           headers,
         })
         .then((response) => {
@@ -56,7 +56,7 @@ io.on("connection", (socket) => {
   console.log(socket.id + " is connected:", token);
   socket.on("disconnect", () => {
     axios
-      .post("http://localhost:8000/api/close-socket/", {
+      .post("http://localhost:5005/api/close-socket/", {
         socket: socket.id, // Send socket ID in the body
       })
       .then((response) => {

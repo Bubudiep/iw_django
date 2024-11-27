@@ -107,26 +107,51 @@ class LichsuNguoitroAdmin(admin.ModelAdmin):
     save_as = True  # Kích hoạt Save as new
     list_filter = ('created_at',)
     ordering = ('-created_at',)
-   
+  
+# Tạo một InlineAdmin để hiển thị ChiTietThanhToan
+class DanhsachAdminAdminInline(admin.TabularInline):  # Hoặc bạn có thể dùng StackedInline
+    model = DanhsachAdmin
+    extra = 1  # Số lượng bản ghi ChiTietThanhToan mặc định
+    list_display = ('congty', 'zalo_id', 'isAdmin', 'isStaff', 'ghichu')
 @admin.register(DanhsachCongty)
 class DanhsachCongtyAdmin(admin.ModelAdmin):
+    inlines = [DanhsachAdminAdminInline]
     save_as = True  # Kích hoạt Save as new
     list_filter = ('created_at',)
     ordering = ('-created_at',)
+    
 @admin.register(DanhsachAdmin)
 class DanhsachAdminAdmin(admin.ModelAdmin):
+    list_display = ('congty', 'zalo_id', 'isAdmin', 'isStaff', 'ghichu')
     save_as = True  # Kích hoạt Save as new
     list_filter = ('created_at',)
     ordering = ('-created_at',)
+    
 @admin.register(DanhsachNhanvien)
 class DanhsachNhanvienAdmin(admin.ModelAdmin):
-    list_display = ('congty', 'manhanvien', 'HovaTen', 'nguoituyen', 'created_at')
+    list_display = ('congty', 'manhanvien', 'HovaTen','nghiviec','calamviec', 'nguoituyen', 'created_at')
+    list_editable=(
+        "manhanvien",
+        "nghiviec",
+        "calamviec")
     search_fields = ('congty__tencongty', 'manhanvien')
     save_as = True  # Kích hoạt Save as new
     list_filter = ('created_at',)
     ordering = ('-created_at',)
+    
+@admin.register(DanhsachNhanvien_record)
+class DanhsachNhanvien_recordAdmin(admin.ModelAdmin):
+    search_fields = ('nhanvien__congty__tencongty', 'nhanvien__manhanvien')
+    save_as = True  # Kích hoạt Save as new
+    list_filter = ('created_at',)
+    ordering = ('-created_at',)
+    
 @admin.register(DanhsachnhanvienDilam)
 class DanhsachnhanvienDilamAdmin(admin.ModelAdmin):
+    list_display = ('manhanvien',
+    'chamcongdi',
+    'ngaydilam',
+    'giochamcong','created_at')
     save_as = True  # Kích hoạt Save as new
     list_filter = ('created_at',)
     ordering = ('-created_at',)
