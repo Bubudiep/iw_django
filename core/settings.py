@@ -75,6 +75,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://192.168.110.120",
     "http://192.168.1.27:4000",
     'https://h5.zdn.vn',
+    'https://hoanglongdjc.cloud',
     'zbrowser://h5.zdn.vn',
 ]
 ALLOWED_HOSTS = [
@@ -82,8 +83,10 @@ ALLOWED_HOSTS = [
     'https://ipays.vn',
     'https://order.lenmon.cloud',
     'https://lenmon.cloud',
+    'https://hoanglongdjc.cloud',
     'www.order.lenmon.cloud',
     'www.lenmon.cloud',
+    'www.hoanglongdjc.cloud',
     'www.ipays.vn',
     'localhost',
     'localhost:6500',
