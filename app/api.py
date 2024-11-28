@@ -140,7 +140,37 @@ class RemoveSocketAPIView(APIView):
                 return Response(data={"result":"PASS"},status=status.HTTP_200_OK)
             except Exception as e:
                 return Response(data={"result":"FAIL"},status=status.HTTP_403_FORBIDDEN)
-            
+
+
+class UserAcceptItemOrderAPIView(APIView):
+    authentication_classes = [OAuth2Authentication]  # Kiểm tra xác thực OAuth2
+    permission_classes = [IsAuthenticated]  # Đảm bảo người dùng phải đăng nhập (token hợp lệ)
+    def post(self, request):
+        if request.user.is_authenticated:
+            data = request.data
+            try:
+                user = request.user
+                item_id=data.get("items",None)
+                can=data.get("can",None)
+                qs_item=Restaurant_order_items.objects.get(id=item_id)
+                if qs_item.Order.user_order!=user:
+                    return Response(data={"Error":"Bạn không phải chủ bàn!"}, status=status.HTTP_400_BAD_REQUEST)
+                else:
+                    if can==True:
+                        qs_item.is_accept=True
+                    if can==False:
+                        qs_item.is_rejected=True
+                    qs_item.save()
+                    
+            except Exception as e:
+                exc_type, exc_obj, exc_tb = sys.exc_info()
+                lineno = exc_tb.tb_lineno
+                file_path = exc_tb.tb_frame.f_code.co_filename
+                file_name = os.path.basename(file_path)
+                res_data = generate_response_json("FAIL", f"[{file_name}_{lineno}] {str(e)}")
+                return Response(data=res_data, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response(data={"Error":"Yêu cầu đăng nhập!"}, status=status.HTTP_403_FORBIDDEN)
 class UserCreateOrderAPIView(APIView):
     authentication_classes = [OAuth2Authentication]  # Kiểm tra xác thực OAuth2
     permission_classes = [IsAuthenticated]  # Đảm bảo người dùng phải đăng nhập (token hợp lệ)

@@ -1126,6 +1126,7 @@ class Restaurant_order_items(models.Model):
     name = models.CharField(max_length=100)
 
     is_accept = models.BooleanField(default=False)  # Thanh toán
+    is_rejected = models.BooleanField(default=False)  # Thanh toán
     user_order = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True) 
 
     is_paid = models.BooleanField(default=False)  # Thanh toán
