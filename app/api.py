@@ -161,7 +161,20 @@ class UserAcceptItemOrderAPIView(APIView):
                     if can==False:
                         qs_item.is_rejected=True
                     qs_item.save()
-                    
+                    qs_profile=Profile.objects.filter(user=qs_item.user_order).values_list("socket_id",flat=True)
+                    data_socket={
+                        "send_to":list(qs_profile),
+                        "type":"order",
+                        "from":"offline",
+                        "action":"join-res",
+                        "order_key":qs_item.Order.OrderKey,
+                        "data":Restaurant_order_detailsSerializer(qs_item.Order).data
+                    }
+                    send_socket("backend-enduser-event",data_socket)
+                    return Response(data={
+                        "result":"PASS",
+                        "data":Restaurant_order_detailsSerializer(qs_item.Order).data
+                    },status=status.HTTP_200_OK)
             except Exception as e:
                 exc_type, exc_obj, exc_tb = sys.exc_info()
                 lineno = exc_tb.tb_lineno
