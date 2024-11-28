@@ -202,7 +202,7 @@ class UserCreateOrderAPIView(APIView):
                                                                                             is_accept=False,
                                                                                             name=qs_item.name,
                                                                                             quantity=item.get("quantity"))
-                                            qs_profile=Profile.objects.filter(user__id__in=data.get("join",None)).values_list("socket_id",flat=True)
+                                            qs_profile=Profile.objects.filter(user__id=data.get("join",None)).values_list("socket_id",flat=True)
                                             data_socket={
                                                 "send_to":list(qs_profile),
                                                 "type":"order",
