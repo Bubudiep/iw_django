@@ -1124,6 +1124,10 @@ class Restaurant_order_items(models.Model):
     items = models.ForeignKey(Restaurant_menu_items, on_delete=models.CASCADE) 
     status = models.CharField(max_length=20, choices=ORDER_STATUS_CHOICES, default='WAIT')
     name = models.CharField(max_length=100)
+
+    is_accept = models.BooleanField(default=False)  # Thanh toán
+    user_order = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True) 
+
     is_paid = models.BooleanField(default=False)  # Thanh toán
     price = models.FloatField(default=0)
     quantity = models.IntegerField(default=0)
