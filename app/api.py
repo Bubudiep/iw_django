@@ -207,7 +207,7 @@ class UserCreateOrderAPIView(APIView):
                                                 "send_to":list(qs_profile),
                                                 "type":"order",
                                                 "from":"offline",
-                                                "action":"RECEIVED",
+                                                "action":"join",
                                                 "order_key":cr_oder.OrderKey,
                                                 "data":Restaurant_order_detailsSerializer(cr_oder).data
                                             }
