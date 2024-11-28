@@ -169,6 +169,7 @@ class UserCreateOrderAPIView(APIView):
                         qs_restaurant=Restaurant.objects.get(id=restaurant)
                         qs_space=None
                         qs_group=None
+                        cr_oder=None
                         if spaceId is not None:
                             is_takeaway=False
                             try:
@@ -183,12 +184,20 @@ class UserCreateOrderAPIView(APIView):
                                     qs_space.is_inuse=True
                                     qs_space.user_use=user
                                     qs_space.save()
+                                    if qs_space.is_inuse==True and qs_space.user_use==user:
+                                        # Bàn vẫn đang đc sử dụng bởi người này
+                                        cr_oder=Restaurant_order.objects.filter(restaurant=qs_restaurant,
+                                                                                    user_order=user,
+                                                                                    space=qs_space).first()
+                                        
+                                # lấy những order đang ở trên quầy của người này tại bàn này và 
                             except Restaurant_space.DoesNotExist:
                                 return Response(data={"Error":"Vị trí bàn không tồn tại"}, status=status.HTTP_400_BAD_REQUEST)
                         qs_old_order=Restaurant_order.objects.filter(restaurant=qs_restaurant,user_order=user,status="CREATED")
                         if len(qs_old_order)>=3:
                             return Response(data={"Error":"Tối đa 3 đơn hàng chờ duyệt"}, status=status.HTTP_400_BAD_REQUEST)
-                        cr_oder=Restaurant_order.objects.create(OrderKey=uuid.uuid4().hex.upper(),
+                        if cr_oder is None:
+                            cr_oder=Restaurant_order.objects.create(OrderKey=uuid.uuid4().hex.upper(),
                                                                 restaurant=qs_restaurant,
                                                                 user_order=user,
                                                                 status="CREATED",
