@@ -190,6 +190,8 @@ class UserCreateOrderAPIView(APIView):
                                                                                     user_order=user,
                                                                                     space=qs_space).first()
                                         cr_oder.status="RECEIVED"
+                                        cr_oder.is_paid=False
+                                        cr_oder.is_paided=False
                                         cr_oder.save()
                                         
                                 # lấy những order đang ở trên quầy của người này tại bàn này và 
@@ -349,6 +351,10 @@ class ResPaidOrderAPIView(APIView):
                                         "result":"PASS", 
                                         "data":Restaurant_order_detailsSerializer(qs_order).data
                                     },status=status.HTTP_200_OK)
+                    order=Restaurant_order_items.objects.filter(Order=qs_order)
+                    for od in order:
+                        od.is_paid=True
+                        od.save()
                     if qs_order.status=="COMPLETE" or qs_order.status=="NOT" or qs_order.status=="CANCEL":
                         return Response(data={"Error":"Trạng thái hiện tại đã hoàn tất"},status=status.HTTP_400_BAD_REQUEST)
                     if qs_order.status=="CREATED":
