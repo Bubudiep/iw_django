@@ -39,6 +39,7 @@ urlpatterns = [
     path('res-nhandon/', api.ResAcceptOrderAPIView.as_view(), name='res-nhandon'),
     path('paid-order/', api.UserPaidOrderAPIView.as_view(), name='cancel-order'),
     path('cancel-order/', api.UserCancelOrderAPIView.as_view(), name='cancel-order'),
+    path('joinres-order/', api.UserAcceptItemOrderAPIView.as_view(), name='cancel-order'),
     path('my-list-order/', api.MyListOrderAPIView.as_view(), name='my-list-order'),
     path('oder-fast/', api.UserCreateOrderAPIView.as_view(), name='oder-fast'),
     path('close-socket/', api.RemoveSocketAPIView.as_view(), name='close-socket'),
