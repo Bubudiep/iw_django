@@ -181,9 +181,6 @@ class UserCreateOrderAPIView(APIView):
                                 if qs_space is not None and is_takeaway==False:
                                     if qs_space.is_inuse==True and qs_space.user_use!=user:
                                         return Response(data={"Error":"Bàn đang được sử dụng"}, status=status.HTTP_400_BAD_REQUEST)
-                                    qs_space.is_inuse=True
-                                    qs_space.user_use=user
-                                    qs_space.save()
                                     if qs_space.is_inuse==True and qs_space.user_use==user:
                                         # Bàn vẫn đang đc sử dụng bởi người này
                                         cr_oder=Restaurant_order.objects.filter(restaurant=qs_restaurant,
@@ -193,7 +190,10 @@ class UserCreateOrderAPIView(APIView):
                                         cr_oder.is_paid=False
                                         cr_oder.is_paided=False
                                         cr_oder.save()
-                                        
+                                    qs_space.is_inuse=True
+                                    qs_space.user_use=user
+                                    qs_space.save()
+                                       
                                 # lấy những order đang ở trên quầy của người này tại bàn này và 
                             except Restaurant_space.DoesNotExist:
                                 return Response(data={"Error":"Vị trí bàn không tồn tại"}, status=status.HTTP_400_BAD_REQUEST)
