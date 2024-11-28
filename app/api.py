@@ -189,6 +189,8 @@ class UserCreateOrderAPIView(APIView):
                                         cr_oder=Restaurant_order.objects.filter(restaurant=qs_restaurant,
                                                                                     user_order=user,
                                                                                     space=qs_space).first()
+                                        cr_oder.status="RECEIVED"
+                                        cr_oder.save()
                                         
                                 # lấy những order đang ở trên quầy của người này tại bàn này và 
                             except Restaurant_space.DoesNotExist:
