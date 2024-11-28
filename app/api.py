@@ -175,49 +175,49 @@ class UserCreateOrderAPIView(APIView):
                             try:
                                 qs_user_table=Restaurant_space.objects.filter(user_use=user,is_inuse=True).exclude(id=spaceId)
                                 if len(qs_user_table)>0:
-                                    if data.get("join",None) is not None:
-                                        cr_oder=Restaurant_order.objects.filter(restaurant=qs_restaurant,
-                                                                                user_order=data.get("join",None),
-                                                                                space=qs_space).first()
-                                        for item in items:
-                                            qs_item=Restaurant_menu_items.objects.get(id=item.get("id"))
-                                            if qs_item.is_delete==True:
-                                                return Response(data={"Error":f"{qs_item.name} đã bị xóa!"},
-                                                                status=status.HTTP_400_BAD_REQUEST)
-                                            if qs_item.is_active==False:
-                                                return Response(data={"Error":f"{qs_item.name} đã bị gỡ xuống!"},
-                                                                status=status.HTTP_400_BAD_REQUEST)
-                                            if qs_item.is_available==False:
-                                                return Response(data={"Error":f"{qs_item.name} hiện không khả dụng!"},
-                                                                status=status.HTTP_400_BAD_REQUEST)
-                                            cr_item=Restaurant_order_items.objects.create(Order=cr_oder,
-                                                                                        items=qs_item,
-                                                                                        user_order=user,
-                                                                                        price=qs_item.price,
-                                                                                        is_accept=False,
-                                                                                        name=qs_item.name,
-                                                                                        quantity=item.get("quantity"))
-                                        qs_profile=Profile.objects.filter(user__id__in=data.get("join",None)).values_list("socket_id",flat=True)
-                                        data_socket={
-                                            "send_to":list(qs_profile),
-                                            "type":"order",
-                                            "from":"offline",
-                                            "action":"RECEIVED",
-                                            "order_key":cr_oder.OrderKey,
-                                            "data":Restaurant_order_detailsSerializer(cr_oder).data
-                                        }
-                                        send_socket("backend-enduser-event",data_socket)
-                                        return Response(data={
-                                            "result":"PASS",
-                                            "data":Restaurant_order_detailsSerializer(cr_oder).data
-                                        },status=status.HTTP_200_OK)
-                                    else:
-                                        return Response(data={"Error":"Bạn đang sử dụng một bàn khác"}, status=status.HTTP_400_BAD_REQUEST)
+                                    return Response(data={"Error":"Bạn đang sử dụng một bàn khác"}, status=status.HTTP_400_BAD_REQUEST)
                                 qs_space=Restaurant_space.objects.get(id=spaceId,is_active=True)
                                 qs_group=qs_space.group
                                 if qs_space is not None and is_takeaway==False:
                                     if qs_space.is_inuse==True and qs_space.user_use!=user:
-                                        return Response(data={"Error":"Bàn đang được sử dụng"}, status=status.HTTP_400_BAD_REQUEST)
+                                        if data.get("join",None) is not None:
+                                            cr_oder=Restaurant_order.objects.filter(restaurant=qs_restaurant,
+                                                                                    user_order=data.get("join",None),
+                                                                                    space=qs_space).first()
+                                            for item in items:
+                                                qs_item=Restaurant_menu_items.objects.get(id=item.get("id"))
+                                                if qs_item.is_delete==True:
+                                                    return Response(data={"Error":f"{qs_item.name} đã bị xóa!"},
+                                                                    status=status.HTTP_400_BAD_REQUEST)
+                                                if qs_item.is_active==False:
+                                                    return Response(data={"Error":f"{qs_item.name} đã bị gỡ xuống!"},
+                                                                    status=status.HTTP_400_BAD_REQUEST)
+                                                if qs_item.is_available==False:
+                                                    return Response(data={"Error":f"{qs_item.name} hiện không khả dụng!"},
+                                                                    status=status.HTTP_400_BAD_REQUEST)
+                                                cr_item=Restaurant_order_items.objects.create(Order=cr_oder,
+                                                                                            items=qs_item,
+                                                                                            user_order=user,
+                                                                                            price=qs_item.price,
+                                                                                            is_accept=False,
+                                                                                            name=qs_item.name,
+                                                                                            quantity=item.get("quantity"))
+                                            qs_profile=Profile.objects.filter(user__id__in=data.get("join",None)).values_list("socket_id",flat=True)
+                                            data_socket={
+                                                "send_to":list(qs_profile),
+                                                "type":"order",
+                                                "from":"offline",
+                                                "action":"RECEIVED",
+                                                "order_key":cr_oder.OrderKey,
+                                                "data":Restaurant_order_detailsSerializer(cr_oder).data
+                                            }
+                                            send_socket("backend-enduser-event",data_socket)
+                                            return Response(data={
+                                                "result":"PASS",
+                                                "data":Restaurant_order_detailsSerializer(cr_oder).data
+                                            },status=status.HTTP_200_OK)
+                                        else:
+                                            return Response(data={"Error":"Bàn đang được sử dụng"}, status=status.HTTP_400_BAD_REQUEST)
                                     if qs_space.is_inuse==True and qs_space.user_use==user:
                                         # Bàn vẫn đang đc sử dụng bởi người này
                                         cr_oder=Restaurant_order.objects.filter(restaurant=qs_restaurant,
