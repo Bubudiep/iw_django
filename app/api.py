@@ -188,6 +188,7 @@ class UserCreateOrderAPIView(APIView):
                                                                                     space=qs_space).first()
                                         cr_oder.status="RECEIVED"
                                         cr_oder.is_paid=False
+                                        cr_oder.is_clear=False
                                         cr_oder.is_paided=False
                                         cr_oder.save()
                                     qs_space.is_inuse=True
