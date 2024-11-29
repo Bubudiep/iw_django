@@ -1860,7 +1860,7 @@ class ChuyencaAPIView(APIView):
             if ngayapdung is None:
                 ngayapdung=datetime.datetime.now()
             qs_profile=Profile.objects.get(user=user)
-            qs_admin=DanhsachAdmin.objects.filter(zalo_id=qs_profile.zalo_id).values_list("id",flat=True)
+            qs_admin=DanhsachAdmin.objects.filter(zalo_id=qs_profile.zalo_id).values_list("congty__id",flat=True)
             qs_nvien=DanhsachNhanvien.objects.get(congty__id__in=qs_admin,id=id_nhanvien)
             nghiviec=request.data.get("nghiviec",None)
             if nghiviec is not None:
