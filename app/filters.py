@@ -205,10 +205,14 @@ class DanhsachNhanvienFilter(django_filters.FilterSet):
 class DanhsachnhanvienDilamFilter(django_filters.FilterSet):
     manhanvien = django_filters.CharFilter(field_name='manhanvien__manhanvien', lookup_expr='icontains')
     chamcongdi = django_filters.BooleanFilter()
-    ngaydilam = django_filters.DateFromToRangeFilter()
-    ngaydilam = django_filters.CharFilter()
-    chamcongdi = django_filters.BooleanFilter()
-
+    ngaydilam = django_filters.CharFilter(method='filter_ngaydilam')
+    def filter_ngaydilam(self, queryset, name, value):
+        if ',' in value:
+            dates = value.split(',')
+            if len(dates) == 2:
+                start_date, end_date = dates
+                return queryset.filter(ngaydilam__range=(start_date, end_date))
+        return queryset.filter(ngaydilam=value)
     class Meta:
         model = DanhsachnhanvienDilam
         fields = ['manhanvien', 'chamcongdi', 'ngaydilam']
