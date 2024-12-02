@@ -266,7 +266,8 @@ class UserCreateOrderAPIView(APIView):
                                         cr_oder=Restaurant_order.objects.filter(restaurant=qs_restaurant,
                                                                                     user_order=user,
                                                                                     space=qs_space).first()
-                                        cr_oder.status="RECEIVED"
+                                        if cr_oder.status!="CREATED":
+                                            cr_oder.status="RECEIVED"
                                         cr_oder.is_paid=False
                                         cr_oder.is_clear=False
                                         cr_oder.is_paided=False
