@@ -99,6 +99,7 @@ class company_possition(models.Model):
       
 class company_staff(models.Model):
     company = models.ForeignKey(company, on_delete=models.CASCADE)
+    name = models.CharField(max_length=200, null=True, blank=True)
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     department = models.ForeignKey(company_department, on_delete=models.SET_NULL, null=True, blank=True) # bộ phận
     possition = models.ForeignKey(company_possition, on_delete=models.SET_NULL, null=True, blank=True) # vị trí
@@ -114,7 +115,7 @@ class company_staff(models.Model):
     class Meta:
         ordering = ['-id']
     def __str__(self):
-        return f"{self.user.username}_{self.possition}_{self.company}"
+        return f"{self.name}_{self.user.username}_{self.possition}_{self.company}"
     
 class company_staff_profile(models.Model):
     staff = models.ForeignKey(company_staff, on_delete=models.SET_NULL, null=True, blank=True)

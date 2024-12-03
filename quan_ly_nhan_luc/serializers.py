@@ -18,6 +18,38 @@ class companyFullSerializer(serializers.ModelSerializer):
         model = company
         fields = '__all__'
 
+class CompanyStaffProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = company_staff_profile
+        fields = '__all__'
+
+class CompanyStaffDetailsSerializer(serializers.ModelSerializer):
+    profile = serializers.SerializerMethodField(read_only=True)
+    def get_profile(self, qs):
+        try:
+            profile=company_staff_profile.objects.get(staff=qs)
+            return CompanyStaffProfileSerializer(profile).data
+        except company_staff_profile.DoesNotExist:
+            return None
+            
+    class Meta:
+        model = company_staff
+        fields = [
+            'id','name',
+            'company',
+            'user',
+            'department',
+            'possition',
+            'isSuperAdmin',
+            'isActive',
+            'isAdmin',
+            'isOnline',
+            'isValidate',
+            'socket_id',
+            'profile',
+            'created_at'
+        ]
+
 class company_staffSerializer(serializers.ModelSerializer):
     class Meta:
         model = company_staff

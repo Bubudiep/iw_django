@@ -24,7 +24,14 @@ from django.contrib.auth import authenticate
 from oauthlib.common import generate_token
 from datetime import timedelta
 from django.utils.timezone import now
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.pagination import PageNumberPagination
 
+class StandardResultsSetPagination(PageNumberPagination):
+    page_size = 50  # Số lượng đối tượng trên mỗi trang
+    page_size_query_param = 'page_size'
+    max_page_size = 9999
+    
 class LoginOAuth2APIView(APIView):
     permission_classes = [AllowAny]
     def post(self, request):
@@ -110,3 +117,35 @@ class GetCompanyAPIView(APIView):
                 return Response({'Error': f"{e}"}, status=status.HTTP_400_BAD_REQUEST)
         else:
             return Response({'Error': f"Please login and try again!"}, status=status.HTTP_403_FORBIDDEN)
+
+
+class CompanyStaffViewSet(viewsets.ModelViewSet):
+    serializer_class = CompanyStaffDetailsSerializer
+    authentication_classes = [OAuth2Authentication]
+    permission_classes = [IsAuthenticated]
+    filter_backends = (DjangoFilterBackend,)
+    filterset_class = CompanyStaffFilter
+    pagination_class = StandardResultsSetPagination
+    # Chỉ cho phép GET
+    http_method_names = ['get']
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_superuser:
+            return company_staff.objects.all()
+        qs_res=company_staff.objects.filter(user=user,is_Active=True).values_list("company__id",flat=True)
+        return company_staff.objects.filter(company__id__in=qs_res)
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        queryset = self.filter_queryset(queryset)  # Áp dụng bộ lọc cho queryset
+        
+        page_size = self.request.query_params.get('page_size')
+        if page_size is not None:
+            self.pagination_class.page_size = int(page_size)
+            
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
