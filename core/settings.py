@@ -35,6 +35,7 @@ DEBUG = True
 
 INSTALLED_APPS = [
     'app',
+    'quan_ly_nhan_luc',
     'oauth2_provider',
     'django.contrib.admin',
     'django.contrib.auth',

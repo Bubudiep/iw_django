@@ -16,7 +16,6 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import AllowAny, IsAuthenticated
-from .serializers import *
 from rest_framework.pagination import PageNumberPagination
 from django.contrib.auth import authenticate
 from django.conf import settings
@@ -24,7 +23,6 @@ from oauth2_provider.oauth2_backends import OAuthLibCore
 from django.shortcuts import get_object_or_404
 from datetime import datetime, timedelta
 import string
-from .filters import *
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.exceptions import AuthenticationFailed, NotFound
 from django.db.models import Count
@@ -35,6 +33,8 @@ from geopy.distance import geodesic
 import random
 from .socket import send_socket
 from django.db.models import Q
+from .serializers import *
+from .filters import *
 
 class StandardResultsSetPagination(PageNumberPagination):
     page_size = 50  # Số lượng đối tượng trên mỗi trang
