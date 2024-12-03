@@ -2426,6 +2426,14 @@ class DanhsachnhanvienDilamViewSet(viewsets.ModelViewSet):
             queryset=queryset.filter(
                 Q(ngaydilam__year=current_year) & Q(ngaydilam__month=current_month)
             )
+        month = self.request.query_params.get('month')
+        if month is not None:
+            today = datetime.date.today()
+            current_month = today.month
+            current_year = today.year
+            queryset=queryset.filter(
+                Q(ngaydilam__year=current_year) & Q(ngaydilam__month=month)
+            )
         page_size = self.request.query_params.get('page_size')
         if page_size is not None:
             self.pagination_class.page_size = int(page_size)
