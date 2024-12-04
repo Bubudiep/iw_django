@@ -26,59 +26,102 @@ from datetime import timedelta
 from django.utils.timezone import now
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.pagination import PageNumberPagination
+from django.contrib.auth.hashers import check_password
+from rest_framework.filters import OrderingFilter
+
+def generate_response_json(result:str, message:str, data:dict={}):
+    return {"result": result, "message": message, "data": data}
 
 class StandardResultsSetPagination(PageNumberPagination):
     page_size = 50  # Số lượng đối tượng trên mỗi trang
     page_size_query_param = 'page_size'
     max_page_size = 9999
-    
+class StaffCreateMini(APIView):
+    authentication_classes = [OAuth2Authentication]
+    permission_classes = [IsAuthenticated]
+    def post(self, request):
+        key=request.data.get("key",None)
+        func=request.data.get("func",None)
+        text_value=request.data.get("text_value",None)
+        if key is None:
+            return Response({"Error":"Công ty không hợp lệ!"}, status=status.HTTP_400_BAD_REQUEST)
+        if func is None:
+            return Response({"Error":"Chức năng không hợp lệ!"}, status=status.HTTP_400_BAD_REQUEST)
+        if text_value is None:
+            return Response({"Error":"Nội dung không hợp lệ!"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"Error":"Lỗi khởi tạo!"}, status=status.HTTP_400_BAD_REQUEST)
+               
+class RegisterView(APIView):
+    authentication_classes = [OAuth2Authentication]
+    permission_classes = [IsAuthenticated]
+    def post(self, request):
+        serializer = RegisterSerializer(data=request.data, context={'request': request})
+        if serializer.is_valid():
+            user = serializer.save()
+            return Response({"Result":"CREATED"}, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+               
 class LoginOAuth2APIView(APIView):
     permission_classes = [AllowAny]
     def post(self, request):
-        print("Đang đăng nhập")
-        username = request.data.get('username')
-        password = request.data.get('password')
-        key = request.data.get('key')
-        user = authenticate(username=username, password=password)
-        if not user:
-            return Response({'Error': 'Tài khoản hoặc mật khẩu không chính xác'}, status=status.HTTP_401_UNAUTHORIZED)
         try:
-            qs_company = company_staff.objects.get(user=user, company__key=key,)
-            if qs_company.isBan:
-                return Response({'Error': 'Tài khoản của bạn đã bị cấm!'}, status=status.HTTP_403_FORBIDDEN)
-            if qs_company.isActive==False:
-                return Response({'Error': 'Tài khoản của bạn đã bị khóa!'}, status=status.HTTP_403_FORBIDDEN)
-        except company_staff.DoesNotExist:
-            return Response({'Error': 'Bạn không nằm trong công ty này!'}, status=status.HTTP_403_FORBIDDEN)
-        application = Application.objects.filter(client_id='G061oKzH80Y7k7Q8mcqlrnSpFH2OhSl2N6Ye0RLS').first()
-        if not application:
-            return Response({'Error': 'OAuth2 Application not found'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            print("Đang đăng nhập")
+            username = request.data.get('username')
+            password = request.data.get('password')
+            key = request.data.get('key')
+            try:
+                company_instance =company.objects.get(key=key)
+                user=company_account.objects.get(username=username,company=company_instance )
+                if check_password(password, user.password)==False:
+                    return Response({'Error': 'Sai mật khẩu'}, status=status.HTTP_401_UNAUTHORIZED)
+            except company.DoesNotExist:
+                return Response({'Error': 'Công ty chưa được đăng ký'}, status=status.HTTP_401_UNAUTHORIZED)
+            except company_account.DoesNotExist:
+                return Response({'Error': 'Tài khoản không chính xác'}, status=status.HTTP_401_UNAUTHORIZED)
+            try:
+                qs_company = company_staff.objects.get(user=user, company__key=key,)
+                if qs_company.isBan:
+                    return Response({'Error': 'Tài khoản của bạn đã bị cấm!'}, status=status.HTTP_403_FORBIDDEN)
+                if qs_company.isActive==False:
+                    return Response({'Error': 'Tài khoản của bạn đã bị khóa!'}, status=status.HTTP_403_FORBIDDEN)
+            except company_staff.DoesNotExist:
+                return Response({'Error': 'Bạn không nằm trong công ty này!'}, status=status.HTTP_403_FORBIDDEN)
+            application = Application.objects.filter(client_id='G061oKzH80Y7k7Q8mcqlrnSpFH2OhSl2N6Ye0RLS').first()
+            if not application:
+                return Response({'Error': 'OAuth2 Application not found'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        token = generate_token()
-        access_token = AccessToken.objects.create(
-            user=user,
-            token=token,
-            application=application,
-            expires=now() + timedelta(seconds=oauth2_settings.ACCESS_TOKEN_EXPIRE_SECONDS),
-            scope='read write'
-        )
-        refresh_token_instance = RefreshToken.objects.create(
-            user=user,
-            token=generate_token(),
-            access_token=access_token,
-            application=application
-        )
-        access_token.refresh_token = refresh_token_instance
-        access_token.save()
-        return Response({
-            'access_token': token,
-            'refresh_token': refresh_token_instance.token,
-            'expires_in': oauth2_settings.ACCESS_TOKEN_EXPIRE_SECONDS,
-            'token_type': 'Bearer',
-            'scope': access_token.scope,
-            'company': companySerializer(qs_company.company).data,
-            'user': company_staffSerializer(qs_company).data
-        }, status=status.HTTP_200_OK)
+            token = generate_token()
+            access_token = AccessToken.objects.create(
+                user=user.user,
+                token=token,
+                application=application,
+                expires=now() + timedelta(seconds=oauth2_settings.ACCESS_TOKEN_EXPIRE_SECONDS),
+                scope='read write'
+            )
+            refresh_token_instance = RefreshToken.objects.create(
+                user=user.user,
+                token=generate_token(),
+                access_token=access_token,
+                application=application
+            )
+            access_token.refresh_token = refresh_token_instance
+            access_token.save()
+            return Response({
+                'access_token': token,
+                'refresh_token': refresh_token_instance.token,
+                'expires_in': oauth2_settings.ACCESS_TOKEN_EXPIRE_SECONDS,
+                'token_type': 'Bearer',
+                'scope': access_token.scope,
+                'company': companySerializer(qs_company.company).data,
+                'user': company_staffSerializer(qs_company).data
+            }, status=status.HTTP_200_OK)
+        except Exception as e:
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            lineno = exc_tb.tb_lineno
+            file_path = exc_tb.tb_frame.f_code.co_filename
+            file_name = os.path.basename(file_path)
+            res_data = generate_response_json("FAIL", f"[{file_name}_{lineno}] {str(e)}")
+            return Response(data=res_data, status=status.HTTP_400_BAD_REQUEST)
        
 class GetUserAPIView(APIView):
     authentication_classes = [OAuth2Authentication]  # Kiểm tra xác thực OAuth2
@@ -88,10 +131,16 @@ class GetUserAPIView(APIView):
         if request.user.is_authenticated:
             user=request.user
             try:
-                qs_company=company_staff.objects.get(user=user,company__key=key)
+                qs_staff=company_staff.objects.get(user__user=user,company__key=key)
+                qs_profile=None
+                try:
+                    qs_profile=company_staff_profile.objects.get(staff=qs_staff)
+                except:
+                    pass
                 return Response({
-                    'company': companySerializer(qs_company.company).data,
-                    'user': company_staffSerializer(qs_company).data
+                    'company': companySerializer(qs_staff.company).data,
+                    'user': company_staffSerializer(qs_staff).data,
+                    'profile': company_staff_profileSerializer(qs_profile).data if qs_profile else None
                 }, status=status.HTTP_200_OK)
             except company_staff.DoesNotExist:
                 return Response({'Error': "Bạn không có quyền truy cập!"}, status=status.HTTP_404_NOT_FOUND)
@@ -123,7 +172,7 @@ class CompanyStaffViewSet(viewsets.ModelViewSet):
     serializer_class = CompanyStaffDetailsSerializer
     authentication_classes = [OAuth2Authentication]
     permission_classes = [IsAuthenticated]
-    filter_backends = (DjangoFilterBackend,)
+    filter_backends = (DjangoFilterBackend,OrderingFilter)
     filterset_class = CompanyStaffFilter
     pagination_class = StandardResultsSetPagination
     # Chỉ cho phép GET
@@ -132,7 +181,7 @@ class CompanyStaffViewSet(viewsets.ModelViewSet):
         user = self.request.user
         if user.is_superuser:
             return company_staff.objects.all()
-        qs_res=company_staff.objects.filter(user=user,is_Active=True).values_list("company__id",flat=True)
+        qs_res=company_staff.objects.filter(user__user=user,isActive=True).values_list("company__id",flat=True)
         return company_staff.objects.filter(company__id__in=qs_res)
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()

@@ -4,6 +4,8 @@ from django.contrib.auth.models import User
 import datetime
 from datetime import time
 import uuid
+from django.core.exceptions import ValidationError
+from django.contrib.auth.hashers import make_password
 
 class file_safe(models.Model): # Phân loại công ty
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -95,12 +97,30 @@ class company_possition(models.Model):
     class Meta:
         ordering = ['-id']
     def __str__(self):
-        return f"{self.name}"    
-      
+        return f"{self.name}"   
+     
+class company_account(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    company = models.ForeignKey(company, on_delete=models.CASCADE, related_name='employee_accounts')
+    username = models.CharField(max_length=255)
+    password = models.CharField(max_length=255)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+    class Meta:
+        unique_together = ('company', 'username')  # Đảm bảo username duy nhất trong từng công ty
+    def save(self, *args, **kwargs):
+        if not self.username or not self.password:
+            raise ValidationError("Username và password không được để trống.")
+        if not self.password.startswith('pbkdf2_sha256$'):  # Kiểm tra xem mật khẩu đã mã hóa chưa
+            self.password = make_password(self.password)
+        super().save(*args, **kwargs)
+    def __str__(self):
+        return f"{self.username} ({self.company.name})"
+    
 class company_staff(models.Model):
     company = models.ForeignKey(company, on_delete=models.CASCADE)
-    name = models.CharField(max_length=200, null=True, blank=True)
-    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    name = models.CharField(max_length=200, null=True, blank=True) # mã NV
+    user = models.ForeignKey(company_account, on_delete=models.SET_NULL, null=True, blank=True)
     department = models.ForeignKey(company_department, on_delete=models.SET_NULL, null=True, blank=True) # bộ phận
     possition = models.ForeignKey(company_possition, on_delete=models.SET_NULL, null=True, blank=True) # vị trí
     isActive = models.BooleanField(default=False, null=True, blank=True) # nghỉ việc

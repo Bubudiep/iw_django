@@ -24,6 +24,13 @@ class companyAdmin(admin.ModelAdmin):
     search_fields = ()
     list_filter = ()
 
+@admin.register(company_account)
+class company_accountAdmin(admin.ModelAdmin):
+    list_display = ('username','password','updated_at','created_at')
+    save_as = True  # Kích hoạt Save as new
+    search_fields = ()
+    list_filter = ()
+    
 @admin.register(company_department)
 class company_departmentAdmin(admin.ModelAdmin):
     save_as = True  # Kích hoạt Save as new
