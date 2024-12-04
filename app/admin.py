@@ -8,6 +8,13 @@ class AlbumAdmin(admin.ModelAdmin):
     search_fields = ('user',)
     list_filter = ('user',)
 
+@admin.register(Zalo_hook)
+class Zalo_hookAdmin(admin.ModelAdmin):
+    save_as = True  # Kích hoạt Save as new
+    list_display = ('data', 'created_at')
+    search_fields = ()
+    list_filter = ()
+
 @admin.register(Photos)
 class PhotosAdmin(admin.ModelAdmin):
     save_as = True  # Kích hoạt Save as new

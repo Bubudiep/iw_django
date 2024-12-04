@@ -1453,6 +1453,7 @@ class NhatroThanhtoanAPIView(APIView):
 class ZaloHookAPIView(APIView):
     def post(self, request):
         data = request.data
+        Zalo_hook.objects.create(data=data)
         return Response({"Results":"pass"}, status=status.HTTP_200_OK)
         
 class ThemtangAPIView(APIView):

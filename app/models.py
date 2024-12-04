@@ -8,6 +8,14 @@ from .socket import send_socket
 def get_current_date():
     return timezone.now().date()
 
+class Zalo_hook(models.Model):
+    data = models.JSONField(blank=True, null=True)  # Mô tả thêm về quán ăn
+    created_at = models.DateTimeField(auto_now_add=True)  # Ngày tạo
+    updated_at = models.DateTimeField(auto_now=True)  # Ngày cập nhật
+    
+    def __str__(self):
+        return f"{self.app}_{self.platform}"
+    
 class Fixed_link(models.Model):
     app = models.CharField(max_length=100,blank=True, null=True)  # Tên quán ăn
     platform = models.CharField(max_length=100,blank=True, null=True)  # Tên quán ăn
