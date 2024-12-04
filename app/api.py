@@ -1450,7 +1450,11 @@ class NhatroThanhtoanAPIView(APIView):
             return Response({'Error': "Không tìm thấy nhà trọ"}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({'Error': f"{e}"}, status=status.HTTP_400_BAD_REQUEST)
-
+class ZaloHookAPIView(APIView):
+    def post(self, request):
+        data = request.data
+        return Response({"Results":"pass"}, status=status.HTTP_200_OK)
+        
 class ThemtangAPIView(APIView):
     authentication_classes = [OAuth2Authentication]  # Kiểm tra xác thực OAuth2
     permission_classes = [IsAuthenticated]  # Đảm bảo người dùng phải đăng nhập (token hợp lệ)
