@@ -14,7 +14,7 @@ class Zalo_hook(models.Model):
     updated_at = models.DateTimeField(auto_now=True)  # Ngày cập nhật
     
     def __str__(self):
-        return f"{self.app}_{self.platform}"
+        return f"{self.id}"
     
 class Fixed_link(models.Model):
     app = models.CharField(max_length=100,blank=True, null=True)  # Tên quán ăn
