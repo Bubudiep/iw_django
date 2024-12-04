@@ -75,8 +75,8 @@ class RegisterSerializer(serializers.ModelSerializer):
         if username and password:
             with transaction.atomic():
                 user = User.objects.create_user(username=f"EMP_{qs_company.id}_{username}",
-                                                password=random.choices(string.ascii_letters 
-                                                                        + string.digits, k=12))
+                                                password=''.join(random.choices(string.ascii_letters 
+                                                                        + string.digits, k=12)))
                 emp = company_account.objects.create(company=qs_company,user=user,
                                                     username=username, password=password)
                 employee=company_staff.objects.create(company=qs_company,
@@ -111,6 +111,7 @@ class CompanyStaffProfileSerializer(serializers.ModelSerializer):
 
 class CompanyStaffDetailsSerializer(serializers.ModelSerializer):
     profile = serializers.SerializerMethodField(read_only=True)
+    username = serializers.CharField(source='user.username',read_only=True)
     def get_profile(self, qs):
         try:
             profile=company_staff_profile.objects.get(staff=qs)
@@ -121,27 +122,20 @@ class CompanyStaffDetailsSerializer(serializers.ModelSerializer):
     class Meta:
         model = company_staff
         fields = [
-            'id','name',
-            'company',
-            'user',
-            'department',
-            'possition',
-            'isSuperAdmin',
-            'isActive',
-            'isAdmin',
-            'isOnline',
-            'isValidate',
-            'socket_id',
-            'profile',
+            'id','name','username',
+            'company','user','department',
+            'possition','isSuperAdmin','isActive','isAdmin',
+            'isOnline','isValidate','socket_id','profile',
             'created_at'
         ]
 
 class company_staffSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source='user.username',read_only=True)
     class Meta:
         model = company_staff
         fields = [
             'company',
-            'name',
+            'name','username',
             'department',
             'possition',
             'isSuperAdmin',
