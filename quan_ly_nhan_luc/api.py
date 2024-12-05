@@ -42,14 +42,36 @@ class StaffCreateMini(APIView):
     def post(self, request):
         key=request.data.get("key",None)
         func=request.data.get("func",None)
-        text_value=request.data.get("text_value",None)
-        if key is None:
-            return Response({"Error":"Công ty không hợp lệ!"}, status=status.HTTP_400_BAD_REQUEST)
-        if func is None:
-            return Response({"Error":"Chức năng không hợp lệ!"}, status=status.HTTP_400_BAD_REQUEST)
-        if text_value is None:
-            return Response({"Error":"Nội dung không hợp lệ!"}, status=status.HTTP_400_BAD_REQUEST)
-        return Response({"Error":"Lỗi khởi tạo!"}, status=status.HTTP_400_BAD_REQUEST)
+        data=request.data.get("data",None)
+        user = self.request.user
+        if user.is_authenticated:
+            if key is None:
+                return Response({"Error":"Công ty không hợp lệ!"}, status=status.HTTP_400_BAD_REQUEST)
+            if func is None:
+                return Response({"Error":"Chức năng không hợp lệ!"}, status=status.HTTP_400_BAD_REQUEST)
+            if data is None:
+                return Response({"Error":"Nội dung không hợp lệ!"}, status=status.HTTP_400_BAD_REQUEST)
+            if func=="possition":
+                pos_name=data.get("positionName")
+                pos_des=data.get("jobDescription")
+                qs_company=company_staff.objects.get(user__user=user,company__key=key,isAdmin=True)
+                new_pos=company_possition.objects.create(company=qs_company.company,
+                                                         name=pos_name,
+                                                         description=pos_des,
+                                                         isActive=True)
+                return  Response(company_possitionSerializer(new_pos).data, status=status.HTTP_201_CREATED)
+            if func=="department":
+                pos_name=data.get("departmentName")
+                pos_des=data.get("description")
+                qs_company=company_staff.objects.get(user__user=user,company__key=key,isAdmin=True)
+                new_dpm=company_department.objects.create(company=qs_company.company,
+                                                         name=pos_name,
+                                                         description=pos_des,
+                                                         isActive=True)
+                return  Response(company_departmentSerializer(new_dpm).data, status=status.HTTP_201_CREATED)
+            return Response({"Error":"Lỗi khởi tạo!"}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response({"Error":"Bạn không có quyền!"}, status=status.HTTP_400_BAD_REQUEST)
                
 class RegisterView(APIView):
     authentication_classes = [OAuth2Authentication]
@@ -160,7 +182,7 @@ class GetCompanyAPIView(APIView):
             user=request.user
             try:
                 qs_company=company_staff.objects.get(user=user,company__key=key)
-                return Response(companySerializer(qs_company.company).data, status=status.HTTP_200_OK)
+                return Response(companyDetailsSerializer(qs_company.company).data, status=status.HTTP_200_OK)
             except company_staff.DoesNotExist:
                 return Response({'Error': "Bạn không có quyền truy cập!"}, status=status.HTTP_404_NOT_FOUND)
             except Exception as e:

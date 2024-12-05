@@ -165,3 +165,19 @@ class company_possitionSerializer(serializers.ModelSerializer):
     class Meta:
         model = company_possition
         fields = '__all__'
+
+class companyDetailsSerializer(serializers.ModelSerializer):
+    department = serializers.SerializerMethodField(read_only=True)
+    jobtitle = serializers.SerializerMethodField(read_only=True)
+    def get_department(self, qs):
+        qs_department=company_department.objects.filter(company=qs)
+        return company_departmentSerializer(qs_department).data
+    def get_jobtitle(self, qs):
+        qs_possition=company_possition.objects.filter(company=qs)
+        return company_possitionSerializer(qs_possition).data
+            
+    class Meta:
+        model = company
+        fields = ['companyType','avatar','name','fullname','address','department',
+        'addressDetails','hotline','isValidate','isOA','jobtitle',
+        'shortDescription','description','created_at']
