@@ -166,15 +166,25 @@ class company_possitionSerializer(serializers.ModelSerializer):
         model = company_possition
         fields = '__all__'
 
+class CD_LTESerializer(serializers.ModelSerializer):
+    class Meta:
+        model = company_department
+        fields = '__all__'
+
+class CP_LTESerializer(serializers.ModelSerializer):
+    class Meta:
+        model = company_possition
+        fields = '__all__'
+
 class companyDetailsSerializer(serializers.ModelSerializer):
     department = serializers.SerializerMethodField(read_only=True)
     jobtitle = serializers.SerializerMethodField(read_only=True)
     def get_department(self, qs):
         qs_department=company_department.objects.filter(company=qs)
-        return company_departmentSerializer(qs_department).data
+        return CD_LTESerializer(qs_department,many=True).data
     def get_jobtitle(self, qs):
         qs_possition=company_possition.objects.filter(company=qs)
-        return company_possitionSerializer(qs_possition).data
+        return CP_LTESerializer(qs_possition,many=True).data
             
     class Meta:
         model = company

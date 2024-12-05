@@ -161,7 +161,7 @@ class GetUserAPIView(APIView):
                 except:
                     pass
                 return Response({
-                    'company': companySerializer(qs_staff.company).data,
+                    'company': companyDetailsSerializer(qs_staff.company).data,
                     'user': company_staffSerializer(qs_staff).data,
                     'profile': company_staff_profileSerializer(qs_profile).data if qs_profile else None
                 }, status=status.HTTP_200_OK)
