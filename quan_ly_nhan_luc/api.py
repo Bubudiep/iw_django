@@ -85,6 +85,69 @@ class RegisterView(APIView):
             return Response(CompanyStaffDetailsSerializer(qs_staff).data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
        
+class MyInfoAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+    def get(self, request, *args, **kwargs):
+        key=request.query_params.get('key', None)
+        user=self.request.user
+        if user.is_authenticated:
+            try:
+                qs_account=company_staff.objects.get(company__key=key,user__user=user)
+                qs_profile=company_staff_profile.objects.filter(staff=qs_account)
+                if len(qs_profile)==0:
+                    create=company_staff_profile.objects.create(staff=qs_account)
+                    return Response(company_staff_profileSerializer(create).data,status=status.HTTP_200_OK)
+                else:
+                    return Response({
+                        "name":qs_account.name,
+                        "possition":qs_account.possition.name if qs_account.possition else None,
+                        "department":qs_account.department.name if qs_account.department else None,
+                        **company_staff_profileSerializer(qs_profile.first()).data
+                    },status=status.HTTP_200_OK)
+            except company_staff.DoesNotExist:
+                return Response({"detail": "Không tìm thấy công ty và tài khoản"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"detail": "Bạn chưa đăng nhập"}, status=status.HTTP_400_BAD_REQUEST)
+    def _save_image(self, user, image_type, image_data):
+        """Lưu ảnh vào ImageSafe và trả về ID của ảnh."""
+        image = image_safe(
+            user=user,
+            name=image_data.get('name'),  # avatar hoặc background
+            data=image_data.get('data'),
+            size=image_data.get('size'),
+            width=image_data.get('width'),
+            height=image_data.get('height'),
+            fileType=image_data.get('fileType')
+        )
+        image.save()
+        return image
+    def patch(self, request, *args, **kwargs):
+        key = request.query_params.get('key', None)
+        user = self.request.user
+        if user.is_authenticated:
+            try:
+                qs_account = company_staff.objects.get(company__key=key, user__user=user)
+                qs_profile = company_staff_profile.objects.filter(staff=qs_account).first()
+                if qs_profile:
+                    # Kiểm tra nếu có ảnh avatar hoặc ảnh background mới
+                    if 'avatar' in request.data:
+                        avatar_data = request.data['avatar']
+                        create_avt=self._save_image(user, 'avatar', avatar_data)
+                        qs_profile.avatar=create_avt
+                    if 'background' in request.data:
+                        background_data = request.data['background']
+                        create_bg=self._save_image(user, 'background', background_data)
+                        qs_profile.background=create_bg
+                    qs_profile.save()
+                    serializer = company_staff_profileSerializer(qs_profile, data=request.data, partial=True)
+                    if serializer.is_valid():
+                        serializer.save()
+                        return Response(serializer.data, status=status.HTTP_200_OK)
+                    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                return Response({"detail": "Hồ sơ không tồn tại"}, status=status.HTTP_400_BAD_REQUEST)
+            except company_staff.DoesNotExist:
+                return Response({"detail": "Không tìm thấy công ty và tài khoản"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"detail": "Bạn chưa đăng nhập"}, status=status.HTTP_400_BAD_REQUEST)
+    
 class SearchAPIView(APIView):
     permission_classes = [IsAuthenticated]
     def get(self, request, *args, **kwargs):

@@ -19,6 +19,7 @@ class file_safe(models.Model): # Phân loại công ty
         ordering = ['-id']
     def __str__(self):
         return f"{self.name}"
+    
 class image_safe(models.Model): # Phân loại công ty
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     name = models.CharField(max_length=200, null=True, blank=True)
@@ -141,14 +142,26 @@ class company_staff_profile(models.Model):
     staff = models.ForeignKey(company_staff, on_delete=models.SET_NULL, null=True, blank=True)
     last_name = models.CharField(max_length=200, null=True, blank=True)
     first_name = models.CharField(max_length=200, null=True, blank=True)
-    full_name = models.CharField(max_length=200, null=True, blank=True)
-    nick_name = models.CharField(max_length=200, null=True, blank=True)
+    cv_file = models.ForeignKey(file_safe, on_delete=models.SET_NULL, null=True, blank=True)
+    
     avatar = models.ForeignKey(image_safe, on_delete=models.SET_NULL, null=True, blank=True, related_name='avatar_img')
     background = models.ForeignKey(image_safe, on_delete=models.SET_NULL, null=True, blank=True, related_name='background_img')
-    cv_file = models.ForeignKey(file_safe, on_delete=models.SET_NULL, null=True, blank=True)
-    isOnline = models.BooleanField(default=False, null=True, blank=True) # online trên app
-    isValidate = models.BooleanField(default=False, null=True, blank=True) # được phê duyệt
-    socket_id = models.CharField(max_length=200, null=True, blank=True)
+    
+    full_name = models.CharField(max_length=200, null=True, blank=True)
+    nick_name = models.CharField(max_length=200, null=True, blank=True)
+    sologan = models.CharField(max_length=200, null=True, blank=True)
+
+    bank = models.CharField(max_length=200, null=True, blank=True)
+    bank_number = models.CharField(max_length=200, null=True, blank=True)
+    
+    zalo_id= models.CharField(max_length=200, null=True, blank=True)
+    zalo_number = models.CharField(max_length=200, null=True, blank=True)
+    facebook = models.CharField(max_length=200, null=True, blank=True)
+    tiktok = models.CharField(max_length=200, null=True, blank=True)
+    instagram = models.CharField(max_length=200, null=True, blank=True)
+    phone = models.CharField(max_length=200, null=True, blank=True)
+    email = models.EmailField(null=True, blank=True)
+    birthday = models.DateField(null=True, blank=True)
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     class Meta:

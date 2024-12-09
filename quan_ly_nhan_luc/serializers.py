@@ -139,6 +139,12 @@ class CompanyStaffSmallSerializer(serializers.ModelSerializer):
 class CompanyStaffDetailsSerializer(serializers.ModelSerializer):
     profile = serializers.SerializerMethodField(read_only=True)
     username = serializers.CharField(source='user.username',read_only=True)
+    department_name = serializers.SerializerMethodField(read_only=True)
+    possition_name = serializers.SerializerMethodField(read_only=True)
+    def get_department_name(self, obj):
+        return obj.department.name if obj.department else None
+    def get_possition_name(self, obj):
+        return obj.possition.name if obj.possition else None
     def get_profile(self, qs):
         try:
             profile=company_staff_profile.objects.get(staff=qs)
@@ -153,7 +159,7 @@ class CompanyStaffDetailsSerializer(serializers.ModelSerializer):
             'company','user','department',
             'possition','isSuperAdmin','isActive','isAdmin',
             'isOnline','isValidate','socket_id','profile',
-            'created_at'
+            'created_at','department_name','possition_name'
         ]
 
 class company_staffSerializer(serializers.ModelSerializer):
@@ -179,6 +185,8 @@ class company_staffFullSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class company_staff_profileSerializer(serializers.ModelSerializer):
+    avatar = serializers.CharField(source='avatar.data', allow_null=True,read_only=True)
+    background = serializers.CharField(source='background.data', allow_null=True,read_only=True)
     class Meta:
         model = company_staff_profile
         fields = '__all__'
@@ -236,10 +244,12 @@ class CompanyAccountSerializer(serializers.ModelSerializer):
 class CompanyAccountDetailsSerializer(serializers.ModelSerializer):
     user = CompanyAccountSerializer(write_only=True)
     username=serializers.SerializerMethodField(read_only=True)
-    class Meta:
-        model = company_staff
-        fields = '__all__'
-
+    department_name = serializers.SerializerMethodField(read_only=True)
+    possition_name = serializers.SerializerMethodField(read_only=True)
+    def get_department_name(self, obj):
+        return obj.department.name if obj.department else None
+    def get_possition_name(self, obj):
+        return obj.possition.name if obj.possition else None
     def get_username(self, obj):
         return obj.user.username if obj.user else None
     def update(self, instance, validated_data):
@@ -263,3 +273,6 @@ class CompanyAccountDetailsSerializer(serializers.ModelSerializer):
                 )
                 instance.user = company_account_instance
         return super().update(instance, validated_data)
+    class Meta:
+        model = company_staff
+        fields = '__all__'
