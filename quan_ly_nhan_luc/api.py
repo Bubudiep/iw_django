@@ -28,6 +28,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.pagination import PageNumberPagination
 from django.contrib.auth.hashers import check_password
 from rest_framework.filters import OrderingFilter
+from django.db.models import Q,F
 
 def generate_response_json(result:str, message:str, data:dict={}):
     return {"result": result, "message": message, "data": data}
@@ -83,7 +84,32 @@ class RegisterView(APIView):
             qs_staff=company_staff.objects.get(user=user)
             return Response(CompanyStaffDetailsSerializer(qs_staff).data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-               
+       
+class SearchAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+    def get(self, request, *args, **kwargs):
+        query = request.query_params.get('q', '').strip()  # Lấy từ khóa tìm kiếm
+        search_type = request.query_params.get('type', '').strip()
+        if not query:
+            return Response({"detail": "Hãy nhập từ khóa tìm kiếm."}, status=400)
+        if search_type == 'employee':
+            results = company_staff.objects.filter(
+                Q(name__icontains=query) | Q(id__icontains=query)| Q(user__username__icontains=query)
+            ).annotate(
+                username=F('user__username')
+            ).values('id', 'name', 'username')[:8]
+        elif search_type == 'department':
+            results = company_department.objects.filter(
+                Q(name__icontains=query)
+            ).values('id', 'name')
+        elif search_type == 'position':
+            results = company_possition.objects.filter(
+                Q(name__icontains=query)
+            ).values('id', 'name')
+        else:
+            return Response({"detail": "Không hợp lệ."}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(results)
+    
 class LoginOAuth2APIView(APIView):
     permission_classes = [AllowAny]
     def post(self, request):
@@ -96,22 +122,22 @@ class LoginOAuth2APIView(APIView):
                 company_instance =company.objects.get(key=key)
                 user=company_account.objects.get(username=username,company=company_instance )
                 if check_password(password, user.password)==False:
-                    return Response({'Error': 'Sai mật khẩu'}, status=status.HTTP_401_UNAUTHORIZED)
+                    return Response({'detail': 'Sai mật khẩu'}, status=status.HTTP_401_UNAUTHORIZED)
             except company.DoesNotExist:
-                return Response({'Error': 'Công ty chưa được đăng ký'}, status=status.HTTP_401_UNAUTHORIZED)
+                return Response({'detail': 'Công ty chưa được đăng ký'}, status=status.HTTP_401_UNAUTHORIZED)
             except company_account.DoesNotExist:
-                return Response({'Error': 'Tài khoản không chính xác'}, status=status.HTTP_401_UNAUTHORIZED)
+                return Response({'detail': 'Tài khoản không chính xác'}, status=status.HTTP_401_UNAUTHORIZED)
             try:
                 qs_company = company_staff.objects.get(user=user, company__key=key,)
                 if qs_company.isBan:
-                    return Response({'Error': 'Tài khoản của bạn đã bị cấm!'}, status=status.HTTP_403_FORBIDDEN)
+                    return Response({'detail': 'Tài khoản của bạn đã bị cấm!'}, status=status.HTTP_403_FORBIDDEN)
                 if qs_company.isActive==False:
-                    return Response({'Error': 'Tài khoản của bạn đã bị khóa!'}, status=status.HTTP_403_FORBIDDEN)
+                    return Response({'detail': 'Tài khoản của bạn đã bị khóa!'}, status=status.HTTP_403_FORBIDDEN)
             except company_staff.DoesNotExist:
-                return Response({'Error': 'Bạn không nằm trong công ty này!'}, status=status.HTTP_403_FORBIDDEN)
+                return Response({'detail': 'Bạn không nằm trong công ty này!'}, status=status.HTTP_403_FORBIDDEN)
             application = Application.objects.filter(client_id='G061oKzH80Y7k7Q8mcqlrnSpFH2OhSl2N6Ye0RLS').first()
             if not application:
-                return Response({'Error': 'OAuth2 Application not found'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                return Response({'detail': 'OAuth2 Application not found'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
             token = generate_token()
             access_token = AccessToken.objects.create(
@@ -166,11 +192,11 @@ class GetUserAPIView(APIView):
                     'profile': company_staff_profileSerializer(qs_profile).data if qs_profile else None
                 }, status=status.HTTP_200_OK)
             except company_staff.DoesNotExist:
-                return Response({'Error': "Bạn không có quyền truy cập!"}, status=status.HTTP_404_NOT_FOUND)
+                return Response({'detail': "Bạn không có quyền truy cập!"}, status=status.HTTP_404_NOT_FOUND)
             except Exception as e:
-                return Response({'Error': f"{e}"}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'detail': f"{e}"}, status=status.HTTP_400_BAD_REQUEST)
         else:
-            return Response({'Error': f"Please login and try again!"}, status=status.HTTP_403_FORBIDDEN)
+            return Response({'detail': f"Please login and try again!"}, status=status.HTTP_403_FORBIDDEN)
         
 class GetCompanyAPIView(APIView):
     authentication_classes = [OAuth2Authentication]  # Kiểm tra xác thực OAuth2
@@ -184,12 +210,34 @@ class GetCompanyAPIView(APIView):
                 qs_company=company_staff.objects.get(user=user,company__key=key)
                 return Response(companyDetailsSerializer(qs_company.company).data, status=status.HTTP_200_OK)
             except company_staff.DoesNotExist:
-                return Response({'Error': "Bạn không có quyền truy cập!"}, status=status.HTTP_404_NOT_FOUND)
+                return Response({'detail': "Bạn không có quyền truy cập!"}, status=status.HTTP_404_NOT_FOUND)
             except Exception as e:
-                return Response({'Error': f"{e}"}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'detail': f"{e}"}, status=status.HTTP_400_BAD_REQUEST)
         else:
-            return Response({'Error': f"Please login and try again!"}, status=status.HTTP_403_FORBIDDEN)
-
+            return Response({'detail': f"Please login and try again!"}, status=status.HTTP_403_FORBIDDEN)
+  
+class GetCompanyDashboardAPIView(APIView):
+    authentication_classes = [OAuth2Authentication]  # Kiểm tra xác thực OAuth2
+    permission_classes = [IsAuthenticated]  # Đảm bảo người dùng phải đăng nhập (token hợp lệ)
+    def get(self, request):
+        key=request.query_params.get('key')
+        print(f"{key}")
+        if request.user.is_authenticated:
+            user=request.user
+            try:
+                qs_company=company_staff.objects.get(user__user=user,company__key=key).company
+                qs_staff=company_staff.objects.filter(company=qs_company)
+                return Response({
+                    "staff":CompanyStaffSmallSerializer(qs_staff,many=True).data,
+                    "departmnet":None,
+                    "jobtitle":None
+                }, status=status.HTTP_200_OK)
+            except company_staff.DoesNotExist:
+                return Response({'detail': "Bạn không có quyền truy cập!"}, status=status.HTTP_404_NOT_FOUND)
+            except Exception as e:
+                return Response({'detail': f"{e}"}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response({'detail': f"Please login and try again!"}, status=status.HTTP_403_FORBIDDEN)
 
 class CompanyStaffViewSet(viewsets.ModelViewSet):
     serializer_class = CompanyStaffDetailsSerializer
@@ -198,14 +246,21 @@ class CompanyStaffViewSet(viewsets.ModelViewSet):
     filter_backends = (DjangoFilterBackend,OrderingFilter)
     filterset_class = CompanyStaffFilter
     pagination_class = StandardResultsSetPagination
-    # Chỉ cho phép GET
-    http_method_names = ['get']
+    http_method_names = ['get', 'patch']
     def get_queryset(self):
         user = self.request.user
         if user.is_superuser:
             return company_staff.objects.all()
         qs_res=company_staff.objects.filter(user__user=user,isActive=True).values_list("company__id",flat=True)
         return company_staff.objects.filter(company__id__in=qs_res)
+    def partial_update(self, request, *args, **kwargs):
+        user = request.user
+        if not user.is_superuser and not company_staff.objects.filter(user__user=user, isAdmin=True, isActive=True).exists():
+            return Response(
+                {"detail": "Bạn không có quyền thực hiện thao tác này."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        return super().partial_update(request, *args, **kwargs)
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
         queryset = self.filter_queryset(queryset)  # Áp dụng bộ lọc cho queryset
@@ -219,5 +274,92 @@ class CompanyStaffViewSet(viewsets.ModelViewSet):
             serializer = self.get_serializer(page, many=True)
             return self.get_paginated_response(serializer.data)
 
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+    
+class CompanyAccountViewSet(viewsets.ModelViewSet):
+    serializer_class = CompanyAccountDetailsSerializer
+    authentication_classes = [OAuth2Authentication]
+    permission_classes = [IsAuthenticated]
+    filter_backends = (DjangoFilterBackend,OrderingFilter)
+    pagination_class = StandardResultsSetPagination
+    http_method_names = ['get', 'patch']
+    def get_queryset(self):
+        user = self.request.user
+        qs_res=company_staff.objects.filter(user__user=user,isActive=True).values_list("company__id",flat=True)
+        return company_staff.objects.filter(company__id__in=qs_res)
+    def partial_update(self, request, *args, **kwargs):
+        user = request.user
+        instance = self.get_object()
+        data = request.data
+        if not user.is_superuser and not company_staff.objects.filter(user__user=user, isAdmin=True, isActive=True).exists():
+            return Response(
+                {"detail": "Bạn không có quyền thực hiện thao tác này."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        # Kiểm tra logic chỉ SuperAdmin mới được phép đặt tài khoản thành Admin
+        if 'isAdmin' in data and data['isAdmin']:
+            if not user.is_superuser and not company_staff.objects.filter(user__user=user, isSuperAdmin=True, isActive=True).exists():
+                return Response(
+                    {"detail": "Chỉ SuperAdmin mới có quyền đặt tài khoản này thành Admin."},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+        return super().partial_update(request, *args, **kwargs)
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        queryset = self.filter_queryset(queryset)  # Áp dụng bộ lọc cho queryset
+        
+        page_size = self.request.query_params.get('page_size')
+        if page_size is not None:
+            self.pagination_class.page_size = int(page_size)
+            
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+    
+class CompanyDepartmentAdminViewSet(viewsets.ModelViewSet):
+    serializer_class = company_departmentSerializer
+    authentication_classes = [OAuth2Authentication]
+    permission_classes = [IsAuthenticated]
+    http_method_names = ['get','patch','delete']
+    def get_queryset(self):
+        user = self.request.user
+        qs_res=company_staff.objects.filter(user__user=user,isAdmin=True,isActive=True).values_list("company__id",flat=True)
+        return company_department.objects.filter(company__id__in=qs_res)
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        queryset = self.filter_queryset(queryset)  # Áp dụng bộ lọc cho queryset
+        page_size = self.request.query_params.get('page_size')
+        if page_size is not None:
+            self.pagination_class.page_size = int(page_size)
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+class CompanyPossitionAdminViewSet(viewsets.ModelViewSet):
+    serializer_class = company_possitionSerializer
+    authentication_classes = [OAuth2Authentication]
+    permission_classes = [IsAuthenticated]
+    http_method_names = ['get','patch','delete']
+    def get_queryset(self):
+        user = self.request.user
+        qs_res=company_staff.objects.filter(user__user=user,isAdmin=True,isActive=True).values_list("company__id",flat=True)
+        return company_possition.objects.filter(company__id__in=qs_res)
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        queryset = self.filter_queryset(queryset)  # Áp dụng bộ lọc cho queryset
+        page_size = self.request.query_params.get('page_size')
+        if page_size is not None:
+            self.pagination_class.page_size = int(page_size)
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)

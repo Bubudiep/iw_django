@@ -16,13 +16,15 @@ def generate_response_json(result:str, message:str, data:dict={}):
 
 class RegisterSerializer(serializers.ModelSerializer):
     # Bạn có thể thêm các trường zalo_name và zalo_id vào đây
-    employeeCode = serializers.CharField(required=False)
-    key = serializers.CharField(required=False)
-    password = serializers.CharField(required=False)
-    username = serializers.CharField(required=False)
+    employeeCode = serializers.CharField(required=True)
+    key = serializers.CharField(required=True)
+    password = serializers.CharField(required=True)
+    username = serializers.CharField(required=True)
+    department = serializers.CharField(required=False)
+    jobtitle = serializers.CharField(required=False)
     class Meta:
         model = User
-        fields = ['username', 'password', 'employeeCode','key']
+        fields = ['username', 'password', 'employeeCode','key','jobtitle','department']
         
     @cached_property
     def user(self):
@@ -40,6 +42,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         jobtitle = validated_data.pop('jobtitle',None)
         user = self.user
         qs_company=company.objects.get(key=key)
+        print(f"{jobtitle} {department}")
         if not user.is_authenticated:
             raise serializers.ValidationError("Người dùng chưa được xác thực qua OAuth2")
         if key:
@@ -60,12 +63,12 @@ class RegisterSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({"Error":"Mã NV không được để trống!"})
         if department:
             try:
-                department=company_department.objects.get(id=department)
+                department=company_department.objects.get(id=department,company=qs_company)
             except company_department.DoesNotExist:
                 raise serializers.ValidationError({"Error":"Bộ phận không hợp lệ!"})
         if jobtitle:
             try:
-                jobtitle=company_possition.objects.get(id=jobtitle)
+                jobtitle=company_possition.objects.get(id=jobtitle,company=qs_company)
             except company_possition.DoesNotExist:
                 raise serializers.ValidationError({"Error":"Chức vụ không hợp lệ!"})
         if username:
@@ -108,6 +111,30 @@ class CompanyStaffProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = company_staff_profile
         fields = '__all__'
+
+class CompanyStaffProfileLTESerializer(serializers.ModelSerializer):
+    class Meta:
+        model = company_staff_profile
+        fields = ['full_name','nick_name','avatar']
+
+class CompanyStaffSmallSerializer(serializers.ModelSerializer):
+    profile = serializers.SerializerMethodField(read_only=True)
+    def get_profile(self, qs):
+        try:
+            profile=company_staff_profile.objects.get(staff=qs)
+            return CompanyStaffProfileLTESerializer(profile).data
+        except company_staff_profile.DoesNotExist:
+            return None
+    class Meta:
+        model = company_staff
+        fields = [
+            'id','name','department',
+            'possition','isSuperAdmin',
+            'isActive','isAdmin',
+            'isOnline','isValidate',
+            'socket_id','profile',
+            'created_at'
+        ]
 
 class CompanyStaffDetailsSerializer(serializers.ModelSerializer):
     profile = serializers.SerializerMethodField(read_only=True)
@@ -191,3 +218,48 @@ class companyDetailsSerializer(serializers.ModelSerializer):
         fields = ['companyType','avatar','name','fullname','address','department',
         'addressDetails','hotline','isValidate','isOA','jobtitle',
         'shortDescription','description','created_at']
+        
+class CompanyAccountSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True)
+    class Meta:
+        model = company_account
+        fields = ['username', 'password']
+    def update(self, instance, validated_data):
+        if 'password' in validated_data:
+            instance.password = make_password(validated_data.pop('password'))
+        return super().update(instance, validated_data)
+    def create(self, validated_data):
+        if 'password' in validated_data:
+            validated_data['password'] = make_password(validated_data['password'])
+        return super().create(validated_data)
+    
+class CompanyAccountDetailsSerializer(serializers.ModelSerializer):
+    user = CompanyAccountSerializer(write_only=True)
+    username=serializers.SerializerMethodField(read_only=True)
+    class Meta:
+        model = company_staff
+        fields = '__all__'
+
+    def get_username(self, obj):
+        return obj.user.username if obj.user else None
+    def update(self, instance, validated_data):
+        user_data = validated_data.pop('user', None)  # Lấy thông tin user nếu có
+        company_account_instance = instance.user
+        if user_data:
+            username = user_data.get('username')
+            password = user_data.get('password')
+            if company_account_instance:
+                if username:
+                    company_account_instance.username = username
+                if password:
+                    company_account_instance.password = password
+                company_account_instance.save()
+            else:
+                company_account_instance = company_account.objects.create(
+                    user=instance.user,
+                    company=instance.company,
+                    username=username,
+                    password=password
+                )
+                instance.user = company_account_instance
+        return super().update(instance, validated_data)

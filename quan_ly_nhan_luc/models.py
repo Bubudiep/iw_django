@@ -155,3 +155,4 @@ class company_staff_profile(models.Model):
         ordering = ['-id']
     def __str__(self):
         return f"{self.user.username}_{self.possition}_{self.company}"
+    
