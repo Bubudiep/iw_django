@@ -168,4 +168,46 @@ class company_staff_profile(models.Model):
         ordering = ['-id']
     def __str__(self):
         return f"{self.user.username}_{self.possition}_{self.company}"
+
+class company_staff_history_function(models.Model):
+    name = models.CharField(max_length=200, null=True, blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+    class Meta:
+        ordering = ['-id']
+    def __str__(self):
+        return f"{self.name}"
     
+class company_staff_history_action(models.Model):
+    name = models.CharField(max_length=200, null=True, blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+    class Meta:
+        ordering = ['-id']
+    def __str__(self):
+        return f"{self.name}"
+    
+class company_staff_history(models.Model):
+    staff = models.ForeignKey(company_staff, on_delete=models.SET_NULL, null=True, blank=True)
+
+    function = models.ForeignKey(company_staff_history_function, on_delete=models.SET_NULL, null=True, blank=True)
+    action = models.ForeignKey(company_staff_history_action, on_delete=models.SET_NULL, null=True, blank=True)
+    
+    old_data = models.JSONField(null=True, blank=True)
+    new_data = models.JSONField(null=True, blank=True)
+    
+    title= models.CharField(max_length=200, null=True, blank=True)
+    message = models.TextField(null=True, blank=True)
+    
+    isHidden = models.BooleanField(default=False, null=True, blank=True)
+    
+    isSended = models.BooleanField(default=False, null=True, blank=True)
+    isReceived = models.BooleanField(default=False, null=True, blank=True)
+    isReaded = models.BooleanField(default=False, null=True, blank=True)
+    
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+    class Meta:
+        ordering = ['-id']
+    def __str__(self):
+        return f"{self.user.username}_{self.possition}_{self.company}"
