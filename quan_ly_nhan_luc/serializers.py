@@ -311,3 +311,39 @@ class CompanyAccountDetailsSerializer(serializers.ModelSerializer):
     class Meta:
         model = company_staff
         fields = '__all__'
+        
+class CompanyVendorSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = company_vendor
+        fields = '__all__'
+
+class CompanySupplierSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = company_supplier
+        fields = '__all__'
+
+class CompanyOperatorSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = company_operator
+        fields = '__all__'
+        
+class CompanyStaffSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = company_staff
+        fields = ['id', 'name', 'department', 'possition']  # Chỉ các trường cần thiết
+
+class CompanyCustomerSerializer(serializers.ModelSerializer):
+    staffs = CompanyStaffSerializer(many=True, read_only=True)  # Dùng serializer lồng ghép để hiển thị nhân viên
+    staff_ids = serializers.PrimaryKeyRelatedField(
+        many=True, queryset=company_staff.objects.all(), write_only=True
+    )  # Để thêm/xóa nhân viên thông qua ID
+
+    class Meta:
+        model = company_customer
+        fields = ['id', 'company', 'name', 'fullname', 'address', 'email', 'hotline', 'created_at', 'updated_at', 'staffs', 'staff_ids']
+
+    def update(self, instance, validated_data):
+        staff_ids = validated_data.pop('staff_ids', [])
+        instance = super().update(instance, validated_data)
+        instance.staffs.set(staff_ids)  # Cập nhật mối quan hệ Many-to-Many
+        return instance

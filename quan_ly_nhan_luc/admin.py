@@ -59,6 +59,13 @@ class IsActiveAndNotBannedFilter(admin.SimpleListFilter):
         if self.value() == 'no':
             return queryset.exclude(isActive=True, isBan=False)
 
+    
+@admin.register(operator_history)
+class operator_historyAdmin(admin.ModelAdmin):
+    list_display = ['operator', 'customer', 'vendor', 'start_date', 'end_date']
+    list_filter = ['start_date', 'end_date', 'vendor', 'customer']
+    search_fields = ['operator__ma_nhanvien', 'customer__name', 'vendor__name']
+    
 class CompanyStaffAdmin(admin.ModelAdmin):
     list_display = ['user','name', 'company', 'department', 'possition', 'isActive', 'isSuperAdmin', 'isAdmin', 'isBan', 'isOnline', 'isValidate']
     list_filter = ['isActive', 'isSuperAdmin', 'isAdmin', 'isBan', 'isOnline', 'isValidate', 'company', 'department', 'possition', IsActiveAndNotBannedFilter]

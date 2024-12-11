@@ -214,10 +214,92 @@ class company_staff_history(models.Model):
     def __str__(self):
         return f"{self.staff.name}"
 
-class company_operator(models.Model):
+class company_customer(models.Model):
+    staffs = models.ManyToManyField(company_staff, related_name="customers", blank=True)
+    company = models.ForeignKey(company, on_delete=models.CASCADE)
+    name = models.CharField(max_length=200, null=True, blank=True)
+    fullname = models.CharField(max_length=200, null=True, blank=True)
+    address = models.CharField(max_length=200, null=True, blank=True)
+    email = models.CharField(max_length=200, null=True, blank=True)
+    hotline = models.CharField(max_length=200, null=True, blank=True)
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     class Meta:
         ordering = ['-id']
     def __str__(self):
-        return f"{self.staff.name}"
+        return f"{self.name}"
+    
+class company_supplier(models.Model):
+    company = models.ForeignKey(company, on_delete=models.CASCADE)
+    name = models.CharField(max_length=200, null=True, blank=True)
+    fullname = models.CharField(max_length=200, null=True, blank=True)
+    address = models.CharField(max_length=200, null=True, blank=True)
+    email = models.CharField(max_length=200, null=True, blank=True)
+    hotline = models.CharField(max_length=200, null=True, blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+    class Meta:
+        ordering = ['-id']
+    def __str__(self):
+        return f"{self.name}"
+    
+class company_vendor(models.Model):
+    company = models.ForeignKey(company, on_delete=models.CASCADE)
+    name = models.CharField(max_length=200, null=True, blank=True)
+    fullname = models.CharField(max_length=200, null=True, blank=True)
+    address = models.CharField(max_length=200, null=True, blank=True)
+    email = models.CharField(max_length=200, null=True, blank=True)
+    hotline = models.CharField(max_length=200, null=True, blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+    class Meta:
+        ordering = ['-id']
+    def __str__(self):
+        return f"{self.name}"
+    
+class company_operator(models.Model):
+    company = models.ForeignKey(company, on_delete=models.CASCADE)
+    ma_nhanvien= models.CharField(max_length=200, null=True, blank=True)
+    
+    sdt= models.CharField(max_length=15, null=True, blank=True)
+    ho_ten= models.CharField(max_length=200, null=True, blank=True)
+    ten_goc= models.CharField(max_length=200, null=True, blank=True)
+    so_cccd= models.CharField(max_length=200, null=True, blank=True)
+    diachi= models.CharField(max_length=200, null=True, blank=True)
+    ngaysinh= models.DateField(null=True, blank=True)
+    diachi= models.TextField(null=True, blank=True)
+    
+    so_taikhoan= models.CharField(max_length=200, null=True, blank=True)
+    chu_taikhoan= models.CharField(max_length=200, null=True, blank=True)
+    ghichu_taikhoan= models.CharField(max_length=200, null=True, blank=True)
+    ghichu= models.TextField(null=True, blank=True)
+    
+    nguoituyen = models.ForeignKey(company_staff, on_delete=models.SET_NULL, null=True, blank=True)
+    nhacungcap = models.ForeignKey(company_vendor, on_delete=models.SET_NULL, null=True, blank=True)
+    nhachinh = models.ForeignKey(company_supplier, on_delete=models.SET_NULL, null=True, blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+    class Meta:
+        ordering = ['-id']
+    def __str__(self):
+        return f"{self.ma_nhanvien}"
+
+class operator_history(models.Model):
+    operator = models.ForeignKey(company_operator, on_delete=models.CASCADE, related_name="work_histories")
+    customer = models.ForeignKey(company_customer, on_delete=models.CASCADE, related_name="operator_histories")
+    vendor = models.ForeignKey(company_vendor, on_delete=models.SET_NULL, null=True, blank=True, related_name="operator_histories")
+    
+    start_date = models.DateTimeField(null=True, blank=True)  # Thời gian bắt đầu làm việc
+    end_date = models.DateTimeField(null=True, blank=True)    # Thời gian kết thúc làm việc
+    notes = models.TextField(null=True, blank=True)           # Ghi chú thêm nếu cần
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-start_date']  # Sắp xếp theo thời gian bắt đầu mới nhất
+        verbose_name = "Operator History"
+        verbose_name_plural = "Operator Histories"
+
+    def __str__(self):
+        return f"{self.operator} -> {self.customer} ({self.start_date} - {self.end_date})"

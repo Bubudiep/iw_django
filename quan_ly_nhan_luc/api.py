@@ -446,6 +446,7 @@ class CompanyDepartmentAdminViewSet(viewsets.ModelViewSet):
             return self.get_paginated_response(serializer.data)
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
+    
 class CompanyPossitionAdminViewSet(viewsets.ModelViewSet):
     serializer_class = company_possitionSerializer
     authentication_classes = [OAuth2Authentication]
@@ -455,6 +456,94 @@ class CompanyPossitionAdminViewSet(viewsets.ModelViewSet):
         user = self.request.user
         qs_res=company_staff.objects.filter(user__user=user,isAdmin=True,isActive=True).values_list("company__id",flat=True)
         return company_possition.objects.filter(company__id__in=qs_res)
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        queryset = self.filter_queryset(queryset)  # Áp dụng bộ lọc cho queryset
+        page_size = self.request.query_params.get('page_size')
+        if page_size is not None:
+            self.pagination_class.page_size = int(page_size)
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+    
+class CompanyCustomerViewSet(viewsets.ModelViewSet):
+    serializer_class = CompanyCustomerSerializer
+    authentication_classes = [OAuth2Authentication]
+    permission_classes = [IsAuthenticated]
+    http_method_names = ['get','patch','delete']
+    def get_queryset(self):
+        user = self.request.user
+        qs_res=company_staff.objects.filter(user__user=user,isActive=True).values_list("company__id",flat=True)
+        return company_customer.objects.filter(company__id__in=qs_res)
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        queryset = self.filter_queryset(queryset)  # Áp dụng bộ lọc cho queryset
+        page_size = self.request.query_params.get('page_size')
+        if page_size is not None:
+            self.pagination_class.page_size = int(page_size)
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+    
+class CompanyVendorViewSet(viewsets.ModelViewSet):
+    serializer_class = CompanyVendorSerializer
+    authentication_classes = [OAuth2Authentication]
+    permission_classes = [IsAuthenticated]
+    http_method_names = ['get','patch','delete']
+    def get_queryset(self):
+        user = self.request.user
+        qs_res=company_staff.objects.filter(user__user=user,isActive=True).values_list("company__id",flat=True)
+        return company_vendor.objects.filter(company__id__in=qs_res)
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        queryset = self.filter_queryset(queryset)  # Áp dụng bộ lọc cho queryset
+        page_size = self.request.query_params.get('page_size')
+        if page_size is not None:
+            self.pagination_class.page_size = int(page_size)
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+    
+class CompanySupplierViewSet(viewsets.ModelViewSet):
+    serializer_class = CompanySupplierSerializer
+    authentication_classes = [OAuth2Authentication]
+    permission_classes = [IsAuthenticated]
+    http_method_names = ['get','patch','delete']
+    def get_queryset(self):
+        user = self.request.user
+        qs_res=company_staff.objects.filter(user__user=user,isActive=True).values_list("company__id",flat=True)
+        return company_supplier.objects.filter(company__id__in=qs_res)
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        queryset = self.filter_queryset(queryset)  # Áp dụng bộ lọc cho queryset
+        page_size = self.request.query_params.get('page_size')
+        if page_size is not None:
+            self.pagination_class.page_size = int(page_size)
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+    
+class CompanyOperatorViewSet(viewsets.ModelViewSet):
+    serializer_class = CompanyOperatorSerializer
+    authentication_classes = [OAuth2Authentication]
+    permission_classes = [IsAuthenticated]
+    http_method_names = ['get','patch','delete']
+    def get_queryset(self):
+        user = self.request.user
+        qs_res=company_staff.objects.filter(user__user=user,isActive=True).values_list("company__id",flat=True)
+        return company_operator.objects.filter(company__id__in=qs_res)
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
         queryset = self.filter_queryset(queryset)  # Áp dụng bộ lọc cho queryset
