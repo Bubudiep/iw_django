@@ -14,6 +14,37 @@ from rest_framework import status
 def generate_response_json(result:str, message:str, data:dict={}):
     return {"result": result, "message": message, "data": data}
 
+def get_client_ip(request):
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        # 'x_forwarded_for' trả về danh sách IP cách nhau bởi dấu phẩy
+        ip = x_forwarded_for.split(',')[0].strip()
+    else:
+        ip = request.META.get('REMOTE_ADDR')
+    return ip
+
+def record_user_action(function_name, action_name, staff, old_data=None, new_data=None, title=None, message=None, is_hidden=False, is_sended=False, is_received=False, is_readed=False):
+    function = company_staff_history_function.objects.get_or_create(name=function_name)[0]
+    action = company_staff_history_action.objects.get_or_create(name=action_name)[0]
+    # Tạo history
+    history = company_staff_history.objects.create(
+        staff=staff,
+        function=function,
+        action=action,
+        old_data=old_data,
+        new_data=new_data,
+        title=title,
+        message=message,
+        isHidden=is_hidden,
+        isSended=is_sended,
+        isReceived=is_received,
+        isReaded=is_readed,
+    )
+    return {
+        "message": "History created successfully.",
+        "data": history.id
+    }
+    
 class RegisterSerializer(serializers.ModelSerializer):
     # Bạn có thể thêm các trường zalo_name và zalo_id vào đây
     employeeCode = serializers.CharField(required=True)
@@ -77,10 +108,10 @@ class RegisterSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({"Error":"Tài khoản đã tồn tại!"})
         if username and password:
             with transaction.atomic():
-                user = User.objects.create_user(username=f"EMP_{qs_company.id}_{username}",
+                newuser = User.objects.create_user(username=f"EMP_{qs_company.id}_{username}",
                                                 password=''.join(random.choices(string.ascii_letters 
                                                                         + string.digits, k=12)))
-                emp = company_account.objects.create(company=qs_company,user=user,
+                emp = company_account.objects.create(company=qs_company,user=newuser,
                                                     username=username, password=password)
                 employee=company_staff.objects.create(company=qs_company,
                                                     name=employeeCode,
@@ -93,6 +124,10 @@ class RegisterSerializer(serializers.ModelSerializer):
                                                     isBan=False,
                                                     isOnline=False,
                                                     isValidate=False)
+                record_user_action(function_name="staff_account",action_name="create",staff=qs_staff,
+                                   title="Công ty",message=f"Đã thêm tài khoản {employeeCode} thành công!",is_hidden=False)
+                record_user_action(function_name="staff_account",action_name="create",staff=employee,
+                                   title="Tài khoản",message="Tài khoản của bản đã được khởi tạo!",is_hidden=False)
         return emp
         
 class companySerializer(serializers.ModelSerializer):

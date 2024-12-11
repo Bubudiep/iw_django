@@ -33,6 +33,39 @@ from django.db.models import Q,F
 def generate_response_json(result:str, message:str, data:dict={}):
     return {"result": result, "message": message, "data": data}
 
+def get_client_ip(request):
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        # 'x_forwarded_for' trả về danh sách IP cách nhau bởi dấu phẩy
+        ip = x_forwarded_for.split(',')[0].strip()
+    else:
+        ip = request.META.get('REMOTE_ADDR')
+    return ip
+
+def record_user_action(function_name, action_name, staff, old_data=None, new_data=None, title=None, message=None, is_hidden=False, is_sended=False, is_received=False, is_readed=False):
+    # Kiểm tra và tạo mới function nếu chưa tồn tại
+    function = company_staff_history_function.objects.get_or_create(name=function_name)[0]
+    # Kiểm tra và tạo mới action nếu chưa tồn tại
+    action = company_staff_history_action.objects.get_or_create(name=action_name)[0]
+    # Tạo history
+    history = company_staff_history.objects.create(
+        staff=staff,
+        function=function,
+        action=action,
+        old_data=old_data,
+        new_data=new_data,
+        title=title,
+        message=message,
+        isHidden=is_hidden,
+        isSended=is_sended,
+        isReceived=is_received,
+        isReaded=is_readed,
+    )
+    return {
+        "message": "History created successfully.",
+        "data": history.id
+    }
+    
 class StandardResultsSetPagination(PageNumberPagination):
     page_size = 50  # Số lượng đối tượng trên mỗi trang
     page_size_query_param = 'page_size'
@@ -178,6 +211,7 @@ class LoginOAuth2APIView(APIView):
     def post(self, request):
         try:
             print("Đang đăng nhập")
+            ip=get_client_ip(request)
             username = request.data.get('username')
             password = request.data.get('password')
             key = request.data.get('key')
@@ -191,7 +225,7 @@ class LoginOAuth2APIView(APIView):
             except company_account.DoesNotExist:
                 return Response({'detail': 'Tài khoản không chính xác'}, status=status.HTTP_401_UNAUTHORIZED)
             try:
-                qs_company = company_staff.objects.get(user=user, company__key=key,)
+                qs_company = company_staff.objects.get(user=user, company__key=key)
                 if qs_company.isBan:
                     return Response({'detail': 'Tài khoản của bạn đã bị cấm!'}, status=status.HTTP_403_FORBIDDEN)
                 if qs_company.isActive==False:
@@ -216,6 +250,13 @@ class LoginOAuth2APIView(APIView):
                 access_token=access_token,
                 application=application
             )
+            record_user_action(function_name="login",
+                               action_name="login",
+                               ip_action=ip,
+                               staff=qs_company,
+                               title="Đăng nhập",
+                               message=f"Đăng nhập thành công tại ip {ip}",
+                               is_hidden=True)
             access_token.refresh_token = refresh_token_instance
             access_token.save()
             return Response({

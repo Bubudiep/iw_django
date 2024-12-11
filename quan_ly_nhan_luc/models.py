@@ -192,6 +192,8 @@ class company_staff_history(models.Model):
 
     function = models.ForeignKey(company_staff_history_function, on_delete=models.SET_NULL, null=True, blank=True)
     action = models.ForeignKey(company_staff_history_action, on_delete=models.SET_NULL, null=True, blank=True)
+
+    ip_action=models.GenericIPAddressField(null=True,blank=True)
     
     old_data = models.JSONField(null=True, blank=True)
     new_data = models.JSONField(null=True, blank=True)
@@ -210,4 +212,12 @@ class company_staff_history(models.Model):
     class Meta:
         ordering = ['-id']
     def __str__(self):
-        return f"{self.user.username}_{self.possition}_{self.company}"
+        return f"{self.staff.name}"
+
+class company_operator(models.Model):
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+    class Meta:
+        ordering = ['-id']
+    def __str__(self):
+        return f"{self.staff.name}"

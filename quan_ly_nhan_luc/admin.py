@@ -63,5 +63,51 @@ class CompanyStaffAdmin(admin.ModelAdmin):
     list_display = ['user','name', 'company', 'department', 'possition', 'isActive', 'isSuperAdmin', 'isAdmin', 'isBan', 'isOnline', 'isValidate']
     list_filter = ['isActive', 'isSuperAdmin', 'isAdmin', 'isBan', 'isOnline', 'isValidate', 'company', 'department', 'possition', IsActiveAndNotBannedFilter]
     search_fields = ['user__username', 'company__name', 'department__name', 'possition__name']
-
+class CompanyStaffHistoryFunctionAdmin(admin.ModelAdmin):
+    list_display = ('id', 'name', 'created_at', 'updated_at')
+    search_fields = ('name',)
+    readonly_fields = ('created_at', 'updated_at')
+    fieldsets = (
+        (None, {
+            'fields': ('name',)
+        }),
+        ('Thời gian', {
+            'fields': ('created_at', 'updated_at')
+        }),
+    )
+class CompanyStaffHistoryActionAdmin(admin.ModelAdmin):
+    list_display = ('id', 'name', 'created_at', 'updated_at')
+    search_fields = ('name',)
+    readonly_fields = ('created_at', 'updated_at')
+    fieldsets = (
+        (None, {
+            'fields': ('name',)
+        }),
+        ('Thời gian', {
+            'fields': ('created_at', 'updated_at')
+        }),
+    )
+class CompanyStaffHistoryAdmin(admin.ModelAdmin):
+    list_display = ('id', 'staff', 'function', 'action', 'ip_action', 'created_at', 'isHidden', 'isSended', 'isReceived', 'isReaded')
+    list_filter = ('function', 'action', 'isHidden', 'isSended', 'isReceived', 'isReaded')
+    search_fields = ('staff__name', 'title', 'message', 'ip_action')
+    date_hierarchy = 'created_at'
+    readonly_fields = ('created_at', 'updated_at')
+    fieldsets = (
+        (None, {
+            'fields': ('staff', 'function', 'action', 'ip_action')
+        }),
+        ('Dữ liệu', {
+            'fields': ('old_data', 'new_data')
+        }),
+        ('Thông tin thêm', {
+            'fields': ('title', 'message', 'isHidden', 'isSended', 'isReceived', 'isReaded')
+        }),
+        ('Thời gian', {
+            'fields': ('created_at', 'updated_at')
+        }),
+    )
 admin.site.register(company_staff, CompanyStaffAdmin)
+admin.site.register(company_staff_history, CompanyStaffHistoryAdmin)
+admin.site.register(company_staff_history_function, CompanyStaffHistoryFunctionAdmin)
+admin.site.register(company_staff_history_action, CompanyStaffHistoryActionAdmin)
