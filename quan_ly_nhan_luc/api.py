@@ -472,11 +472,26 @@ class CompanyCustomerViewSet(viewsets.ModelViewSet):
     serializer_class = CompanyCustomerSerializer
     authentication_classes = [OAuth2Authentication]
     permission_classes = [IsAuthenticated]
-    http_method_names = ['get','patch','delete']
+    http_method_names = ['get','post','patch','delete']
+    pagination_class = StandardResultsSetPagination
     def get_queryset(self):
         user = self.request.user
-        qs_res=company_staff.objects.filter(user__user=user,isActive=True).values_list("company__id",flat=True)
-        return company_customer.objects.filter(company__id__in=qs_res)
+        key = self.request.headers.get('ApplicationKey')
+        qs_res=company_staff.objects.get(user__user=user,isActive=True,company__key=key)
+        return company_customer.objects.filter(company=qs_res.company)
+    
+    def perform_create(self, serializer):
+        user = self.request.user
+        key = self.request.headers.get('ApplicationKey')
+        qs_res = company_staff.objects.get(
+            user__user=user,
+            isActive=True,
+            company__key=key
+        )
+        serializer.save(
+            company=qs_res.company
+        )
+        
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
         queryset = self.filter_queryset(queryset)  # Áp dụng bộ lọc cho queryset

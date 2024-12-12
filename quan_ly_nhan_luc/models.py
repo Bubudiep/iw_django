@@ -222,6 +222,7 @@ class company_customer(models.Model):
     address = models.CharField(max_length=200, null=True, blank=True)
     email = models.CharField(max_length=200, null=True, blank=True)
     hotline = models.CharField(max_length=200, null=True, blank=True)
+    website = models.CharField(max_length=200, null=True, blank=True)
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     class Meta:

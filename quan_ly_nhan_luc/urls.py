@@ -6,6 +6,7 @@ router.register(r'employee', api.CompanyStaffViewSet, basename='employee')
 router.register(r'employee_account', api.CompanyAccountViewSet, basename='employee_account')
 router.register(r'department', api.CompanyDepartmentAdminViewSet, basename='department')
 router.register(r'jobtitle', api.CompanyPossitionAdminViewSet, basename='jobtitle')
+router.register(r'customers', api.CompanyCustomerViewSet, basename='customers')
 urlpatterns = [
     path('my-info/', api.MyInfoAPIView.as_view(), name='my-info'),
     path('search/', api.SearchAPIView.as_view(), name='search'),
