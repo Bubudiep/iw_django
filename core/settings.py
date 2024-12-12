@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 
 import os, environ
 from pathlib import Path
+from corsheaders.defaults import default_headers
 
 # Initialize environment variables
 env = environ.Env()
@@ -127,7 +128,9 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
-
+CORS_ALLOW_HEADERS = list(default_headers) + [
+    'ApplicationKey',
+]
 ROOT_URLCONF = 'core.urls'
 AUTHENTICATION_BACKENDS = [
     'app.authentication.ZaloBackend',

@@ -74,7 +74,7 @@ class StaffCreateMini(APIView):
     authentication_classes = [OAuth2Authentication]
     permission_classes = [IsAuthenticated]
     def post(self, request):
-        key=request.data.get("key",None)
+        key = request.headers.get('ApplicationKey')
         func=request.data.get("func",None)
         data=request.data.get("data",None)
         user = self.request.user
@@ -121,7 +121,7 @@ class RegisterView(APIView):
 class MyInfoAPIView(APIView):
     permission_classes = [IsAuthenticated]
     def get(self, request, *args, **kwargs):
-        key=request.query_params.get('key', None)
+        key = request.headers.get('ApplicationKey')
         user=self.request.user
         if user.is_authenticated:
             try:
@@ -154,7 +154,7 @@ class MyInfoAPIView(APIView):
         image.save()
         return image
     def patch(self, request, *args, **kwargs):
-        key = request.query_params.get('key', None)
+        key = request.headers.get('ApplicationKey')
         user = self.request.user
         if user.is_authenticated:
             try:
@@ -214,7 +214,7 @@ class LoginOAuth2APIView(APIView):
             ip=get_client_ip(request)
             username = request.data.get('username')
             password = request.data.get('password')
-            key = request.data.get('key')
+            key = request.headers.get('ApplicationKey')
             try:
                 company_instance =company.objects.get(key=key)
                 user=company_account.objects.get(username=username,company=company_instance )
@@ -280,7 +280,7 @@ class GetUserAPIView(APIView):
     authentication_classes = [OAuth2Authentication]  # Kiểm tra xác thực OAuth2
     permission_classes = [IsAuthenticated]  # Đảm bảo người dùng phải đăng nhập (token hợp lệ)
     def get(self, request):
-        key=request.query_params.get('key')
+        key = request.headers.get('ApplicationKey')
         if request.user.is_authenticated:
             user=request.user
             try:
@@ -306,8 +306,7 @@ class GetCompanyAPIView(APIView):
     authentication_classes = [OAuth2Authentication]  # Kiểm tra xác thực OAuth2
     permission_classes = [IsAuthenticated]  # Đảm bảo người dùng phải đăng nhập (token hợp lệ)
     def get(self, request):
-        key=request.query_params.get('key')
-        print(f"{key}")
+        key = request.headers.get('ApplicationKey')
         if request.user.is_authenticated:
             user=request.user
             try:
@@ -324,7 +323,7 @@ class GetCompanyDashboardAPIView(APIView):
     authentication_classes = [OAuth2Authentication]  # Kiểm tra xác thực OAuth2
     permission_classes = [IsAuthenticated]  # Đảm bảo người dùng phải đăng nhập (token hợp lệ)
     def get(self, request):
-        key=request.query_params.get('key')
+        key = request.headers.get('ApplicationKey')
         print(f"{key}")
         if request.user.is_authenticated:
             user=request.user
