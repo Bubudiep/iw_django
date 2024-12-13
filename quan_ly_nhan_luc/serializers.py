@@ -246,22 +246,6 @@ class CP_LTESerializer(serializers.ModelSerializer):
         model = company_possition
         fields = '__all__'
 
-class companyDetailsSerializer(serializers.ModelSerializer):
-    department = serializers.SerializerMethodField(read_only=True)
-    jobtitle = serializers.SerializerMethodField(read_only=True)
-    def get_department(self, qs):
-        qs_department=company_department.objects.filter(company=qs)
-        return CD_LTESerializer(qs_department,many=True).data
-    def get_jobtitle(self, qs):
-        qs_possition=company_possition.objects.filter(company=qs)
-        return CP_LTESerializer(qs_possition,many=True).data
-            
-    class Meta:
-        model = company
-        fields = ['companyType','avatar','name','fullname','address','department',
-        'addressDetails','hotline','isValidate','isOA','jobtitle',
-        'shortDescription','description','created_at']
-        
 class CompanyAccountSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
     class Meta:
@@ -337,4 +321,55 @@ class CompanyCustomerSerializer(serializers.ModelSerializer):
     company = serializers.PrimaryKeyRelatedField(read_only=True)
     class Meta:
         model = company_customer
-        fields = ['id','company','staffs','name', 'fullname', 'address', 'email', 'hotline', 'created_at', 'updated_at']
+        fields = ['id','company','staffs','name', 'fullname','website', 'address', 'email', 'hotline', 'created_at', 'updated_at']
+
+class CompanyCustomerLTESerializer(serializers.ModelSerializer):
+    class Meta:
+        model = company_customer
+        fields = ['id','name','fullname','website', 'address', 'email', 'hotline', 'created_at' ]
+
+class CompanySupplierLTESerializer(serializers.ModelSerializer):
+    class Meta:
+        model = company_supplier
+        fields = ['id','name','fullname','website', 'address', 'email', 'hotline', 'created_at' ]
+class CompanyVendorLTESerializer(serializers.ModelSerializer):
+    class Meta:
+        model = company_vendor
+        fields = ['id','name','fullname','website', 'address', 'email', 'hotline', 'created_at' ]
+class companyDetailsSerializer(serializers.ModelSerializer):
+    department = serializers.SerializerMethodField(read_only=True)
+    jobtitle = serializers.SerializerMethodField(read_only=True)
+    custommer = serializers.SerializerMethodField(read_only=True)
+    supplier = serializers.SerializerMethodField(read_only=True)
+    vendor = serializers.SerializerMethodField(read_only=True)
+    def get_department(self, qs):
+        qs_department=company_department.objects.filter(company=qs)
+        return CD_LTESerializer(qs_department,many=True).data
+    def get_jobtitle(self, qs):
+        qs_possition=company_possition.objects.filter(company=qs)
+        return CP_LTESerializer(qs_possition,many=True).data
+    def get_custommer(self, qs):
+        qs_customer=company_customer.objects.filter(company=qs)
+        return {
+            "count": len(qs_customer),
+            "data" : CompanyCustomerLTESerializer(qs_customer[:10],many=True).data
+        }
+    def get_supplier(self, qs):
+        qs_supplier=company_supplier.objects.filter(company=qs)
+        return {
+            "count": len(qs_supplier),
+            "data" : CompanyCustomerLTESerializer(qs_supplier[:10],many=True).data
+        }
+    def get_vendor(self, qs):
+        qs_vendor=company_vendor.objects.filter(company=qs)
+        return {
+            "count": len(qs_vendor),
+            "data" : CompanyCustomerLTESerializer(qs_vendor[:10],many=True).data
+        }
+            
+    class Meta:
+        model = company
+        fields = ['companyType','avatar','name','fullname','address','department',
+        'addressDetails','hotline','isValidate','isOA','jobtitle','custommer',
+        'supplier','vendor','shortDescription','description','created_at']
+        
