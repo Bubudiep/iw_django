@@ -42,13 +42,19 @@ def get_client_ip(request):
         ip = request.META.get('REMOTE_ADDR')
     return ip
 
-def record_user_action(function_name, action_name, staff, old_data=None, new_data=None, title=None, message=None, is_hidden=False, is_sended=False, is_received=False, is_readed=False):
+def record_user_action(function_name,
+                       action_name, staff, old_data=None, 
+                       new_data=None, title=None, 
+                       message=None, is_hidden=False, 
+                       is_sended=False, is_received=False, is_readed=False,
+                       ip_action=None):
     # Kiểm tra và tạo mới function nếu chưa tồn tại
     function = company_staff_history_function.objects.get_or_create(name=function_name)[0]
     # Kiểm tra và tạo mới action nếu chưa tồn tại
     action = company_staff_history_action.objects.get_or_create(name=action_name)[0]
     # Tạo history
     history = company_staff_history.objects.create(
+        ip_action=ip_action,
         staff=staff,
         function=function,
         action=action,
@@ -250,6 +256,7 @@ class LoginOAuth2APIView(APIView):
                 access_token=access_token,
                 application=application
             )
+            print(f"{ip}")
             record_user_action(function_name="login",
                                action_name="login",
                                ip_action=ip,
@@ -509,11 +516,26 @@ class CompanyVendorViewSet(viewsets.ModelViewSet):
     serializer_class = CompanyVendorSerializer
     authentication_classes = [OAuth2Authentication]
     permission_classes = [IsAuthenticated]
-    http_method_names = ['get','patch','delete']
+    pagination_class = StandardResultsSetPagination
+    http_method_names = ['get','patch','delete','post']
     def get_queryset(self):
         user = self.request.user
-        qs_res=company_staff.objects.filter(user__user=user,isActive=True).values_list("company__id",flat=True)
-        return company_vendor.objects.filter(company__id__in=qs_res)
+        key = self.request.headers.get('ApplicationKey')
+        qs_res=company_staff.objects.get(user__user=user,isActive=True,company__key=key)
+        return company_vendor.objects.filter(company=qs_res.company)
+    
+    def perform_create(self, serializer):
+        user = self.request.user
+        key = self.request.headers.get('ApplicationKey')
+        qs_res = company_staff.objects.get(
+            user__user=user,
+            isActive=True,
+            company__key=key
+        )
+        serializer.save(
+            company=qs_res.company
+        )
+        
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
         queryset = self.filter_queryset(queryset)  # Áp dụng bộ lọc cho queryset
@@ -531,11 +553,26 @@ class CompanySupplierViewSet(viewsets.ModelViewSet):
     serializer_class = CompanySupplierSerializer
     authentication_classes = [OAuth2Authentication]
     permission_classes = [IsAuthenticated]
-    http_method_names = ['get','patch','delete']
+    pagination_class = StandardResultsSetPagination
+    http_method_names = ['get','patch','delete','post']
     def get_queryset(self):
         user = self.request.user
-        qs_res=company_staff.objects.filter(user__user=user,isActive=True).values_list("company__id",flat=True)
-        return company_supplier.objects.filter(company__id__in=qs_res)
+        key = self.request.headers.get('ApplicationKey')
+        qs_res=company_staff.objects.get(user__user=user,isActive=True,company__key=key)
+        return company_supplier.objects.filter(company=qs_res.company)
+    
+    def perform_create(self, serializer):
+        user = self.request.user
+        key = self.request.headers.get('ApplicationKey')
+        qs_res = company_staff.objects.get(
+            user__user=user,
+            isActive=True,
+            company__key=key
+        )
+        serializer.save(
+            company=qs_res.company
+        )
+        
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
         queryset = self.filter_queryset(queryset)  # Áp dụng bộ lọc cho queryset
@@ -556,8 +593,22 @@ class CompanyOperatorViewSet(viewsets.ModelViewSet):
     http_method_names = ['get','patch','delete']
     def get_queryset(self):
         user = self.request.user
-        qs_res=company_staff.objects.filter(user__user=user,isActive=True).values_list("company__id",flat=True)
-        return company_operator.objects.filter(company__id__in=qs_res)
+        key = self.request.headers.get('ApplicationKey')
+        qs_res=company_staff.objects.get(user__user=user,isActive=True,company__key=key)
+        return company_operator.objects.filter(company=qs_res.company)
+    
+    def perform_create(self, serializer):
+        user = self.request.user
+        key = self.request.headers.get('ApplicationKey')
+        qs_res = company_staff.objects.get(
+            user__user=user,
+            isActive=True,
+            company__key=key
+        )
+        serializer.save(
+            company=qs_res.company
+        )
+        
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
         queryset = self.filter_queryset(queryset)  # Áp dụng bộ lọc cho queryset

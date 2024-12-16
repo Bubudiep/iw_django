@@ -134,7 +134,7 @@ class companySerializer(serializers.ModelSerializer):
     class Meta:
         model = company
         fields = ['companyType','avatar','name','fullname','address',
-        'addressDetails','hotline','isValidate','isOA',
+        'addressDetails','hotline','isValidate','isOA','wallpaper',
         'shortDescription','description','created_at']
 
 class companyFullSerializer(serializers.ModelSerializer):
@@ -295,17 +295,7 @@ class CompanyAccountDetailsSerializer(serializers.ModelSerializer):
     class Meta:
         model = company_staff
         fields = '__all__'
-        
-class CompanyVendorSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = company_vendor
-        fields = '__all__'
-
-class CompanySupplierSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = company_supplier
-        fields = '__all__'
-
+       
 class CompanyOperatorSerializer(serializers.ModelSerializer):
     class Meta:
         model = company_operator
@@ -316,11 +306,25 @@ class CompanyStaffSerializer(serializers.ModelSerializer):
         model = company_staff
         fields = ['id', 'name', 'department', 'possition']  # Chỉ các trường cần thiết
 
+class CompanySupplierSerializer(serializers.ModelSerializer):
+    staffs = CompanyStaffSerializer(many=True, read_only=True)  # Dùng serializer lồng ghép để hiển thị nhân viên
+    company = serializers.PrimaryKeyRelatedField(read_only=True)
+    class Meta:
+        model = company_supplier
+        fields = ['id','company','staffs','name', 'fullname','website', 'address', 'email', 'hotline', 'created_at', 'updated_at']
+
 class CompanyCustomerSerializer(serializers.ModelSerializer):
     staffs = CompanyStaffSerializer(many=True, read_only=True)  # Dùng serializer lồng ghép để hiển thị nhân viên
     company = serializers.PrimaryKeyRelatedField(read_only=True)
     class Meta:
         model = company_customer
+        fields = ['id','company','staffs','name', 'fullname','website', 'address', 'email', 'hotline', 'created_at', 'updated_at']
+
+class CompanyVendorSerializer(serializers.ModelSerializer):
+    staffs = CompanyStaffSerializer(many=True, read_only=True)  # Dùng serializer lồng ghép để hiển thị nhân viên
+    company = serializers.PrimaryKeyRelatedField(read_only=True)
+    class Meta:
+        model = company_vendor
         fields = ['id','company','staffs','name', 'fullname','website', 'address', 'email', 'hotline', 'created_at', 'updated_at']
 
 class CompanyCustomerLTESerializer(serializers.ModelSerializer):

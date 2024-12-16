@@ -50,7 +50,8 @@ class company_type(models.Model): # Phân loại công ty
 class company(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE) # người sở hữu
     companyType = models.ForeignKey(company_type, on_delete=models.SET_NULL, null=True, blank=True)
-    avatar= models.ForeignKey(image_safe, on_delete=models.SET_NULL, null=True, blank=True)
+    avatar= models.ForeignKey(image_safe, on_delete=models.SET_NULL, null=True, blank=True, related_name="cpn_avatar")
+    wallpaper= models.ForeignKey(image_safe, on_delete=models.SET_NULL, null=True, blank=True, related_name="cpn_wallpaper")
     key = models.CharField(max_length=200, null=True, blank=True)
     name = models.CharField(max_length=200, null=True, blank=True)
     fullname = models.TextField(null=True, blank=True)
@@ -237,6 +238,7 @@ class company_supplier(models.Model):
     address = models.CharField(max_length=200, null=True, blank=True)
     email = models.CharField(max_length=200, null=True, blank=True)
     hotline = models.CharField(max_length=200, null=True, blank=True)
+    website = models.CharField(max_length=200, null=True, blank=True)
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     class Meta:
@@ -251,6 +253,7 @@ class company_vendor(models.Model):
     address = models.CharField(max_length=200, null=True, blank=True)
     email = models.CharField(max_length=200, null=True, blank=True)
     hotline = models.CharField(max_length=200, null=True, blank=True)
+    website = models.CharField(max_length=200, null=True, blank=True)
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     class Meta:

@@ -118,3 +118,53 @@ admin.site.register(company_staff, CompanyStaffAdmin)
 admin.site.register(company_staff_history, CompanyStaffHistoryAdmin)
 admin.site.register(company_staff_history_function, CompanyStaffHistoryFunctionAdmin)
 admin.site.register(company_staff_history_action, CompanyStaffHistoryActionAdmin)
+
+# Register company_customer with customization
+@admin.register(company_customer)
+class CompanyCustomerAdmin(admin.ModelAdmin):
+    list_display = ('id', 'name', 'fullname', 'email', 'hotline', 'website', 'company', 'created_at', 'updated_at')
+    search_fields = ('name', 'fullname', 'email', 'hotline', 'website')
+    list_filter = ('company', 'created_at')
+    ordering = ('-id',)
+    readonly_fields = ('created_at', 'updated_at')
+
+# Register company_supplier with customization
+@admin.register(company_supplier)
+class CompanySupplierAdmin(admin.ModelAdmin):
+    list_display = ('id', 'name', 'fullname', 'email', 'hotline', 'company', 'created_at', 'updated_at')
+    search_fields = ('name', 'fullname', 'email', 'hotline')
+    list_filter = ('company', 'created_at')
+    ordering = ('-id',)
+    readonly_fields = ('created_at', 'updated_at')
+
+# Register company_vendor with customization
+@admin.register(company_vendor)
+class CompanyVendorAdmin(admin.ModelAdmin):
+    list_display = ('id', 'name', 'fullname', 'email', 'hotline', 'company', 'created_at', 'updated_at')
+    search_fields = ('name', 'fullname', 'email', 'hotline')
+    list_filter = ('company', 'created_at')
+    ordering = ('-id',)
+    readonly_fields = ('created_at', 'updated_at')
+
+# Register company_operator with customization
+@admin.register(company_operator)
+class CompanyOperatorAdmin(admin.ModelAdmin):
+    list_display = ('id', 'ma_nhanvien', 'ho_ten', 'sdt', 'so_cccd', 'company', 'created_at', 'updated_at')
+    search_fields = ('ma_nhanvien', 'ho_ten', 'sdt', 'so_cccd')
+    list_filter = ('company', 'ngaysinh', 'created_at')
+    ordering = ('-id',)
+    readonly_fields = ('created_at', 'updated_at')
+    fieldsets = (
+        ("Personal Details", {
+            'fields': ('ma_nhanvien', 'ho_ten', 'sdt', 'so_cccd', 'ngaysinh', 'diachi')
+        }),
+        ("Account Details", {
+            'fields': ('so_taikhoan', 'chu_taikhoan', 'ghichu_taikhoan')
+        }),
+        ("Company Relationships", {
+            'fields': ('company', 'nguoituyen', 'nhacungcap', 'nhachinh')
+        }),
+        ("Additional Info", {
+            'fields': ('ghichu',)
+        }),
+    )
