@@ -44,6 +44,8 @@ class company_type(models.Model): # Phân loại công ty
     updated_at = models.DateTimeField(auto_now=True)
     class Meta:
         ordering = ['-id']
+        verbose_name = "Company Types"
+        verbose_name_plural = "Company Types"
     def __str__(self):
         return f"{self.name}"
     
@@ -69,6 +71,8 @@ class company(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     class Meta:
         ordering = ['-id']
+        verbose_name = "Company"
+        verbose_name_plural = "Company"
     def __str__(self):
         return f"{self.name}"
     def save(self, *args, **kwargs):
@@ -85,6 +89,8 @@ class company_department(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     class Meta:
         ordering = ['-id']
+        verbose_name = "Company Departments"
+        verbose_name_plural = "Company Departments"
     def __str__(self):
         return f"{self.name}"    
       
@@ -98,6 +104,8 @@ class company_possition(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     class Meta:
         ordering = ['-id']
+        verbose_name = "Company Possitions"
+        verbose_name_plural = "Company Possitions"
     def __str__(self):
         return f"{self.name}"   
      
@@ -109,7 +117,9 @@ class company_account(models.Model):
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     class Meta:
-        unique_together = ('company', 'username')  # Đảm bảo username duy nhất trong từng công ty
+        unique_together = ('company', 'username')
+        verbose_name = "Company Accounts"
+        verbose_name_plural = "Company Accounts"
     def save(self, *args, **kwargs):
         if not self.username or not self.password:
             raise ValidationError("Username và password không được để trống.")
@@ -136,6 +146,9 @@ class company_staff(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     class Meta:
         ordering = ['-id']
+        unique_together = ('company', 'name')
+        verbose_name = "Company Staff"
+        verbose_name_plural = "Company Staff"
     def __str__(self):
         return f"{self.name}_{self.user.username}_{self.possition}_{self.company}"
     
@@ -167,6 +180,8 @@ class company_staff_profile(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     class Meta:
         ordering = ['-id']
+        verbose_name = "Company Staff Profiles"
+        verbose_name_plural = "Company Staff Profiles"
     def __str__(self):
         return f"{self.user.username}_{self.possition}_{self.company}"
 
@@ -176,6 +191,8 @@ class company_staff_history_function(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     class Meta:
         ordering = ['-id']
+        verbose_name = "Company Staff Action History Functions"
+        verbose_name_plural = "Company Staff Action History Functions"
     def __str__(self):
         return f"{self.name}"
     
@@ -185,6 +202,8 @@ class company_staff_history_action(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     class Meta:
         ordering = ['-id']
+        verbose_name = "Company Staff Action Historys"
+        verbose_name_plural = "Company Staff Action Historys"
     def __str__(self):
         return f"{self.name}"
     
@@ -212,6 +231,8 @@ class company_staff_history(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     class Meta:
         ordering = ['-id']
+        verbose_name = "Company Staff History"
+        verbose_name_plural = "Company Staff History"
     def __str__(self):
         return f"{self.staff.name}"
 
@@ -228,6 +249,9 @@ class company_customer(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     class Meta:
         ordering = ['-id']
+        unique_together = ('company', 'name')
+        verbose_name = "Company Customers"
+        verbose_name_plural = "Company Customers"
     def __str__(self):
         return f"{self.name}"
     
@@ -243,6 +267,9 @@ class company_supplier(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     class Meta:
         ordering = ['-id']
+        unique_together = ('company', 'name')
+        verbose_name = "Company Suppliers"
+        verbose_name_plural = "Company Suppliers"
     def __str__(self):
         return f"{self.name}"
     
@@ -258,6 +285,9 @@ class company_vendor(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     class Meta:
         ordering = ['-id']
+        unique_together = ('company', 'name')
+        verbose_name = "Company Vendors"
+        verbose_name_plural = "Company Vendors"
     def __str__(self):
         return f"{self.name}"
     
@@ -285,11 +315,14 @@ class company_operator(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     class Meta:
         ordering = ['-id']
+        verbose_name = "Company Operators"
+        verbose_name_plural = "Company Operators"
+        unique_together = ('company', 'ma_nhanvien')
     def __str__(self):
         return f"{self.ma_nhanvien}"
 
 class operator_history(models.Model):
-    operator = models.ForeignKey(company_operator, on_delete=models.CASCADE, related_name="work_histories")
+    operator = models.ForeignKey(company_operator, on_delete=models.CASCADE , related_name="work_histories")
     customer = models.ForeignKey(company_customer, on_delete=models.CASCADE, related_name="operator_histories")
     vendor = models.ForeignKey(company_vendor, on_delete=models.SET_NULL, null=True, blank=True, related_name="operator_histories")
     
