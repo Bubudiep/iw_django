@@ -10,3 +10,15 @@ class CompanyStaffFilter(django_filters.FilterSet):
     class Meta:
         model = company_staff
         fields = ['company', 'user', 'isActive', 'department', 'possition', 'isBan', 'isAdmin', 'isSuperAdmin']
+class CompanyFilter(django_filters.FilterSet):
+    name = django_filters.CharFilter(field_name='name', lookup_expr='icontains')
+    companyCode = django_filters.CharFilter(field_name='companyCode', lookup_expr='exact')
+    isActive = django_filters.BooleanFilter(field_name='isActive')
+    isValidate = django_filters.BooleanFilter(field_name='isValidate')
+    companyType = django_filters.CharFilter(field_name='companyType__name', lookup_expr='icontains')
+    created_at = django_filters.DateFromToRangeFilter(field_name='created_at')
+    class Meta:
+        model = company
+        fields = [
+            'name', 'companyCode', 'isActive', 'isValidate', 'companyType', 'created_at'
+        ]

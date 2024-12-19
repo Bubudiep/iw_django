@@ -137,6 +137,13 @@ class companySerializer(serializers.ModelSerializer):
         'addressDetails','hotline','isValidate','isOA','wallpaper',
         'shortDescription','description','created_at']
 
+class CompanySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = company
+        fields = ['companyType','avatar','name','fullname','address',
+        'addressDetails','hotline','isValidate','isOA','wallpaper',
+        'shortDescription','description','created_at']
+
 class companyFullSerializer(serializers.ModelSerializer):
     class Meta:
         model = company
