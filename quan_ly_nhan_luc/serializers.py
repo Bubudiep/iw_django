@@ -305,6 +305,8 @@ class CompanyAccountDetailsSerializer(serializers.ModelSerializer):
         fields = '__all__'
        
 class CompanyOperatorSerializer(serializers.ModelSerializer):
+    company = serializers.PrimaryKeyRelatedField(read_only=True)
+    ma_nhanvien = serializers.CharField(read_only=True)
     class Meta:
         model = company_operator
         fields = '__all__'
@@ -364,24 +366,25 @@ class companyDetailsSerializer(serializers.ModelSerializer):
         qs_customer=company_customer.objects.filter(company=qs)
         return {
             "count": len(qs_customer),
-            "data" : CompanyCustomerLTESerializer(qs_customer[:10],many=True).data
+            "data" : CompanyCustomerLTESerializer(qs_customer[:5],many=True).data
         }
     def get_supplier(self, qs):
         qs_supplier=company_supplier.objects.filter(company=qs)
         return {
             "count": len(qs_supplier),
-            "data" : CompanyCustomerLTESerializer(qs_supplier[:10],many=True).data
+            "data" : CompanyCustomerLTESerializer(qs_supplier[:5],many=True).data
         }
     def get_vendor(self, qs):
         qs_vendor=company_vendor.objects.filter(company=qs)
         return {
             "count": len(qs_vendor),
-            "data" : CompanyCustomerLTESerializer(qs_vendor[:10],many=True).data
+            "data" : CompanyCustomerLTESerializer(qs_vendor[:5],many=True).data
         }
             
     class Meta:
         model = company
-        fields = ['companyType','avatar','name','fullname','address','department',
-        'addressDetails','hotline','isValidate','isOA','jobtitle','custommer',
-        'supplier','vendor','shortDescription','description','created_at']
+        fields = ['id','companyType','avatar','name','fullname','address','department','wallpaper',
+        'addressDetails','hotline','isValidate','isOA','jobtitle','custommer','taxCode',
+        'supplier','vendor','shortDescription','description','created_at',
+        'zalo','website','instagram','tiktok','facebook']
         

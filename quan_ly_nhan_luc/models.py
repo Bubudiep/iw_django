@@ -60,12 +60,18 @@ class company(models.Model):
     companyCode = models.CharField(max_length=200, null=True, blank=True)
     address = models.CharField(max_length=200, null=True, blank=True)
     addressDetails = models.JSONField(null=True, blank=True)
+    taxCode = models.CharField(max_length=200, null=True, blank=True)
     hotline = models.CharField(max_length=200, null=True, blank=True)
     isActive = models.BooleanField(default=False, null=True, blank=True)
     isValidate = models.BooleanField(default=False, null=True, blank=True)
     isOA = models.BooleanField(default=False, null=True, blank=True)
     shortDescription = models.CharField(max_length=200, null=True, blank=True)
     description = models.TextField(null=True, blank=True)
+    zalo = models.CharField(max_length=200, null=True, blank=True)
+    website = models.CharField(max_length=200, null=True, blank=True)
+    instagram = models.CharField(max_length=200, null=True, blank=True)
+    tiktok = models.CharField(max_length=200, null=True, blank=True)
+    facebook = models.CharField(max_length=200, null=True, blank=True)
     
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
@@ -297,20 +303,24 @@ class company_operator(models.Model):
     
     sdt= models.CharField(max_length=15, null=True, blank=True)
     ho_ten= models.CharField(max_length=200, null=True, blank=True)
+    gioi_tinh= models.CharField(max_length=200, null=True, blank=True)
     ten_goc= models.CharField(max_length=200, null=True, blank=True)
     so_cccd= models.CharField(max_length=200, null=True, blank=True)
-    diachi= models.CharField(max_length=200, null=True, blank=True)
     ngaysinh= models.DateField(null=True, blank=True)
     diachi= models.TextField(null=True, blank=True)
+    quequan= models.TextField(null=True, blank=True)
     
+    trangthai= models.CharField(max_length=200, null=True, blank=True)
+    nganhang= models.CharField(max_length=200, null=True, blank=True)
     so_taikhoan= models.CharField(max_length=200, null=True, blank=True)
     chu_taikhoan= models.CharField(max_length=200, null=True, blank=True)
     ghichu_taikhoan= models.CharField(max_length=200, null=True, blank=True)
     ghichu= models.TextField(null=True, blank=True)
     
-    nguoituyen = models.ForeignKey(company_staff, on_delete=models.SET_NULL, null=True, blank=True)
+    nguoituyen = models.ForeignKey(company_staff, on_delete=models.SET_NULL, null=True, blank=True,related_name="companyOP_nguoituyen")
     nhacungcap = models.ForeignKey(company_vendor, on_delete=models.SET_NULL, null=True, blank=True)
     nhachinh = models.ForeignKey(company_supplier, on_delete=models.SET_NULL, null=True, blank=True)
+    nguoibaocao = models.ForeignKey(company_staff, on_delete=models.SET_NULL, null=True, blank=True,related_name="companyOP_nguoibaocao")
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     class Meta:
@@ -318,6 +328,10 @@ class company_operator(models.Model):
         verbose_name = "Company Operators"
         verbose_name_plural = "Company Operators"
         unique_together = ('company', 'ma_nhanvien')
+    def save(self, *args, **kwargs):
+        if not self.ma_nhanvien:
+            self.ma_nhanvien = f"RANDOM_{uuid.uuid4().hex.upper()[:18]}"
+        super(company_operator, self).save(*args, **kwargs)
     def __str__(self):
         return f"{self.ma_nhanvien}"
 
