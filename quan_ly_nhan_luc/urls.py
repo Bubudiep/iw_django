@@ -9,6 +9,7 @@ router.register(r'jobtitle', api.CompanyPossitionAdminViewSet, basename='jobtitl
 router.register(r'customers', api.CompanyCustomerViewSet, basename='customers')
 router.register(r'suppliers', api.CompanySupplierViewSet, basename='suppliers')
 router.register(r'vendors', api.CompanyVendorViewSet, basename='vendors')
+router.register(r'company', api.CompanyViewSet, basename='company')
 urlpatterns = [
     path('my-info/', api.MyInfoAPIView.as_view(), name='my-info'),
     path('search/', api.SearchAPIView.as_view(), name='search'),

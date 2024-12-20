@@ -331,7 +331,6 @@ class GetCompanyDashboardAPIView(APIView):
     permission_classes = [IsAuthenticated]  # Đảm bảo người dùng phải đăng nhập (token hợp lệ)
     def get(self, request):
         key = request.headers.get('ApplicationKey')
-        print(f"{key}")
         if request.user.is_authenticated:
             user=request.user
             try:
@@ -350,7 +349,7 @@ class GetCompanyDashboardAPIView(APIView):
             return Response({'detail': f"Please login and try again!"}, status=status.HTTP_403_FORBIDDEN)
 
 class CompanyViewSet(viewsets.ModelViewSet):
-    serializer_class = CompanySerializer
+    serializer_class = companyDetailsSerializer
     authentication_classes = [OAuth2Authentication]
     permission_classes = [IsAuthenticated]
     filter_backends = (DjangoFilterBackend,OrderingFilter)
@@ -359,13 +358,14 @@ class CompanyViewSet(viewsets.ModelViewSet):
     http_method_names = ['get', 'patch']
     def get_queryset(self):
         user = self.request.user
+        key = self.request.headers.get('ApplicationKey')
         if user.is_superuser:
-            return company_staff.objects.all()
-        qs_res=company_staff.objects.filter(user__user=user,isActive=True).values_list("company__id",flat=True)
-        return company_staff.objects.filter(company__id__in=qs_res)
+            return company.objects.all()
+        return company.objects.filter(key=key)
     def partial_update(self, request, *args, **kwargs):
         user = request.user
-        if not user.is_superuser and not company_staff.objects.filter(user__user=user, isAdmin=True, isActive=True).exists():
+        key = request.headers.get('ApplicationKey')
+        if not user.is_superuser and not company_staff.objects.filter(company__key=key,user__user=user, isAdmin=True, isActive=True).exists():
             return Response(
                 {"detail": "Bạn không có quyền thực hiện thao tác này."},
                 status=status.HTTP_403_FORBIDDEN

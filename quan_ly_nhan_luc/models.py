@@ -60,6 +60,7 @@ class company(models.Model):
     companyCode = models.CharField(max_length=200, null=True, blank=True)
     address = models.CharField(max_length=200, null=True, blank=True)
     addressDetails = models.JSONField(null=True, blank=True)
+    taxCode = models.CharField(max_length=200, null=True, blank=True)
     hotline = models.CharField(max_length=200, null=True, blank=True)
     isActive = models.BooleanField(default=False, null=True, blank=True)
     isValidate = models.BooleanField(default=False, null=True, blank=True)
