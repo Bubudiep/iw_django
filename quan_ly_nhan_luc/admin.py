@@ -168,3 +168,11 @@ class CompanyOperatorAdmin(admin.ModelAdmin):
             'fields': ('ghichu',)
         }),
     )
+    
+@admin.register(IntegrityErrorLog)
+class IntegrityErrorLogAdmin(admin.ModelAdmin):
+    list_display = ('id', 'models_name', 'api_name', 'error_message', 'timestamp', 'endpoint')  # Hiển thị các trường trong danh sách
+    list_filter = ('models_name','api_name','timestamp', 'endpoint')  # Lọc theo thời gian hoặc endpoint
+    search_fields = ('api_name','models_name','endpoint')  # Tìm kiếm theo thông báo lỗi hoặc endpoint
+    ordering = ('-timestamp',)  # Sắp xếp theo thời gian (mới nhất trước)
+    readonly_fields = ('api_name','models_name','error_message', 'timestamp', 'endpoint', 'payload')

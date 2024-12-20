@@ -11,6 +11,7 @@ import os
 import sys
 from rest_framework.response import Response
 from rest_framework import status
+from django.db import IntegrityError
 def generate_response_json(result:str, message:str, data:dict={}):
     return {"result": result, "message": message, "data": data}
 

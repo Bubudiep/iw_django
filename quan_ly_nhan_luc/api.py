@@ -537,6 +537,28 @@ class CompanyCustomerViewSet(viewsets.ModelViewSet):
             company=qs_res.company
         )
         
+    def create(self, request, *args, **kwargs):
+        try:
+            return super().create(request, *args, **kwargs)
+        except IntegrityError as e:
+            IntegrityErrorLog.objects.create(
+                models_name="company_customer",
+                api_name="CompanyCustomerViewSet",
+                error_message=str(e),
+                endpoint=request.path,
+                payload=request.data
+            )
+            if 'UNIQUE constraint failed' in str(e):
+                return Response(
+                    {"detail": f"Khách hàng {request.data.get("name")} đã tồn tại!"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            else:
+                return Response(
+                    {"detail": "Lỗi khởi tạo!"},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
+                
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
         queryset = self.filter_queryset(queryset)  # Áp dụng bộ lọc cho queryset
