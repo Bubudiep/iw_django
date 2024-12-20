@@ -304,6 +304,8 @@ class CompanyAccountDetailsSerializer(serializers.ModelSerializer):
         fields = '__all__'
        
 class CompanyOperatorSerializer(serializers.ModelSerializer):
+    company = serializers.PrimaryKeyRelatedField(read_only=True)
+    ma_nhanvien = serializers.CharField(read_only=True)
     class Meta:
         model = company_operator
         fields = '__all__'
@@ -380,7 +382,8 @@ class companyDetailsSerializer(serializers.ModelSerializer):
             
     class Meta:
         model = company
-        fields = ['companyType','avatar','name','fullname','address','department',
+        fields = ['id','companyType','avatar','name','fullname','address','department','wallpaper',
         'addressDetails','hotline','isValidate','isOA','jobtitle','custommer','taxCode',
-        'supplier','vendor','shortDescription','description','created_at']
+        'supplier','vendor','shortDescription','description','created_at',
+        'zalo','website','instagram','tiktok','facebook']
         

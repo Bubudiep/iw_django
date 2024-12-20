@@ -623,12 +623,13 @@ class CompanySupplierViewSet(viewsets.ModelViewSet):
             return self.get_paginated_response(serializer.data)
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
-    
+
 class CompanyOperatorViewSet(viewsets.ModelViewSet):
     serializer_class = CompanyOperatorSerializer
     authentication_classes = [OAuth2Authentication]
     permission_classes = [IsAuthenticated]
-    http_method_names = ['get','patch','delete']
+    pagination_class = StandardResultsSetPagination
+    http_method_names = ['get','patch','delete','post']
     def get_queryset(self):
         user = self.request.user
         key = self.request.headers.get('ApplicationKey')
@@ -644,7 +645,8 @@ class CompanyOperatorViewSet(viewsets.ModelViewSet):
             company__key=key
         )
         serializer.save(
-            company=qs_res.company
+            company=qs_res.company,
+            nguoibaocao=qs_res
         )
         
     def list(self, request, *args, **kwargs):
