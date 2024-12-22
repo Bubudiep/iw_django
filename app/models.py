@@ -432,6 +432,7 @@ class NhanvienSorting(models.Model):
     biensoxe = models.CharField(max_length=200, null=True, blank=True)
     quequan = models.CharField(max_length=200, null=True, blank=True)
     gioitinh = models.CharField(max_length=200, null=True, blank=True)
+    isDilam = models.BooleanField(default=True)
 
     anhchup = models.TextField(null=True, blank=True)
     created_at = models.DateTimeField(default=timezone.now)
@@ -817,7 +818,6 @@ class DanhsachNhanvien_record(models.Model):
     new_value =  models.CharField(max_length=200, null=True, blank=True)
     ngayapdung =  models.DateField(null=True, blank=True)
     ghichu =  models.CharField(max_length=200, null=True, blank=True)
-    isDilam = models.BooleanField(default=True)
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     class Meta:
