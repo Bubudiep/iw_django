@@ -353,6 +353,7 @@ class CompanyVendorLTESerializer(serializers.ModelSerializer):
 class companyDetailsSerializer(serializers.ModelSerializer):
     avatar = serializers.CharField(source='avatar.data', allow_null=True,read_only=True)
     wallpaper = serializers.CharField(source='wallpaper.data', allow_null=True,read_only=True)
+    companyType = serializers.CharField(source='companyType.name', allow_null=True,read_only=True)
     department = serializers.SerializerMethodField(read_only=True)
     jobtitle = serializers.SerializerMethodField(read_only=True)
     custommer = serializers.SerializerMethodField(read_only=True)
