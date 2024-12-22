@@ -356,6 +356,19 @@ class CompanyViewSet(viewsets.ModelViewSet):
     filterset_class = CompanyFilter
     pagination_class = StandardResultsSetPagination
     http_method_names = ['get', 'patch']
+    def _save_image(self, user, image_type, image_data):
+        """Lưu ảnh vào ImageSafe và trả về ID của ảnh."""
+        image = image_safe(
+            user=user,
+            name=image_data.get('name'),  # avatar hoặc background
+            data=image_data.get('data'),
+            size=image_data.get('size'),
+            width=image_data.get('width'),
+            height=image_data.get('height'),
+            fileType=image_data.get('fileType')
+        )
+        image.save()
+        return image
     def get_queryset(self):
         user = self.request.user
         key = self.request.headers.get('ApplicationKey')
@@ -365,11 +378,23 @@ class CompanyViewSet(viewsets.ModelViewSet):
     def partial_update(self, request, *args, **kwargs):
         user = request.user
         key = request.headers.get('ApplicationKey')
+        instance = self.get_object()
         if not user.is_superuser and not company_staff.objects.filter(company__key=key,user__user=user, isAdmin=True, isActive=True).exists():
             return Response(
                 {"detail": "Bạn không có quyền thực hiện thao tác này."},
                 status=status.HTTP_403_FORBIDDEN
             )
+        else:
+            if 'avatar' in request.data:
+                avatar_data = request.data['avatar']
+                create_avt=self._save_image(user, 'avatar', avatar_data)
+                instance.avatar=create_avt
+                instance.save()
+            if 'wallpaper' in request.data:
+                wallpaper_data = request.data['wallpaper']
+                create_bg=self._save_image(user, 'wallpaper', wallpaper_data)
+                instance.wallpaper=create_bg
+                instance.save()
         return super().partial_update(request, *args, **kwargs)
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
