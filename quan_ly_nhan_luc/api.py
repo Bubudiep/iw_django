@@ -549,8 +549,9 @@ class CompanyCustomerViewSet(viewsets.ModelViewSet):
                 payload=request.data
             )
             if 'UNIQUE constraint failed' in str(e):
+                name=request.data.get("name")
                 return Response(
-                    {"detail": f"Khách hàng {request.data.get("name")} đã tồn tại!"},
+                    {"detail": f"Khách hàng {name} đã tồn tại!"},
                     status=status.HTTP_400_BAD_REQUEST
                 )
             else:
