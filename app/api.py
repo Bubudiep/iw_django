@@ -2899,6 +2899,9 @@ class NhanvienSortingViewSet(viewsets.ModelViewSet):
         queryset = self.get_queryset()
         queryset = self.filter_queryset(queryset)  # Áp dụng bộ lọc cho queryset
         
+        isDilam = self.request.query_params.get('isDilam')
+        if isDilam is not None:
+            queryset=queryset.filter(isDilam=isDilam)
         page_size = self.request.query_params.get('page_size')
         if page_size is not None:
             self.pagination_class.page_size = int(page_size)

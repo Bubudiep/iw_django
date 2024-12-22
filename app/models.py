@@ -817,6 +817,7 @@ class DanhsachNhanvien_record(models.Model):
     new_value =  models.CharField(max_length=200, null=True, blank=True)
     ngayapdung =  models.DateField(null=True, blank=True)
     ghichu =  models.CharField(max_length=200, null=True, blank=True)
+    isDilam = models.BooleanField(default=True)
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     class Meta:
