@@ -556,6 +556,11 @@ class DanhsachNhanvienSerializer(serializers.ModelSerializer):
         model = DanhsachNhanvien
         fields = '__all__'
 
+class NhanvienSortingSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = NhanvienSorting
+        fields = '__all__'
+
 class DanhsachCongtySerializer(serializers.ModelSerializer):
     class Meta:
         model = DanhsachCongty

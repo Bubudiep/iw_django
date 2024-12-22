@@ -278,3 +278,23 @@ class Restaurant_spaceAdmin(admin.ModelAdmin):
     readonly_fields = ("created_at", "updated_at")
     list_filter = ('created_at',)
     ordering = ('-created_at',)
+    
+@admin.register(NhanvienSorting)
+class NhanvienSortingAdmin(admin.ModelAdmin):
+    # Các trường sẽ hiển thị trong danh sách admin
+    list_display = ('socccd', 'hovaten', 'ngaysinh', 'ngayvao', 'sdt', 'biensoxe', 'quequan', 'gioitinh', 'created_at', 'updated_at')
+
+    # Các trường được phép tìm kiếm
+    search_fields = ('socccd', 'hovaten', 'sdt', 'biensoxe', 'quequan')
+
+    # Các trường dùng để lọc
+    list_filter = ('gioitinh', 'ngaysinh', 'ngayvao', 'created_at')
+
+    # Hiển thị thứ tự mặc định khi truy cập chi tiết bản ghi
+    ordering = ('-id',)
+
+    # Các trường được chỉnh sửa trực tiếp trên giao diện danh sách
+    list_editable = ('gioitinh', 'sdt', 'biensoxe')
+
+    # Số lượng bản ghi hiển thị mỗi trang
+    list_per_page = 25

@@ -423,6 +423,24 @@ class Nhanvien(models.Model):
     def __str__(self):
         return f"{self.manhanvien}"
     
+class NhanvienSorting(models.Model):
+    socccd = models.CharField(max_length=200, null=True, blank=True)
+    hovaten = models.CharField(max_length=200, null=True, blank=True)
+    ngaysinh = models.DateField(null=True, blank=True)
+    ngayvao = models.DateField(null=True, blank=True)
+    sdt = models.CharField(max_length=200, null=True, blank=True)
+    biensoxe = models.CharField(max_length=200, null=True, blank=True)
+    quequan = models.CharField(max_length=200, null=True, blank=True)
+    gioitinh = models.CharField(max_length=200, null=True, blank=True)
+
+    anhchup = models.TextField(null=True, blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+    class Meta:
+        ordering = ['-id']  # Sắp xếp theo 'id' mặc định
+    def __str__(self):
+        return f"{self.socccd}"
+    
 class Thumuc(models.Model):
     congty = models.ForeignKey(Congty, on_delete=models.CASCADE)
     thumucgoc = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True)
