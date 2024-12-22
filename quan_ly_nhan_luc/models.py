@@ -113,7 +113,7 @@ class company_possition(models.Model):
         verbose_name = "Company Possitions"
         verbose_name_plural = "Company Possitions"
     def __str__(self):
-        return f"{self.name}"   
+        return f"{self.name}"
      
 class company_account(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -319,6 +319,7 @@ class company_operator(models.Model):
     
     nguoituyen = models.ForeignKey(company_staff, on_delete=models.SET_NULL, null=True, blank=True,related_name="companyOP_nguoituyen")
     nhacungcap = models.ForeignKey(company_vendor, on_delete=models.SET_NULL, null=True, blank=True)
+    congty_danglam = models.ForeignKey(company_customer, on_delete=models.SET_NULL, null=True, blank=True)
     nhachinh = models.ForeignKey(company_supplier, on_delete=models.SET_NULL, null=True, blank=True)
     nguoibaocao = models.ForeignKey(company_staff, on_delete=models.SET_NULL, null=True, blank=True,related_name="companyOP_nguoibaocao")
     created_at = models.DateTimeField(default=timezone.now)
@@ -329,8 +330,6 @@ class company_operator(models.Model):
         verbose_name_plural = "Company Operators"
         unique_together = ('company', 'ma_nhanvien')
     def save(self, *args, **kwargs):
-        if not self.ma_nhanvien:
-            self.ma_nhanvien = f"RANDOM_{uuid.uuid4().hex.upper()[:18]}"
         super(company_operator, self).save(*args, **kwargs)
     def __str__(self):
         return f"{self.ma_nhanvien}"
@@ -339,10 +338,13 @@ class operator_history(models.Model):
     operator = models.ForeignKey(company_operator, on_delete=models.CASCADE , related_name="work_histories")
     customer = models.ForeignKey(company_customer, on_delete=models.CASCADE, related_name="operator_histories")
     vendor = models.ForeignKey(company_vendor, on_delete=models.SET_NULL, null=True, blank=True, related_name="operator_histories")
+    supplier = models.ForeignKey(company_supplier, on_delete=models.SET_NULL, null=True, blank=True, related_name="operator_histories")
     
+    ma_nhanvien= models.CharField(max_length=200, null=True, blank=True)
     start_date = models.DateTimeField(null=True, blank=True)  # Thời gian bắt đầu làm việc
     end_date = models.DateTimeField(null=True, blank=True)    # Thời gian kết thúc làm việc
     notes = models.TextField(null=True, blank=True)           # Ghi chú thêm nếu cần
+    noihopdong = models.ForeignKey('self',on_delete=models.SET_NULL,null=True,blank=True,related_name="next_histories")
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

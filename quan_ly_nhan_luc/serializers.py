@@ -205,22 +205,24 @@ class CompanyStaffDetailsSerializer(serializers.ModelSerializer):
             'created_at','department_name','possition_name'
         ]
 
+class CompanyStaffFullnameSerializer(serializers.ModelSerializer):
+    fullname = serializers.SerializerMethodField(read_only=True)
+    def get_fullname(self, qs):
+        try:
+            profile=company_staff_profile.objects.get(staff=qs)
+            return profile.full_name
+        except company_staff_profile.DoesNotExist:
+            return None
+    class Meta:
+        model = company_staff
+        fields = ['id','name','fullname','created_at']
+
 class company_staffSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source='user.username',read_only=True)
     class Meta:
         model = company_staff
-        fields = [
-            'company',
-            'name','username',
-            'department',
-            'possition',
-            'isSuperAdmin',
-            'isAdmin',
-            'isOnline',
-            'isValidate',
-            'socket_id',
-            'created_at'
-        ]
+        fields = ['company','name','username','department','possition','isSuperAdmin',
+                  'isAdmin','isOnline','isValidate','socket_id','created_at']
 
 class company_staffFullSerializer(serializers.ModelSerializer):
     class Meta:
@@ -306,7 +308,6 @@ class CompanyAccountDetailsSerializer(serializers.ModelSerializer):
        
 class CompanyOperatorSerializer(serializers.ModelSerializer):
     company = serializers.PrimaryKeyRelatedField(read_only=True)
-    ma_nhanvien = serializers.CharField(read_only=True)
     class Meta:
         model = company_operator
         fields = '__all__'
@@ -390,4 +391,39 @@ class companyDetailsSerializer(serializers.ModelSerializer):
         'addressDetails','hotline','isValidate','isOA','jobtitle','custommer','taxCode',
         'supplier','vendor','shortDescription','description','created_at',
         'zalo','website','instagram','tiktok','facebook']
+
+class companySublistSerializer(serializers.ModelSerializer):
+    custommer = serializers.SerializerMethodField(read_only=True)
+    supplier = serializers.SerializerMethodField(read_only=True)
+    vendor = serializers.SerializerMethodField(read_only=True)
+    staff = serializers.SerializerMethodField(read_only=True)
+    def get_staff(self, qs):
+        qs_staff=company_staff.objects.filter(company=qs)
+        return {
+            "count": len(qs_staff),
+            "data" : CompanyStaffFullnameSerializer(qs_staff,many=True).data
+        }
+    def get_custommer(self, qs):
+        qs_customer=company_customer.objects.filter(company=qs)
+        return {
+            "count": len(qs_customer),
+            "data" : CompanyCustomerLTESerializer(qs_customer,many=True).data
+        }
+    def get_supplier(self, qs):
+        qs_supplier=company_supplier.objects.filter(company=qs)
+        return {
+            "count": len(qs_supplier),
+            "data" : CompanySupplierLTESerializer(qs_supplier,many=True).data
+        }
+    def get_vendor(self, qs):
+        qs_vendor=company_vendor.objects.filter(company=qs)
+        return {
+            "count": len(qs_vendor),
+            "data" : CompanyVendorLTESerializer(qs_vendor,many=True).data
+        }
+            
+    class Meta:
+        model = company
+        fields = ['id','companyType','custommer','staff',
+        'supplier','vendor','created_at']
         

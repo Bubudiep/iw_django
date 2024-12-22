@@ -11,6 +11,7 @@ router.register(r'suppliers', api.CompanySupplierViewSet, basename='suppliers')
 router.register(r'vendors', api.CompanyVendorViewSet, basename='vendors')
 router.register(r'company', api.CompanyViewSet, basename='company')
 router.register(r'operators', api.CompanyOperatorViewSet, basename='operators')
+router.register(r'company_sublist', api.CompanySublistViewSet, basename='company_sublist')
 urlpatterns = [
     path('my-info/', api.MyInfoAPIView.as_view(), name='my-info'),
     path('search/', api.SearchAPIView.as_view(), name='search'),
