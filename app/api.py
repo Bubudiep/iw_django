@@ -2888,7 +2888,7 @@ class NhanvienSortingViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     pagination_class = StandardResultsSetPagination
     def get_permissions(self):
-        if self.request.method == 'GET' or self.request.method == 'POST':
+        if self.request.method == 'GET' or self.request.method == 'POST' or self.request.method == 'PATCH':
             return [permissions.AllowAny()]
         return [permissions.IsAuthenticated()]
 
