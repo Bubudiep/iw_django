@@ -153,8 +153,11 @@ class CompanyOperatorAdmin(admin.ModelAdmin):
     search_fields = ('ma_nhanvien', 'ho_ten', 'sdt', 'so_cccd')
     list_filter = ('company', 'ngaysinh', 'created_at')
     ordering = ('-id',)
-    readonly_fields = ('created_at', 'updated_at')
+    readonly_fields = ('company','created_at', 'updated_at')
     fieldsets = (
+        ("Company", {
+            'fields': ('company',)
+        }),
         ("Personal Details", {
             'fields': ('ma_nhanvien', 'ho_ten', 'sdt', 'so_cccd', 'ngaysinh', 'diachi')
         }),
@@ -162,7 +165,7 @@ class CompanyOperatorAdmin(admin.ModelAdmin):
             'fields': ('so_taikhoan', 'chu_taikhoan', 'ghichu_taikhoan')
         }),
         ("Company Relationships", {
-            'fields': ('company', 'nguoituyen', 'nhacungcap', 'nhachinh')
+            'fields': ('congty_danglam', 'nguoituyen', 'nhacungcap', 'nhachinh')
         }),
         ("Additional Info", {
             'fields': ('ghichu',)
@@ -176,3 +179,32 @@ class IntegrityErrorLogAdmin(admin.ModelAdmin):
     search_fields = ('api_name','models_name','endpoint')  # Tìm kiếm theo thông báo lỗi hoặc endpoint
     ordering = ('-timestamp',)  # Sắp xếp theo thời gian (mới nhất trước)
     readonly_fields = ('api_name','models_name','error_message', 'timestamp', 'endpoint', 'payload')
+
+@admin.register(company_staff_profile)
+class CompanyStaffProfileAdmin(admin.ModelAdmin):
+    list_display = (
+        'id', 'staff', 'full_name', 'nick_name', 'phone', 
+        'email', 'birthday', 'created_at', 'updated_at'
+    )  # Các trường hiển thị trong danh sách
+    list_filter = ('created_at', 'updated_at', 'birthday')  # Bộ lọc theo ngày/thời gian
+    search_fields = ('full_name', 'nick_name', 'phone', 'email')  # Tìm kiếm theo tên, điện thoại, email
+    ordering = ('-id',)  # Sắp xếp theo ID giảm dần
+    readonly_fields = ('created_at', 'updated_at')  # Trường chỉ đọc
+
+    fieldsets = (
+        ('Thông tin cơ bản', {
+            'fields': ('staff', 'last_name', 'first_name', 'full_name', 'nick_name', 'sologan')
+        }),
+        ('Thông tin liên hệ', {
+            'fields': ('phone', 'email', 'zalo_id', 'zalo_number', 'facebook', 'tiktok', 'instagram')
+        }),
+        ('Thông tin ngân hàng', {
+            'fields': ('bank', 'bank_number')
+        }),
+        ('Hình ảnh và tệp đính kèm', {
+            'fields': ('avatar', 'background', 'cv_file')
+        }),
+        ('Thông tin khác', {
+            'fields': ('birthday', 'created_at', 'updated_at')
+        }),
+    )  # Phân nhóm các trường trong form chi tiết

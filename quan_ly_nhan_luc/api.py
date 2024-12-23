@@ -195,10 +195,15 @@ class SearchAPIView(APIView):
         if not query:
             return Response({"detail": "Hãy nhập từ khóa tìm kiếm."}, status=400)
         if search_type == 'employee':
-            results = company_staff.objects.filter(
-                Q(name__icontains=query) | Q(id__icontains=query)| Q(user__username__icontains=query)
+            results = company_staff_profile.objects.filter(
+                Q(staff__name__icontains=query) | 
+                Q(staff__user__username__icontains=query)| 
+                Q(full_name__icontains=query)| 
+                Q(nick_name__icontains=query)
             ).annotate(
-                username=F('user__username')
+                id=F('staff__id'),
+                username=F('staff__user__username'),
+                name=F('staff__name')
             ).values('id', 'name', 'username')[:8]
         elif search_type == 'department':
             results = company_department.objects.filter(
@@ -208,6 +213,21 @@ class SearchAPIView(APIView):
             results = company_possition.objects.filter(
                 Q(name__icontains=query)
             ).values('id', 'name')
+        elif search_type == 'operator':
+            results = company_operator.objects.filter(
+                Q(ho_ten__icontains=query)|
+                Q(ma_nhanvien__icontains=query)|
+                Q(ten_goc__icontains=query)|
+                Q(so_cccd__icontains=query)|
+                Q(so_taikhoan__icontains=query)|
+                Q(chu_taikhoan__icontains=query)|
+                Q(ghichu__icontains=query)|
+                Q(ghichu__icontains=query)|
+                Q(nguoituyen__name__icontains=query)|
+                Q(nguoituyen__company_staff_profile__full_name__icontains=query)|
+                Q(nguoibaocao__name__icontains=query)|
+                Q(nguoibaocao__company_staff_profile__full_name__icontains=query)
+            ).values('id', 'ma_nhanvien','ho_ten')[:8]
         else:
             return Response({"detail": "Không hợp lệ."}, status=status.HTTP_400_BAD_REQUEST)
         return Response(results)
@@ -705,17 +725,26 @@ class CompanyOperatorViewSet(viewsets.ModelViewSet):
                 isActive=True,
                 company__key=key
             )
-            serializer = self.get_serializer(data=request.data)
-            serializer.is_valid(raise_exception=True)
-            user_create = serializer.save(company=qs_res.company)
-            ngaybatdau=request.data.get("ngay_vao_lam")
-            qs_cty=company_customer.objects.get(id=request.data.get("cong_ty"))
-            nhachinh=None
-            if request.data.get("nhachinh"):
-                nhachinh=company_supplier.objects.get(id=request.data.get("nhachinh"))
-            operator_history.objects.create(ma_nhanvien=user_create.ma_nhanvien,operator=user_create,
-                                            customer=qs_cty,supplier=nhachinh,start_date=ngaybatdau)
-            return Response(serializer.data, status=201)
+            if qs_res:
+                request.data["nguoibaocao"]=qs_res.id
+                if request.data.get("ma_nhanvien") is None:
+                    request.data["ma_nhanvien"]=f"RANDOM_{uuid.uuid4().hex.upper()[:12]}"
+                serializer = self.get_serializer(data=request.data)
+                serializer.is_valid(raise_exception=True)
+                user_create = serializer.save(company=qs_res.company)
+                ngaybatdau=request.data.get("ngay_vao_lam")
+                qs_cty=company_customer.objects.get(id=request.data.get("congty_danglam"))
+                nhachinh=None
+                if request.data.get("nhachinh"):
+                    nhachinh=company_supplier.objects.get(id=request.data.get("nhachinh"))
+                operator_history.objects.create(ma_nhanvien=user_create.ma_nhanvien,operator=user_create,
+                                                customer=qs_cty,supplier=nhachinh,start_date=ngaybatdau)
+                return Response(CompanyOperatorDetailsSerializer(user_create).data, status=201)
+            else:
+                return Response(
+                    {"detail": "Bạn không có quyền!"},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
         except IntegrityError as e:
             IntegrityErrorLog.objects.create(
                 models_name="company_operator",
@@ -735,6 +764,30 @@ class CompanyOperatorViewSet(viewsets.ModelViewSet):
                     {"detail": "Lỗi khởi tạo!"},
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR
                 )
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        queryset = self.filter_queryset(queryset)  # Áp dụng bộ lọc cho queryset
+        page_size = self.request.query_params.get('page_size')
+        if page_size is not None:
+            self.pagination_class.page_size = int(page_size)
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+    
+class CompanyOperatorDetailsViewSet(viewsets.ModelViewSet):
+    serializer_class = CompanyOperatorDetailsSerializer
+    authentication_classes = [OAuth2Authentication]
+    permission_classes = [IsAuthenticated]
+    pagination_class = StandardResultsSetPagination
+    http_method_names = ['get']
+    def get_queryset(self):
+        user = self.request.user
+        key = self.request.headers.get('ApplicationKey')
+        qs_res=company_staff.objects.get(user__user=user,isActive=True,company__key=key)
+        return company_operator.objects.filter(company=qs_res.company)
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
         queryset = self.filter_queryset(queryset)  # Áp dụng bộ lọc cho queryset

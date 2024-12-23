@@ -189,7 +189,7 @@ class company_staff_profile(models.Model):
         verbose_name = "Company Staff Profiles"
         verbose_name_plural = "Company Staff Profiles"
     def __str__(self):
-        return f"{self.user.username}_{self.possition}_{self.company}"
+        return f"{self.staff.name}_{self.full_name}"
 
 class company_staff_history_function(models.Model):
     name = models.CharField(max_length=200, null=True, blank=True)
@@ -330,6 +330,8 @@ class company_operator(models.Model):
         verbose_name_plural = "Company Operators"
         unique_together = ('company', 'ma_nhanvien')
     def save(self, *args, **kwargs):
+        if not self.ma_nhanvien:
+            self.ma_nhanvien = f"RANDOM_{uuid.uuid4().hex.upper()[:18]}"
         super(company_operator, self).save(*args, **kwargs)
     def __str__(self):
         return f"{self.ma_nhanvien}"

@@ -52,11 +52,12 @@ class RegisterSerializer(serializers.ModelSerializer):
     key = serializers.CharField(required=True)
     password = serializers.CharField(required=True)
     username = serializers.CharField(required=True)
+    fullname = serializers.CharField(required=True)
     department = serializers.CharField(required=False)
     jobtitle = serializers.CharField(required=False)
     class Meta:
         model = User
-        fields = ['username', 'password', 'employeeCode','key','jobtitle','department']
+        fields = ['username','fullname', 'password', 'employeeCode','key','jobtitle','department']
         
     @cached_property
     def user(self):
@@ -70,6 +71,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         employeeCode = validated_data.pop('employeeCode',None)
         password = validated_data.pop('password',None)
         username = validated_data.pop('username',None)
+        fullname = validated_data.pop('fullname',None)
         department = validated_data.pop('department',None)
         jobtitle = validated_data.pop('jobtitle',None)
         user = self.user
@@ -125,6 +127,8 @@ class RegisterSerializer(serializers.ModelSerializer):
                                                     isBan=False,
                                                     isOnline=False,
                                                     isValidate=False)
+                profile=company_staff_profile.objects.create(staff=employee,
+                                                             full_name=fullname)
                 record_user_action(function_name="staff_account",action_name="create",staff=qs_staff,
                                    title="Công ty",message=f"Đã thêm tài khoản {employeeCode} thành công!",is_hidden=False)
                 record_user_action(function_name="staff_account",action_name="create",staff=employee,
@@ -306,8 +310,99 @@ class CompanyAccountDetailsSerializer(serializers.ModelSerializer):
         model = company_staff
         fields = '__all__'
        
+class OperatorHistorySerializer(serializers.ModelSerializer):
+    customer = serializers.SerializerMethodField(read_only=True)
+    supplier = serializers.SerializerMethodField(read_only=True)
+    vendor = serializers.SerializerMethodField(read_only=True)
+    class Meta:
+        model = operator_history
+        fields = '__all__'
+    def get_vendor(self, qs):
+        if qs.vendor:
+            return CompanyCustomerLTESerializer(qs.vendor,many=False).data
+    def get_customer(self, qs):
+        if qs.customer:
+            return CompanyCustomerLTESerializer(qs.customer,many=False).data
+    def get_supplier(self, qs):
+        if qs.supplier:
+            return CompanyCustomerLTESerializer(qs.supplier,many=False).data
+            
 class CompanyOperatorSerializer(serializers.ModelSerializer):
     company = serializers.PrimaryKeyRelatedField(read_only=True)
+    class Meta:
+        model = company_operator
+        fields = '__all__'
+         
+class CompanyOperatorDetailsSerializer(serializers.ModelSerializer):
+    company = serializers.PrimaryKeyRelatedField(read_only=True)
+    work = serializers.SerializerMethodField(read_only=True)
+    nguoituyen = serializers.SerializerMethodField(read_only=True)
+    nguoibaocao = serializers.SerializerMethodField(read_only=True)
+    congty_danglam = serializers.SerializerMethodField(read_only=True)
+    nhachinh = serializers.SerializerMethodField(read_only=True)
+    nhacungcap = serializers.SerializerMethodField(read_only=True)
+    def get_congty_danglam(self, qs):
+        if qs.congty_danglam:
+            return {
+                "name":qs.congty_danglam.name,
+                "fullname":qs.congty_danglam.fullname,
+            }
+    def get_nhacungcap(self, qs):
+        if qs.nhacungcap:
+            return {
+                "name":qs.nhacungcap.name,
+                "fullname":qs.nhacungcap.fullname,
+            }
+    def get_nhachinh(self, qs):
+        if qs.nhachinh:
+            return {
+                "name":qs.nhachinh.name,
+                "fullname":qs.nhachinh.fullname,
+            }
+    def get_nguoibaocao(self, qs):
+        try:
+            if qs.nguoibaocao:
+                qs_profile=company_staff_profile.objects.filter(staff=qs.nguoibaocao)
+                return {
+                    "id":qs.nguoibaocao.id,
+                    "name":qs.nguoibaocao.name,
+                    "full_name":qs_profile.first().full_name if len(qs_profile)>0 else None
+                }
+        except Exception as e:
+            return None
+    def get_nguoituyen(self, qs):
+        try:
+            if qs.nguoituyen:
+                qs_profile=company_staff_profile.objects.filter(staff=qs.nguoituyen)
+                return {
+                    "id":qs.nguoituyen.id,
+                    "name":qs.nguoituyen.name,
+                    "full_name":qs_profile.first().full_name if len(qs_profile)>0 else None
+                }
+        except Exception as e:
+            return None
+    def get_work(self, qs):
+        qs_work=operator_history.objects.filter(operator=qs)
+        if len(qs_work)>0:
+            nowStatus=qs_work.first()
+            return {
+                "start_date": nowStatus.start_date,
+                "end_date": nowStatus.end_date,
+                "customer":{
+                    "name": nowStatus.customer.name,
+                    "fullname": nowStatus.customer.fullname,
+                } if nowStatus.customer else None,
+                "vendor":{
+                    "name": nowStatus.vendor.name,
+                    "fullname": nowStatus.vendor.fullname,
+                } if nowStatus.vendor else None,
+                "supplier":{
+                    "name": nowStatus.supplier.name,
+                    "fullname": nowStatus.supplier.fullname,
+                } if nowStatus.supplier else None,
+            }
+        else:
+            return None
     class Meta:
         model = company_operator
         fields = '__all__'
