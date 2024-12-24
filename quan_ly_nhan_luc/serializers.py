@@ -12,6 +12,9 @@ import sys
 from rest_framework.response import Response
 from rest_framework import status
 from django.db import IntegrityError
+from datetime import datetime
+import pytz
+
 def generate_response_json(result:str, message:str, data:dict={}):
     return {"result": result, "message": message, "data": data}
 
@@ -341,6 +344,24 @@ class CompanyOperatorDetailsSerializer(serializers.ModelSerializer):
     congty_danglam = serializers.SerializerMethodField(read_only=True)
     nhachinh = serializers.SerializerMethodField(read_only=True)
     nhacungcap = serializers.SerializerMethodField(read_only=True)
+    thamnien = serializers.SerializerMethodField(read_only=True)
+    def get_thamnien(self, obj):
+        def calculate_seniority(record):
+            if not record.start_date:
+                return 0
+            start_date = record.start_date.date()
+            end_date = (record.end_date or datetime.now()).date()
+            delta_days = (end_date - start_date).days + 1
+            if record.noihopdong:
+                delta_days += calculate_seniority(record.noihopdong)
+            return delta_days
+        qs_history=operator_history.objects.filter(operator=obj).first()
+        if qs_history:
+            total_days = calculate_seniority(qs_history)
+            return total_days
+        else:
+            return None
+    
     def get_congty_danglam(self, qs):
         if qs.congty_danglam:
             return {
@@ -403,6 +424,85 @@ class CompanyOperatorDetailsSerializer(serializers.ModelSerializer):
             }
         else:
             return None
+    class Meta:
+        model = company_operator
+        fields = '__all__'
+         
+class CompanyOperatorMoreDetailsSerializer(serializers.ModelSerializer):
+    company = serializers.PrimaryKeyRelatedField(read_only=True)
+    work = serializers.SerializerMethodField(read_only=True)
+    nguoituyen = serializers.SerializerMethodField(read_only=True)
+    nguoibaocao = serializers.SerializerMethodField(read_only=True)
+    congty_danglam = serializers.SerializerMethodField(read_only=True)
+    nhachinh = serializers.SerializerMethodField(read_only=True)
+    nhacungcap = serializers.SerializerMethodField(read_only=True)
+    thamnien = serializers.SerializerMethodField(read_only=True)
+    def get_thamnien(self, qs):
+        return None
+    def get_congty_danglam(self, qs):
+        if qs.congty_danglam:
+            return {
+                "name":qs.congty_danglam.name,
+                "fullname":qs.congty_danglam.fullname,
+            }
+    def get_nhacungcap(self, qs):
+        if qs.nhacungcap:
+            return {
+                "name":qs.nhacungcap.name,
+                "fullname":qs.nhacungcap.fullname,
+            }
+    def get_nhachinh(self, qs):
+        if qs.nhachinh:
+            return {
+                "name":qs.nhachinh.name,
+                "fullname":qs.nhachinh.fullname,
+            }
+    def get_nguoibaocao(self, qs):
+        try:
+            if qs.nguoibaocao:
+                qs_profile=company_staff_profile.objects.filter(staff=qs.nguoibaocao)
+                return {
+                    "id":qs.nguoibaocao.id,
+                    "name":qs.nguoibaocao.name,
+                    "full_name":qs_profile.first().full_name if len(qs_profile)>0 else None
+                }
+        except Exception as e:
+            return None
+    def get_nguoituyen(self, qs):
+        try:
+            if qs.nguoituyen:
+                qs_profile=company_staff_profile.objects.filter(staff=qs.nguoituyen)
+                return {
+                    "id":qs.nguoituyen.id,
+                    "name":qs.nguoituyen.name,
+                    "full_name":qs_profile.first().full_name if len(qs_profile)>0 else None
+                }
+        except Exception as e:
+            return None
+    def get_work(self, qs):
+        qs_work=operator_history.objects.filter(operator=qs)
+        if len(qs_work)>0:
+            work_list = []
+            for work in qs_work:
+                work_list.append({
+                    "start_date": work.start_date,
+                    "end_date": work.end_date,
+                    "customer": {
+                        "name": work.customer.name,
+                        "fullname": work.customer.fullname,
+                    } if work.customer else None,
+                    "vendor": {
+                        "name": work.vendor.name,
+                        "fullname": work.vendor.fullname,
+                    } if work.vendor else None,
+                    "supplier": {
+                        "name": work.supplier.name,
+                        "fullname": work.supplier.fullname,
+                    } if work.supplier else None,
+                })
+            return work_list
+        else:
+            return []
     class Meta:
         model = company_operator
         fields = '__all__'
