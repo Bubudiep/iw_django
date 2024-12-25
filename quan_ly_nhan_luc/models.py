@@ -352,7 +352,7 @@ class operator_history(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ['-start_date']  # Sắp xếp theo thời gian bắt đầu mới nhất
+        ordering = ['-id']  # Sắp xếp theo thời gian bắt đầu mới nhất
         verbose_name = "Operator History"
         verbose_name_plural = "Operator Histories"
 

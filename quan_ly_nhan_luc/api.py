@@ -29,6 +29,7 @@ from rest_framework.pagination import PageNumberPagination
 from django.contrib.auth.hashers import check_password
 from rest_framework.filters import OrderingFilter
 from django.db.models import Q,F
+from rest_framework.decorators import action
 
 def generate_response_json(result:str, message:str, data:dict={}):
     return {"result": result, "message": message, "data": data}
@@ -703,6 +704,30 @@ class CompanyOperatorViewSet(viewsets.ModelViewSet):
         key = self.request.headers.get('ApplicationKey')
         qs_res=company_staff.objects.get(user__user=user,isActive=True,company__key=key)
         return company_operator.objects.filter(company=qs_res.company)
+    
+    @action(detail=True, methods=['patch'])
+    def nghiviec(self, request, pk=None):
+        ngaynghi = request.data.get('ngaynghi')
+        try:
+            # xóa cty đang làm, cập nhập lịch sử làm việc tại công ty đang làm
+            operator = self.get_object()
+            hist=operator_history.objects.filter(operator=operator).order_by('-id')
+            if len(hist)==0:
+                return Response({"detail": f"Nhân viên {operator.ho_ten} chưa đi làm ở công ty nào!"}, status=status.HTTP_400_BAD_REQUEST)
+            if (operator.congty_danglam)==None:
+                return Response({"detail": f"Nhân viên {operator.ho_ten} đang không đi làm!"}, status=status.HTTP_400_BAD_REQUEST)
+            ctyNow=hist.first()
+            if ctyNow.end_date:
+                operator.congty_danglam = None
+                return Response({"detail": f"Nhân viên {operator.ho_ten} đang không đi làm!"}, status=status.HTTP_400_BAD_REQUEST)
+            ctyNow.end_date=datetime.now()
+            operator.congty_danglam = ngaynghi
+            operator.congty_danglam = None
+            operator.save()
+            return Response({"message": "Trường 'nghiviec' đã được cập nhật thành True."}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        
     def perform_create(self, serializer):
         user = self.request.user
         key = self.request.headers.get('ApplicationKey')
