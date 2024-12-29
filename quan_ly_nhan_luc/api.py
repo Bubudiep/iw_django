@@ -4,6 +4,7 @@ import os
 import requests
 import secrets
 import socketio
+from django.conf import settings
 from rest_framework import viewsets
 from rest_framework import permissions
 from oauth2_provider.contrib.rest_framework import OAuth2Authentication
@@ -22,7 +23,7 @@ from app.socket import send_socket
 from oauth2_provider.settings import oauth2_settings
 from django.contrib.auth import authenticate
 from oauthlib.common import generate_token
-from datetime import timedelta
+from datetime import timedelta, datetime
 from django.utils.timezone import now
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.pagination import PageNumberPagination
@@ -30,7 +31,9 @@ from django.contrib.auth.hashers import check_password
 from rest_framework.filters import OrderingFilter
 from django.db.models import Q,F
 from rest_framework.decorators import action
-
+from pytz import timezone
+print("Múi giờ mặc định:", settings.TIME_ZONE)
+print("Thời gian hiện tại:", now())
 def generate_response_json(result:str, message:str, data:dict={}):
     return {"result": result, "message": message, "data": data}
 
@@ -751,20 +754,24 @@ class CompanyOperatorViewSet(viewsets.ModelViewSet):
                 company__key=key
             )
             if qs_res:
-                request.data["nguoibaocao"]=qs_res.id
-                if request.data.get("ma_nhanvien") is None:
-                    request.data["ma_nhanvien"]=f"RANDOM_{uuid.uuid4().hex.upper()[:12]}"
-                serializer = self.get_serializer(data=request.data)
-                serializer.is_valid(raise_exception=True)
-                user_create = serializer.save(company=qs_res.company)
-                ngaybatdau=request.data.get("ngay_vao_lam")
-                qs_cty=company_customer.objects.get(id=request.data.get("congty_danglam"))
-                nhachinh=None
-                if request.data.get("nhachinh"):
-                    nhachinh=company_supplier.objects.get(id=request.data.get("nhachinh"))
-                operator_history.objects.create(ma_nhanvien=user_create.ma_nhanvien,operator=user_create,
-                                                customer=qs_cty,supplier=nhachinh,start_date=ngaybatdau)
-                return Response(CompanyOperatorDetailsSerializer(user_create).data, status=201)
+                with transaction.atomic():
+                    request.data["nguoibaocao"]=qs_res.id
+                    if request.data.get("ma_nhanvien") is None:
+                        request.data["ma_nhanvien"]=f"RANDOM_{uuid.uuid4().hex.upper()[:12]}"
+                    serializer = self.get_serializer(data=request.data)
+                    serializer.is_valid(raise_exception=True)
+                    user_create = serializer.save(company=qs_res.company)
+                    ngaybatdau_str = request.data.get("ngay_vao_lam")  # Ví dụ: '2024-12-27'
+                    if ngaybatdau_str:
+                        ngaybatdau = datetime.strptime(ngaybatdau_str, '%Y-%m-%d')
+                        ngaybatdau = timezone('Asia/Ho_Chi_Minh').localize(ngaybatdau)
+                    qs_cty=company_customer.objects.get(id=request.data.get("congty_danglam"))
+                    nhachinh=None
+                    if request.data.get("nhachinh"):
+                        nhachinh=company_supplier.objects.get(id=request.data.get("nhachinh"))
+                    operator_history.objects.create(ma_nhanvien=user_create.ma_nhanvien,operator=user_create,
+                                                    customer=qs_cty,supplier=nhachinh,start_date=ngaybatdau)
+                    return Response(CompanyOperatorDetailsSerializer(user_create).data, status=201)
             else:
                 return Response(
                     {"detail": "Bạn không có quyền!"},

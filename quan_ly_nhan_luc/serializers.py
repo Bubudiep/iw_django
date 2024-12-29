@@ -408,19 +408,16 @@ class CompanyOperatorDetailsSerializer(serializers.ModelSerializer):
             nowStatus=qs_work.first()
             return {
                 "start_date": nowStatus.start_date,
-                "end_date": nowStatus.end_date,
-                "customer":{
+                "end_date": nowStatus.end_date, "customer":{
                     "name": nowStatus.customer.name,
                     "fullname": nowStatus.customer.fullname,
-                } if nowStatus.customer else None,
-                "vendor":{
+                } if nowStatus.customer else None, "vendor":{
                     "name": nowStatus.vendor.name,
                     "fullname": nowStatus.vendor.fullname,
-                } if nowStatus.vendor else None,
-                "supplier":{
+                } if nowStatus.vendor else None, "supplier":{
                     "name": nowStatus.supplier.name,
                     "fullname": nowStatus.supplier.fullname,
-                } if nowStatus.supplier else None,
+                } if nowStatus.supplier else None
             }
         else:
             return None

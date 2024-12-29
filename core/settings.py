@@ -205,9 +205,5 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-# Cài đặt múi giờ
 TIME_ZONE = 'Asia/Ho_Chi_Minh'  # Thay đổi thành múi giờ bạn muốn
-
-# Bật hỗ trợ thời gian mùa hè
 USE_TZ = True  # Bật tính năng timezone (mặc định là True)
