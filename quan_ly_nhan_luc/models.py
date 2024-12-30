@@ -307,15 +307,18 @@ class company_operator(models.Model):
     ten_goc= models.CharField(max_length=200, null=True, blank=True)
     so_cccd= models.CharField(max_length=200, null=True, blank=True)
     ngaysinh= models.DateField(null=True, blank=True)
-    diachi= models.TextField(null=True, blank=True)
-    quequan= models.TextField(null=True, blank=True)
+    diachi= models.CharField(max_length=200, null=True, blank=True)
+    quequan= models.CharField(max_length=200, null=True, blank=True)
+    
+    anh_cccd_front= models.TextField(null=True, blank=True)
+    anh_cccd_back= models.TextField(null=True, blank=True)
     
     trangthai= models.CharField(max_length=200, null=True, blank=True)
     nganhang= models.CharField(max_length=200, null=True, blank=True)
     so_taikhoan= models.CharField(max_length=200, null=True, blank=True)
     chu_taikhoan= models.CharField(max_length=200, null=True, blank=True)
     ghichu_taikhoan= models.CharField(max_length=200, null=True, blank=True)
-    ghichu= models.TextField(null=True, blank=True)
+    ghichu= models.CharField(max_length=200, null=True, blank=True)
     
     nguoituyen = models.ForeignKey(company_staff, on_delete=models.SET_NULL, null=True, blank=True,related_name="companyOP_nguoituyen")
     nhacungcap = models.ForeignKey(company_vendor, on_delete=models.SET_NULL, null=True, blank=True)
@@ -342,6 +345,9 @@ class operator_history(models.Model):
     vendor = models.ForeignKey(company_vendor, on_delete=models.SET_NULL, null=True, blank=True, related_name="operator_histories")
     supplier = models.ForeignKey(company_supplier, on_delete=models.SET_NULL, null=True, blank=True, related_name="operator_histories")
     
+    so_cccd= models.CharField(max_length=200, null=True, blank=True)
+    anh_cccd_front= models.TextField(null=True, blank=True)
+    anh_cccd_back= models.TextField(null=True, blank=True)
     ma_nhanvien= models.CharField(max_length=200, null=True, blank=True)
     start_date = models.DateTimeField(null=True, blank=True)  # Thời gian bắt đầu làm việc
     end_date = models.DateTimeField(null=True, blank=True)    # Thời gian kết thúc làm việc

@@ -335,6 +335,32 @@ class CompanyOperatorSerializer(serializers.ModelSerializer):
     class Meta:
         model = company_operator
         fields = '__all__'
+            
+class OP_HISTSerializer(serializers.ModelSerializer):
+    customer = serializers.SerializerMethodField(read_only=True)
+    supplier = serializers.SerializerMethodField(read_only=True)
+    vendor = serializers.SerializerMethodField(read_only=True)
+    class Meta:
+        model = operator_history
+        fields = '__all__'
+    def get_vendor(self, qs):
+        if qs.vendor:
+            return {
+                "name":qs.vendor.name,
+                "fullname": qs.vendor.fullname,
+            }
+    def get_customer(self, qs):
+        if qs.customer:
+            return {
+                "name":qs.customer.name,
+                "fullname": qs.customer.fullname,
+            }
+    def get_supplier(self, qs):
+        if qs.supplier:
+            return {
+                "name":qs.supplier.name,
+                "fullname": qs.supplier.fullname,
+            }
          
 class CompanyOperatorDetailsSerializer(serializers.ModelSerializer):
     company = serializers.PrimaryKeyRelatedField(read_only=True)
@@ -478,28 +504,7 @@ class CompanyOperatorMoreDetailsSerializer(serializers.ModelSerializer):
             return None
     def get_work(self, qs):
         qs_work=operator_history.objects.filter(operator=qs)
-        if len(qs_work)>0:
-            work_list = []
-            for work in qs_work:
-                work_list.append({
-                    "start_date": work.start_date,
-                    "end_date": work.end_date,
-                    "customer": {
-                        "name": work.customer.name,
-                        "fullname": work.customer.fullname,
-                    } if work.customer else None,
-                    "vendor": {
-                        "name": work.vendor.name,
-                        "fullname": work.vendor.fullname,
-                    } if work.vendor else None,
-                    "supplier": {
-                        "name": work.supplier.name,
-                        "fullname": work.supplier.fullname,
-                    } if work.supplier else None,
-                })
-            return work_list
-        else:
-            return []
+        return OP_HISTSerializer(qs_work,many=True).data
     class Meta:
         model = company_operator
         fields = '__all__'

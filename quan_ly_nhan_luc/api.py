@@ -709,6 +709,27 @@ class CompanyOperatorViewSet(viewsets.ModelViewSet):
         return company_operator.objects.filter(company=qs_res.company)
     
     @action(detail=True, methods=['post'])
+    def dilam(self, request, pk=None):
+        startDate = request.data.get('startDate',now())
+        company = request.data.get('company',now())
+        try:
+            operator = self.get_object()
+            hist=operator_history.objects.filter(operator=operator).order_by('-id')
+            if len(hist)==0:
+                return Response({"detail": f"Nhân viên {operator.ho_ten} chưa đi làm ở công ty nào!"}, status=status.HTTP_400_BAD_REQUEST)
+            ctyNow=hist.first()
+            if startDate < ctyNow.end_date:
+                return Response({"detail": "Ngày đi làm không được nhỏ hơn ngày nghỉ ở công ty cũ!"}, status=status.HTTP_400_BAD_REQUEST)
+            if ctyNow.end_date is None or ctyNow.start_date:
+                return Response({"detail": f"Nhân viên {operator.ho_ten} đang chưa nghỉ làm ở công ty cũ!"}, status=status.HTTP_400_BAD_REQUEST)
+            operator.congty_danglam = None
+            operator_history.objects.create(ma_nhanvien=user_create.ma_nhanvien,operator=user_create,
+                                            customer=qs_cty,supplier=nhachinh,start_date=ngaybatdau)
+            return Response(CompanyOperatorMoreDetailsSerializer(operator).data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        
+    @action(detail=True, methods=['post'])
     def nghiviec(self, request, pk=None):
         ngaynghi = request.data.get('ngaynghi',now())
         try:
@@ -717,9 +738,9 @@ class CompanyOperatorViewSet(viewsets.ModelViewSet):
             hist=operator_history.objects.filter(operator=operator).order_by('-id')
             if len(hist)==0:
                 return Response({"detail": f"Nhân viên {operator.ho_ten} chưa đi làm ở công ty nào!"}, status=status.HTTP_400_BAD_REQUEST)
-            # if (operator.congty_danglam)==None:
-            #     return Response({"detail": f"Nhân viên {operator.ho_ten} đang không đi làm!"}, status=status.HTTP_400_BAD_REQUEST)
             ctyNow=hist.first()
+            if ngaynghi < ctyNow.start_date:
+                return Response({"detail": "Ngày nghỉ phải lớn hơn ngày bắt đầu làm!"}, status=status.HTTP_400_BAD_REQUEST)
             if ctyNow.end_date:
                 operator.congty_danglam = None
                 return Response({"detail": f"Nhân viên {operator.ho_ten} đang không đi làm!"}, status=status.HTTP_400_BAD_REQUEST)
@@ -763,15 +784,14 @@ class CompanyOperatorViewSet(viewsets.ModelViewSet):
                     user_create = serializer.save(company=qs_res.company)
                     ngaybatdau_str = request.data.get("ngay_vao_lam")  # Ví dụ: '2024-12-27'
                     if ngaybatdau_str:
-                        ngaybatdau = datetime.strptime(ngaybatdau_str, '%Y-%m-%d')
-                        ngaybatdau = timezone('Asia/Ho_Chi_Minh').localize(ngaybatdau)
+                        ngaybatdau = f"{ngaybatdau_str}T07:00:00.000000"
                     qs_cty=company_customer.objects.get(id=request.data.get("congty_danglam"))
                     nhachinh=None
                     if request.data.get("nhachinh"):
                         nhachinh=company_supplier.objects.get(id=request.data.get("nhachinh"))
                     operator_history.objects.create(ma_nhanvien=user_create.ma_nhanvien,operator=user_create,
                                                     customer=qs_cty,supplier=nhachinh,start_date=ngaybatdau)
-                    return Response(CompanyOperatorDetailsSerializer(user_create).data, status=201)
+                    return Response(CompanyOperatorMoreDetailsSerializer(user_create).data, status=201)
             else:
                 return Response(
                     {"detail": "Bạn không có quyền!"},
@@ -810,7 +830,7 @@ class CompanyOperatorViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
     
 class CompanyOperatorDetailsViewSet(viewsets.ModelViewSet):
-    serializer_class = CompanyOperatorDetailsSerializer
+    serializer_class = CompanyOperatorMoreDetailsSerializer
     authentication_classes = [OAuth2Authentication]
     permission_classes = [IsAuthenticated]
     pagination_class = StandardResultsSetPagination
