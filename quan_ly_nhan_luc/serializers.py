@@ -431,22 +431,9 @@ class CompanyOperatorDetailsSerializer(serializers.ModelSerializer):
     def get_work(self, qs):
         qs_work=operator_history.objects.filter(operator=qs)
         if len(qs_work)>0:
-            nowStatus=qs_work.first()
-            return {
-                "start_date": nowStatus.start_date,
-                "end_date": nowStatus.end_date, "customer":{
-                    "name": nowStatus.customer.name,
-                    "fullname": nowStatus.customer.fullname,
-                } if nowStatus.customer else None, "vendor":{
-                    "name": nowStatus.vendor.name,
-                    "fullname": nowStatus.vendor.fullname,
-                } if nowStatus.vendor else None, "supplier":{
-                    "name": nowStatus.supplier.name,
-                    "fullname": nowStatus.supplier.fullname,
-                } if nowStatus.supplier else None
-            }
+            return [OP_HISTSerializer(qs_work.first()).data]
         else:
-            return None
+            return []
     class Meta:
         model = company_operator
         fields = '__all__'

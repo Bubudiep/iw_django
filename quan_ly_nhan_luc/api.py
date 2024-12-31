@@ -830,7 +830,7 @@ class CompanyOperatorViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
     
 class CompanyOperatorDetailsViewSet(viewsets.ModelViewSet):
-    serializer_class = CompanyOperatorMoreDetailsSerializer
+    serializer_class = CompanyOperatorDetailsSerializer
     authentication_classes = [OAuth2Authentication]
     permission_classes = [IsAuthenticated]
     pagination_class = StandardResultsSetPagination
