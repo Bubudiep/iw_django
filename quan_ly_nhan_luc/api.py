@@ -711,7 +711,11 @@ class CompanyOperatorViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'])
     def dilam(self, request, pk=None):
         startDate = request.data.get('startDate',now())
-        company = request.data.get('company',now())
+        company = request.data.get('company',None)
+        cccd_truoc = request.data.get('cccd_truoc',None)
+        cccd_sau = request.data.get('cccd_sau',None)
+        if company is None:
+            return Response({"detail": f"Chưa chọn công ty làm việc!"}, status=status.HTTP_400_BAD_REQUEST)
         try:
             operator = self.get_object()
             hist=operator_history.objects.filter(operator=operator).order_by('-id')
