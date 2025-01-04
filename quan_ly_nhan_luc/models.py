@@ -310,8 +310,9 @@ class company_operator(models.Model):
     diachi= models.CharField(max_length=200, null=True, blank=True)
     quequan= models.CharField(max_length=200, null=True, blank=True)
     
-    anh_cccd_front= models.TextField(null=True, blank=True)
-    anh_cccd_back= models.TextField(null=True, blank=True)
+    avatar= models.TextField(null=True, blank=True)
+    cccd_front= models.TextField(null=True, blank=True)
+    cccd_back= models.TextField(null=True, blank=True)
     
     trangthai= models.CharField(max_length=200, null=True, blank=True)
     nganhang= models.CharField(max_length=200, null=True, blank=True)

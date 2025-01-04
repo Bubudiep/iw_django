@@ -786,15 +786,6 @@ class CompanyOperatorViewSet(viewsets.ModelViewSet):
                     serializer = self.get_serializer(data=request.data)
                     serializer.is_valid(raise_exception=True)
                     user_create = serializer.save(company=qs_res.company)
-                    ngaybatdau_str = request.data.get("ngay_vao_lam")  # Ví dụ: '2024-12-27'
-                    if ngaybatdau_str:
-                        ngaybatdau = f"{ngaybatdau_str}T07:00:00.000000"
-                    qs_cty=company_customer.objects.get(id=request.data.get("congty_danglam"))
-                    nhachinh=None
-                    if request.data.get("nhachinh"):
-                        nhachinh=company_supplier.objects.get(id=request.data.get("nhachinh"))
-                    operator_history.objects.create(ma_nhanvien=user_create.ma_nhanvien,operator=user_create,
-                                                    customer=qs_cty,supplier=nhachinh,start_date=ngaybatdau)
                     return Response(CompanyOperatorMoreDetailsSerializer(user_create).data, status=201)
             else:
                 return Response(
