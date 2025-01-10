@@ -21,7 +21,7 @@ class companyAdmin(admin.ModelAdmin):
     save_as = True  # Kích hoạt Save as new
     list_display = ('name','companyType','isActive',
       'isValidate','isOA', 'created_at')
-    search_fields = ()
+    search_fields = ('name', 'companyCode')
     list_filter = ()
 
 @admin.register(company_account)
@@ -35,15 +35,14 @@ class company_accountAdmin(admin.ModelAdmin):
 class company_departmentAdmin(admin.ModelAdmin):
     save_as = True  # Kích hoạt Save as new
     list_display = ('name','isActive','description','created_at')
-    search_fields = ()
+    search_fields = ('name', 'company__name')
     list_filter = ()
 
 @admin.register(company_possition)
 class company_possitionAdmin(admin.ModelAdmin):
     save_as = True  # Kích hoạt Save as new
-    list_display = ('name','isActive','description','created_at')
-    search_fields = ()
-    list_filter = ()
+    list_display = ('id', 'name', 'company', 'department', 'isActive')
+    search_fields = ('name', 'company__name', 'department__name')
     
 class IsActiveAndNotBannedFilter(admin.SimpleListFilter):
     title = 'Active and Not Banned'  # Tên hiển thị trong bộ lọc
@@ -208,3 +207,19 @@ class CompanyStaffProfileAdmin(admin.ModelAdmin):
             'fields': ('birthday', 'created_at', 'updated_at')
         }),
     )  # Phân nhóm các trường trong form chi tiết
+
+@admin.register(Permission)
+class PermissionAdmin(admin.ModelAdmin):
+    list_display = ('id', 'name', 'description', 'min_company_level', 'created_at', 'updated_at')
+    list_filter = ('min_company_level', 'created_at')
+    search_fields = ('name', 'description')
+    ordering = ('-created_at',)
+
+@admin.register(CompanyPermission)
+class CompanyPermissionAdmin(admin.ModelAdmin):
+    list_display = ('id', 'company', 'permission', 'is_active', 'assigned_by', 'assigned_at')
+    list_filter = ('is_active', 'company', 'permission')
+    search_fields = ('company__name', 'permission__name')
+    ordering = ('-assigned_at',)
+    autocomplete_fields = ('company', 'permission', 'assigned_by', 'applicable_staff', 'applicable_departments', 'applicable_positions', 'excluded_staff')
+    filter_horizontal = ('applicable_staff', 'applicable_departments', 'applicable_positions', 'excluded_staff')

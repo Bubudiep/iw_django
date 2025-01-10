@@ -32,11 +32,42 @@ from rest_framework.filters import OrderingFilter
 from django.db.models import Q,F
 from rest_framework.decorators import action
 from pytz import timezone
-print("Múi giờ mặc định:", settings.TIME_ZONE)
-print("Thời gian hiện tại:", now())
+from django.contrib.auth.decorators import permission_required
+
 def generate_response_json(result:str, message:str, data:dict={}):
     return {"result": result, "message": message, "data": data}
 
+def check_permission(user_a, permission_name):
+    """
+    Kiểm tra xem user_a có quyền cụ thể không.
+    
+    Args:
+        user_a (User): Người dùng cần kiểm tra quyền.
+        permission_name (str): Tên quyền cần kiểm tra.
+    
+    Returns:
+        bool: True nếu có quyền, False nếu không.
+    """
+    try:
+        # Lấy thông tin nhân viên từ tài khoản người dùng
+        staff = company_staff.objects.get(user__user=user_a)
+        # Lấy tất cả các quyền của công ty liên quan đến nhân viên (bao gồm trực tiếp, bộ phận, chức vụ)
+        applicable_permissions = CompanyPermission.objects.filter(
+            Q(applicable_staff=staff) |
+            Q(applicable_departments=staff.department) |
+            Q(applicable_positions=staff.possition),
+            is_active=True,
+            permission__name=permission_name,
+            company=staff.company
+        ).exclude(excluded_staff=staff)  # Loại trừ nếu nhân viên nằm trong danh sách bị loại trừ
+        # Nếu có ít nhất một quyền phù hợp
+        if applicable_permissions.exists():
+            return True
+        return False
+    except company_staff.DoesNotExist:
+        # Nhân viên không tồn tại
+        return False
+    
 def get_client_ip(request):
     x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
     if x_forwarded_for:
@@ -409,12 +440,12 @@ class CompanyViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_403_FORBIDDEN
             )
         else:
-            if 'avatar' in request.data:
+            if 'avatar' in request.data and request.data['avatar']:
                 avatar_data = request.data['avatar']
                 create_avt=self._save_image(user, 'avatar', avatar_data)
                 instance.avatar=create_avt
                 instance.save()
-            if 'wallpaper' in request.data:
+            if 'wallpaper' in request.data and request.data['wallpaper']:
                 wallpaper_data = request.data['wallpaper']
                 create_bg=self._save_image(user, 'wallpaper', wallpaper_data)
                 instance.wallpaper=create_bg
