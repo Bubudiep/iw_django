@@ -50,3 +50,23 @@ class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = Profile
         fields = "__all__"
+
+class PunchtimeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Punchtime
+        fields = ['user', 'punch_time', 'att_date']
+
+class AttendanceSerializer(serializers.ModelSerializer):
+    punch_time = PunchtimeSerializer(many=True)
+
+    class Meta:
+        model = Attendance
+        fields = ['user', 'week', 'weekday', 'clock_in', 'clock_out', 'punch_time', 'att_date', 'is_check']
+
+    def create(self, validated_data):
+        punch_time_data = validated_data.pop('punch_time')
+        attendance = Attendance.objects.create(**validated_data)
+        for punch_data in punch_time_data:
+            punchtime = Punchtime.objects.create(**punch_data)
+            attendance.punch_time.add(punchtime)
+        return attendance

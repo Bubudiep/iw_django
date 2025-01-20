@@ -4,6 +4,7 @@ from . import views
 router = routers.DefaultRouter()
 router.register(r'attendance', views.AttendanceViewSet, basename='attendance')
 urlpatterns = [
+    path('add-attendance/', views.AttendanceAPIView.as_view(), name='attendance_api'),
     path('user/', views.UserView.as_view(), name='user'),
     path('add-user/', views.RegisterView.as_view(), name='add-user'),
     path('login/', views.LoginView.as_view(), name='login'),

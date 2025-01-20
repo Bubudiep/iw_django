@@ -173,4 +173,11 @@ class AttendanceViewSet(viewsets.ModelViewSet):
 
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
-    
+
+class AttendanceAPIView(APIView):
+    def post(self, request, *args, **kwargs):
+        serializer = AttendanceSerializer(data=request.data, many=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"message": "Chấm công được lưu thành công!"}, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
