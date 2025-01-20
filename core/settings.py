@@ -35,6 +35,7 @@ DEBUG = True
 # Application definition
 
 INSTALLED_APPS = [
+    'attendance',
     'app',
     'quan_ly_nhan_luc',
     'oauth2_provider',
@@ -132,6 +133,7 @@ MIDDLEWARE = [
 ]
 CORS_ALLOW_HEADERS = list(default_headers) + [
     'ApplicationKey',
+    'Companykey',
 ]
 ROOT_URLCONF = 'core.urls'
 AUTHENTICATION_BACKENDS = [
