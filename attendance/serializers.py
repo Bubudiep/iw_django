@@ -26,8 +26,14 @@ def get_client_ip(request):
         ip = request.META.get('REMOTE_ADDR')
     return ip
 
+class PunchtimeLTESerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Punchtime
+        fields = ["punch_time"]
+        
 class UserAttendanceSerializer(serializers.ModelSerializer):
     user = serializers.CharField(source='user.username', allow_null=True,read_only=True)
+    punch_time = PunchtimeLTESerializer(many=True, read_only=True)
     class Meta:
         model = Attendance
         fields = "__all__"
@@ -40,7 +46,7 @@ class PunchtimeSerializer(serializers.ModelSerializer):
         
 class AttendanceDetailsSerializer(serializers.ModelSerializer):
     user = serializers.CharField(source='user.username', allow_null=True,read_only=True)
-    punchtime = PunchtimeSerializer(many=True, read_only=True)
+    punch_time = PunchtimeSerializer(many=True, read_only=True)
     class Meta:
         model = Attendance
         fields = "__all__"

@@ -107,33 +107,6 @@ class UserView(APIView):
           )[0]
           qs_ticket=AttendanceTicket.objects.filter(user=qs_emp)
           qs_mess=EmployeeMessage.objects.filter(user=qs_emp)
-          current_date = timezone.now()
-          current_month = current_date.month
-          current_year = current_date.year
-          # Kiểm tra nếu ngày hiện tại là 21 hoặc sau đó
-          if current_date.day >= 21:
-              # Nếu là ngày 21 hoặc sau đó, tháng lương là tháng sau
-              month_salary = current_month + 1
-              year_salary = current_year
-              if month_salary > 12:  # Nếu tháng lương là tháng 13, thì chuyển sang tháng 1 năm sau
-                  month_salary = 1
-                  year_salary += 1
-          else:
-              # Nếu trước ngày 21, tháng lương là tháng hiện tại
-              month_salary = current_month
-              year_salary = current_year
-          
-          start_year = year_salary - 1 if month_salary == 1 else year_salary
-          start_month = 12 if month_salary == 1 else month_salary - 1
-          start_date = timezone.datetime(start_year, start_month, 21) 
-          end_date = timezone.datetime(year_salary, month_salary, 20)
-          
-          # Lọc Attendance theo khoảng thời gian từ ngày 21 của tháng trước đến ngày 20 của tháng sau
-          qs_att = Attendance.objects.filter(
-              user=qs_emp,
-              att_date__range=[start_date.date(), end_date.date()]
-          )
-          
           return Response({
             "ticket":{
               "total":len(qs_ticket),
@@ -144,7 +117,6 @@ class UserView(APIView):
               "uncheck":len(qs_mess.filter(is_check=False))
             },
             "profile":UserProfileSerializer(profile).data,
-            "attendance":UserAttendanceSerializer(qs_att,many=True).data
           }, status=status.HTTP_200_OK)
         return Response({"error":"Bạn không có quyền truy cập!"}, status=status.HTTP_400_BAD_REQUEST)
       
@@ -163,7 +135,27 @@ class AttendanceViewSet(viewsets.ModelViewSet):
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
         queryset = self.filter_queryset(queryset)  # Áp dụng bộ lọc cho queryset
-        
+        start_date_param = self.request.query_params.get('start_date')
+        end_date_param = self.request.query_params.get('end_date')
+        print(f"{start_date_param} - {end_date_param}")
+        if start_date_param:
+            try:
+                start_date = datetime.strptime(start_date_param, "%Y-%m-%d")
+                print(f"Start Date: {start_date}")  # In ra để kiểm tra giá trị
+                queryset = queryset.filter(att_date__gte=start_date.date())
+            except ValueError as e:
+                print(f"Invalid start_date_param: {start_date_param}, Error: {e}")
+                pass
+
+        if end_date_param:
+            try:
+                end_date = datetime.strptime(end_date_param, "%Y-%m-%d")
+                print(f"End Date: {end_date}")  # In ra để kiểm tra giá trị
+                queryset = queryset.filter(att_date__lte=end_date.date())
+            except ValueError as e:
+                print(f"Invalid end_date_param: {end_date_param}, Error: {e}")
+                pass
+              
         page_size = self.request.query_params.get('page_size')
         if page_size is not None:
             self.pagination_class.page_size = int(page_size)
@@ -184,7 +176,12 @@ class AttendanceAPIView(APIView):
             att['clock_out'] = None if att.get('clock_out') is None else datetime.strptime(att.get('clock_out'), '%Y-%m-%d %H:%M:%S.%f').replace(tzinfo=tz.timezone('Asia/Ho_Chi_Minh'))
             att['punch_time'] = None if att.get('punch_time') is None else datetime.strptime(att.get('punch_time'), '%Y-%m-%d %H:%M:%S.%f').replace(tzinfo=tz.timezone('Asia/Ho_Chi_Minh'))
             try:
-                crt_punch=Punchtime.objects.create(id=att.get('punch_id'),user=None,
+                emp=None
+                qs_emp=Profile.objects.filter(emp_id=att.get("emp_code")).first()
+                if qs_emp:
+                  emp=qs_emp.user
+                crt_punch=Punchtime.objects.create(id=att.get('punch_id'),
+                                              user=emp,
                                               punch_time=att['punch_time'],
                                               att_date=att.get("att_date"),
                                               emp_id=att.get("emp_code")
@@ -193,6 +190,7 @@ class AttendanceAPIView(APIView):
                   qs_att = Attendance.objects.get_or_create(
                       record_id=att.get("id"),
                       defaults={
+                          'user':emp,
                           'record_id': att.get("id"),
                           'emp_id': att.get("emp_code"),
                           'week': att.get("week"),

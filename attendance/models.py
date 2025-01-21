@@ -43,7 +43,7 @@ class Employee(models.Model):
 class Profile(models.Model):
     user = models.ForeignKey(Employee, on_delete=models.SET_NULL, null=True, blank=True)
     emp_id = models.CharField(max_length=12, null=True, blank=True)
-    avatar = models.TimeField(null=True, blank=True)
+    avatar = models.TextField(null=True, blank=True)
     full_name = models.CharField(max_length=200, null=True, blank=True)
     deparment = models.CharField(max_length=200, null=True, blank=True)
     
@@ -56,6 +56,24 @@ class Profile(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     class Meta:
         ordering = ['-id']
+        
+    def save(self, *args, **kwargs):
+        if self.emp_id:
+            qs_other=Profile.objects.filter(emp_id=self.emp_id)
+            if len(qs_other)>0:
+                if len(qs_other)==1 and qs_other.first().id==self.id:
+                    ...
+                else:
+                    raise ValidationError("Mã nhân viên đã được bind")
+            qs_att = Attendance.objects.filter(emp_id=self.emp_id)
+            for attendance in qs_att:
+                attendance.user = self.user
+                attendance.save()
+                for pt in attendance.punch_time.all():
+                    pt.user = self.user
+                    pt.save()
+        super().save(*args, **kwargs)
+        
     def __str__(self):
         return f"{self.user.username}_{self.full_name}"
 
@@ -81,7 +99,8 @@ class Attendance(models.Model):
     att_date = models.DateField()
     is_check = models.BooleanField(default=False)
     class Meta:
-        ordering = ['-id']
+        ordering = ['-att_date']
+    
     def __str__(self):
         return f"{self.att_date}"
       
