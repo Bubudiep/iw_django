@@ -63,6 +63,8 @@ class Punchtime(models.Model):
     user = models.ForeignKey(Employee, on_delete=models.CASCADE, null=True, blank=True)
     punch_time = models.DateTimeField(null=True, blank=True)
     att_date = models.DateField(auto_now_add=True)
+    class Meta:
+        ordering = ['-id']
     def __str__(self):
         return f"{self.user.username} - {self.att_date}"
       
@@ -76,6 +78,8 @@ class Attendance(models.Model):
     punch_time = models.ManyToManyField(Punchtime)
     att_date = models.DateField()
     is_check = models.BooleanField(default=False)
+    class Meta:
+        ordering = ['-id']
     def __str__(self):
         return f"{self.user.username} - {self.att_date}"
       
@@ -89,6 +93,8 @@ class AttendanceTicket(models.Model):
     is_accept = models.BooleanField(default=False)
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
+    class Meta:
+        ordering = ['-id']
     def __str__(self):
         return f"{self.user.username} {self.attendance.id}"
 
@@ -98,6 +104,8 @@ class AttendanceTicketComment(models.Model):
     comment = models.CharField(max_length=200, null=True, blank=True)
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
+    class Meta:
+        ordering = ['-id']
     def __str__(self):
         return f"{self.user.username} - {self.comment}"
       
@@ -111,6 +119,8 @@ class EmployeeMessage(models.Model):
     is_accept = models.BooleanField(default=False)
     title = models.CharField(max_length=200, null=True, blank=True)
     message = models.TextField(max_length=500, null=True, blank=True)
+    class Meta:
+        ordering = ['-id']
     def __str__(self):
         return f"{self.user.title} - {self.user.username}"
       
@@ -120,6 +130,8 @@ class EmployeeMessageComment(models.Model):
     comment = models.CharField(max_length=200, null=True, blank=True)
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
+    class Meta:
+        ordering = ['-id']
     def __str__(self):
         return f"{self.user.username} - {self.comment}"
       

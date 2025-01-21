@@ -181,3 +181,12 @@ class AttendanceAPIView(APIView):
             serializer.save()
             return Response({"message": "Chấm công được lưu thành công!"}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class LatestPunchtimeAPIView(APIView):
+    def get(self, request, *args, **kwargs):
+        latest_punchtime = Punchtime.objects.order_by('-punch_time').first()  # Sắp xếp giảm dần và lấy bản ghi đầu tiên
+        if latest_punchtime:
+            punch_time_value = latest_punchtime.punch_time
+        else:
+            punch_time_value = datetime(2024, 1, 1, 0, 0, 0)
+        return Response({"data":punch_time_value}, status=status.HTTP_400_BAD_REQUEST)
