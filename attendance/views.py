@@ -1,3 +1,4 @@
+import json
 from django.shortcuts import render
 from rest_framework.views import APIView
 from oauth2_provider.contrib.rest_framework import OAuth2Authentication
@@ -5,6 +6,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework import status
 from rest_framework.response import Response
 from django.utils.timezone import now
+import pytz as tz
 from .serializers import *
 from rest_framework.filters import OrderingFilter
 from django.db.models import Q,F
@@ -176,11 +178,38 @@ class AttendanceViewSet(viewsets.ModelViewSet):
 
 class AttendanceAPIView(APIView):
     def post(self, request, *args, **kwargs):
-        serializer = AttendanceSerializer(data=request.data, many=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response({"message": "Chấm công được lưu thành công!"}, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        print(f"Type of request.data: {type(request.data.get("data"))}")
+        json_data = json.loads(request.data.get("data"))
+        for att in json_data:
+            att['clock_in'] = None if att.get('clock_in') is None else datetime.strptime(att.get('clock_in'), '%Y-%m-%d %H:%M:%S.%f').replace(tzinfo=tz.timezone('Asia/Ho_Chi_Minh'))
+            att['clock_out'] = None if att.get('clock_out') is None else datetime.strptime(att.get('clock_out'), '%Y-%m-%d %H:%M:%S.%f').replace(tzinfo=tz.timezone('Asia/Ho_Chi_Minh'))
+            att['punch_time'] = None if att.get('punch_time') is None else datetime.strptime(att.get('punch_time'), '%Y-%m-%d %H:%M:%S.%f').replace(tzinfo=tz.timezone('Asia/Ho_Chi_Minh'))
+            try:
+                crt_punch=Punchtime.objects.create(id=att.get('punch_id'),user=None,
+                                              punch_time=att['punch_time'],
+                                              att_date=att.get("att_date"),
+                                              emp_id=att.get("emp_code")
+                                            )
+                if crt_punch:
+                  qs_att = Attendance.objects.get_or_create(
+                      record_id=att.get("id"),
+                      defaults={
+                          'record_id': att.get("id"),
+                          'emp_id': att.get("emp_code"),
+                          'week': att.get("week"),
+                          'weekday': att.get("weekday"),
+                          'clock_in': att['clock_in'],
+                          'clock_out': att['clock_out'],
+                          'att_date': att.get("att_date"),
+                      }
+                  )[0]
+                  qs_att.punch_time.add(crt_punch)
+                  qs_att.save()
+            except Exception as e:
+              print(f"{e}")
+              continue
+        print("Hoàn tất!")
+        return Response({"details":"Test"}, status=status.HTTP_200_OK)
 
 class LatestPunchtimeAPIView(APIView):
     def get(self, request, *args, **kwargs):
@@ -189,4 +218,4 @@ class LatestPunchtimeAPIView(APIView):
             punch_time_value = latest_punchtime.punch_time
         else:
             punch_time_value = datetime(2024, 1, 1, 0, 0, 0)
-        return Response({"data":punch_time_value}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"data":punch_time_value}, status=status.HTTP_200_OK)

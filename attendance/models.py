@@ -61,15 +61,17 @@ class Profile(models.Model):
 
 class Punchtime(models.Model):
     user = models.ForeignKey(Employee, on_delete=models.CASCADE, null=True, blank=True)
+    emp_id = models.CharField(max_length=20, null=True, blank=True)
     punch_time = models.DateTimeField(null=True, blank=True)
     att_date = models.DateField(auto_now_add=True)
     class Meta:
         ordering = ['-id']
     def __str__(self):
-        return f"{self.user.username} - {self.att_date}"
+        return f"{self.user} - {self.att_date} - {self.punch_time}"
       
 class Attendance(models.Model):
     user = models.ForeignKey(Employee, on_delete=models.CASCADE, null=True, blank=True)
+    record_id = models.CharField(max_length=50, null=True, blank=True)
     emp_id = models.CharField(max_length=20, null=True, blank=True)
     week = models.IntegerField(null=True, blank=True)
     weekday = models.IntegerField(null=True, blank=True)
@@ -81,7 +83,7 @@ class Attendance(models.Model):
     class Meta:
         ordering = ['-id']
     def __str__(self):
-        return f"{self.user.username} - {self.att_date}"
+        return f"{self.att_date}"
       
 class AttendanceTicket(models.Model):
     user = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name="att_req_user")
