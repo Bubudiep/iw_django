@@ -60,14 +60,15 @@ class Profile(models.Model):
         return f"{self.user.username}_{self.full_name}"
 
 class Punchtime(models.Model):
-    user = models.ForeignKey(Employee, on_delete=models.CASCADE)
+    user = models.ForeignKey(Employee, on_delete=models.CASCADE, null=True, blank=True)
     punch_time = models.DateTimeField(null=True, blank=True)
     att_date = models.DateField(auto_now_add=True)
     def __str__(self):
         return f"{self.user.username} - {self.att_date}"
       
 class Attendance(models.Model):
-    user = models.ForeignKey(Employee, on_delete=models.CASCADE)
+    user = models.ForeignKey(Employee, on_delete=models.CASCADE, null=True, blank=True)
+    emp_id = models.CharField(max_length=20, null=True, blank=True)
     week = models.IntegerField(null=True, blank=True)
     weekday = models.IntegerField(null=True, blank=True)
     clock_in = models.DateTimeField(null=True, blank=True)
