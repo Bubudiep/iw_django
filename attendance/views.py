@@ -178,7 +178,6 @@ class AttendanceViewSet(viewsets.ModelViewSet):
 
 class AttendanceAPIView(APIView):
     def post(self, request, *args, **kwargs):
-        print(f"Type of request.data: {type(request.data.get("data"))}")
         json_data = json.loads(request.data.get("data"))
         for att in json_data:
             att['clock_in'] = None if att.get('clock_in') is None else datetime.strptime(att.get('clock_in'), '%Y-%m-%d %H:%M:%S.%f').replace(tzinfo=tz.timezone('Asia/Ho_Chi_Minh'))
