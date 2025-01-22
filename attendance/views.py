@@ -191,7 +191,6 @@ class AttendanceAPIView(APIView):
                 if crt_punch:
                     qs_old=Attendance.objects.filter(emp_id=att.get("emp_code"),att_date=att.get("att_date")).exclude(record_id=att.get("id"))
                     for old in qs_old:
-                        print(f"delete {old.att_date}-{att.get("att_date")}: {old.record_id}-{att.get("id")}")
                         old.delete()
                     qs_att = Attendance.objects.get_or_create(
                         record_id=att.get("id"),
