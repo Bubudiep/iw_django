@@ -200,7 +200,7 @@ LANGUAGE_CODE = 'en-us'
 
 USE_I18N = True
 
-
+DATA_UPLOAD_MAX_NUMBER_FIELDS = 500000
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.0/howto/static-files/

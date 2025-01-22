@@ -182,13 +182,27 @@ class AttendanceViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 
+def add_minutes_to_time(dt, minutes=7):
+    return dt + timedelta(minutes=minutes)
+  
 class AttendanceAPIView(APIView):
     def post(self, request, *args, **kwargs):
         json_data = json.loads(request.data.get("data"))
         for att in json_data:
-            att['clock_in'] = None if att.get('clock_in') is None else datetime.strptime(att.get('clock_in'), '%Y-%m-%d %H:%M:%S.%f').replace(tzinfo=tz.timezone('Asia/Ho_Chi_Minh'))
-            att['clock_out'] = None if att.get('clock_out') is None else datetime.strptime(att.get('clock_out'), '%Y-%m-%d %H:%M:%S.%f').replace(tzinfo=tz.timezone('Asia/Ho_Chi_Minh'))
-            att['punch_time'] = None if att.get('punch_time') is None else datetime.strptime(att.get('punch_time'), '%Y-%m-%d %H:%M:%S.%f').replace(tzinfo=tz.timezone('Asia/Ho_Chi_Minh'))
+            if att.get('clock_in'):
+                att['clock_in'] = datetime.strptime(att.get('clock_in'), '%Y-%m-%d %H:%M:%S.%f')
+                att['clock_in'] = att['clock_in'].replace(tzinfo=pytz.timezone('Asia/Ho_Chi_Minh'))
+                att['clock_in'] = add_minutes_to_time(att['clock_in'])
+
+            if att.get('clock_out'):
+                att['clock_out'] = datetime.strptime(att.get('clock_out'), '%Y-%m-%d %H:%M:%S.%f')
+                att['clock_out'] = att['clock_out'].replace(tzinfo=pytz.timezone('Asia/Ho_Chi_Minh'))
+                att['clock_out'] = add_minutes_to_time(att['clock_out'])
+
+            if att.get('punch_time'):
+                att['punch_time'] = datetime.strptime(att.get('punch_time'), '%Y-%m-%d %H:%M:%S.%f')
+                att['punch_time'] = att['punch_time'].replace(tzinfo=pytz.timezone('Asia/Ho_Chi_Minh'))
+                att['punch_time'] = add_minutes_to_time(att['punch_time'])
             try:
                 emp=None
                 qs_emp=Profile.objects.filter(emp_id=att.get("emp_code")).first()
