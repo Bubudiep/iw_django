@@ -175,33 +175,39 @@ class AttendanceAPIView(APIView):
             att['clock_in'] = None if att.get('clock_in') is None else datetime.strptime(att.get('clock_in'), '%Y-%m-%d %H:%M:%S.%f').replace(tzinfo=tz.timezone('Asia/Ho_Chi_Minh'))
             att['clock_out'] = None if att.get('clock_out') is None else datetime.strptime(att.get('clock_out'), '%Y-%m-%d %H:%M:%S.%f').replace(tzinfo=tz.timezone('Asia/Ho_Chi_Minh'))
             att['punch_time'] = None if att.get('punch_time') is None else datetime.strptime(att.get('punch_time'), '%Y-%m-%d %H:%M:%S.%f').replace(tzinfo=tz.timezone('Asia/Ho_Chi_Minh'))
+            att['att_date'] = None if att.get('att_date') is None else datetime.strptime(att.get('att_date'), '%Y-%m-%d').replace(tzinfo=tz.timezone('Asia/Ho_Chi_Minh'))
             try:
                 emp=None
                 qs_emp=Profile.objects.filter(emp_id=att.get("emp_code")).first()
                 if qs_emp:
                   emp=qs_emp.user
-                crt_punch=Punchtime.objects.create(id=att.get('punch_id'),
-                                              user=emp,
-                                              punch_time=att['punch_time'],
-                                              att_date=att.get("att_date"),
-                                              emp_id=att.get("emp_code")
-                                            )
+                crt_punch=Punchtime.objects.get_or_create(id=att.get('punch_id'),
+                                            defaults={
+                                              'id' : att.get('punch_id'),
+                                              'user' : emp,
+                                              'punch_time' : att['punch_time'],
+                                              'att_date' : att['att_date'],
+                                              'emp_id' : att.get("emp_code")
+                                            })[0]
                 if crt_punch:
-                  qs_att = Attendance.objects.get_or_create(
-                      record_id=att.get("id"),
-                      defaults={
-                          'user':emp,
-                          'record_id': att.get("id"),
-                          'emp_id': att.get("emp_code"),
-                          'week': att.get("week"),
-                          'weekday': att.get("weekday"),
-                          'clock_in': att['clock_in'],
-                          'clock_out': att['clock_out'],
-                          'att_date': att.get("att_date"),
-                      }
-                  )[0]
-                  qs_att.punch_time.add(crt_punch)
-                  qs_att.save()
+                    qs_old=Attendance.objects.filter(user=emp,att_date=att['att_date'].date()).exclude(record_id=att.get("id"))
+                    for old in qs_old:
+                        old.delete()
+                    qs_att = Attendance.objects.get_or_create(
+                        record_id=att.get("id"),
+                        defaults={
+                            'user':emp,
+                            'record_id': att.get("id"),
+                            'emp_id': att.get("emp_code"),
+                            'week': att.get("week"),
+                            'weekday': att.get("weekday"),
+                            'clock_in': att['clock_in'],
+                            'clock_out': att['clock_out'],
+                            'att_date': att['att_date'],
+                        }
+                    )[0]
+                    qs_att.punch_time.add(crt_punch)
+                    qs_att.save()
             except Exception as e:
               print(f"{e}")
               continue
