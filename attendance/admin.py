@@ -25,7 +25,7 @@ class PunchtimeAdmin(admin.ModelAdmin):
 @admin.register(Attendance)
 class AttendanceAdmin(admin.ModelAdmin):
     list_display = ('user', 'emp_id', 'att_date', 'clock_in', 'clock_out', 'is_check')
-    search_fields = ('emp_id','att_date',)
+    search_fields = ('emp_id','att_date')
     readonly_fields = ('punch_time',)
     def get_readonly_fields(self, request, obj=None):
         if obj:
