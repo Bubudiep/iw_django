@@ -46,6 +46,7 @@ class Profile(models.Model):
     avatar = models.TextField(null=True, blank=True)
     full_name = models.CharField(max_length=200, null=True, blank=True)
     deparment = models.CharField(max_length=200, null=True, blank=True)
+    level = models.IntegerField(default=1)
     
     zalo_id= models.CharField(max_length=200, null=True, blank=True)
     zalo_number = models.CharField(max_length=200, null=True, blank=True)

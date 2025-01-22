@@ -41,14 +41,28 @@ class LoginView(APIView):
             ip=get_client_ip(request)
             username = request.data.get('username')
             password = request.data.get('password')
+            zalo_id = request.data.get('zalo_id',None)
             key = request.headers.get('CompanyKey')
             try:
                 company_instance=Company.objects.get(id=key)
-                user=Employee.objects.get(username=username,company=company_instance)
+                if zalo_id:
+                  try:
+                      prf=Profile.objects.get(zalo_id=zalo_id)
+                      user=prf.user
+                  except Exception as e:
+                      if username:
+                          user=Employee.objects.get(username=username,company=company_instance)
+                          if check_password(password, user.password)==False:
+                              return Response({'detail': 'Sai mật khẩu'}, status=status.HTTP_401_UNAUTHORIZED)
+                      else:
+                          return Response({'detail': 'Zalo id này chưa được liên kết'}, status=status.HTTP_401_UNAUTHORIZED)
+                else:
+                  if username:
+                    user=Employee.objects.get(username=username,company=company_instance)
+                    if check_password(password, user.password)==False:
+                        return Response({'detail': 'Sai mật khẩu'}, status=status.HTTP_401_UNAUTHORIZED)
                 if user.is_active==False:
                     return Response({'detail': 'Tài khoản của bạn đã bị khóa!'}, status=status.HTTP_403_FORBIDDEN)
-                if check_password(password, user.password)==False:
-                    return Response({'detail': 'Sai mật khẩu'}, status=status.HTTP_401_UNAUTHORIZED)
             except Company.DoesNotExist:
                 return Response({'detail': 'Công ty chưa được đăng ký'}, status=status.HTTP_401_UNAUTHORIZED)
             except Employee.DoesNotExist:
