@@ -80,9 +80,11 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:8080",
     "http://192.168.110.120",
     "http://192.168.1.23:6500",
-    'https://h5.zdn.vn',
     'https://hoanglongdjc.cloud',
+    'https://h5.zdn.vn',
     'zbrowser://h5.zdn.vn',
+    'https://h5.zadn.vn',
+    'zbrowser://h5.zadn.vn',
 ]
 ALLOWED_HOSTS = [
     'ipays.vn',
@@ -109,6 +111,8 @@ ALLOWED_HOSTS = [
     '192.168.110.120:5005',
     'https://h5.zdn.vn',
     'zbrowser://h5.zdn.vn',
+    'https://h5.zadn.vn',
+    'zbrowser://h5.zadn.vn',
 ]
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_METHODS = [
