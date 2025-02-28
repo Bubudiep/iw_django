@@ -223,3 +223,40 @@ class CompanyPermissionAdmin(admin.ModelAdmin):
     ordering = ('-assigned_at',)
     autocomplete_fields = ('company', 'permission', 'assigned_by', 'applicable_staff', 'applicable_departments', 'applicable_positions', 'excluded_staff')
     filter_horizontal = ('applicable_staff', 'applicable_departments', 'applicable_positions', 'excluded_staff')
+
+class AdvanceTypeAdmin(admin.ModelAdmin):
+    list_display = ('id', 'typecode', 'need_operator', 'need_approver', 'company', 'created_at', 'updated_at')
+    search_fields = ('typecode', 'company__name')  # You can customize this as needed
+    list_filter = ('need_operator', 'need_approver', 'company')
+    ordering = ['-created_at']
+
+# Admin for AdvanceReasonType model
+class AdvanceReasonTypeAdmin(admin.ModelAdmin):
+    list_display = ('id', 'typename', 'company', 'created_at', 'updated_at')
+    search_fields = ('typename', 'company__name')  # You can customize this as needed
+    list_filter = ('company',)
+    ordering = ['-created_at']
+
+# Admin for AdvanceRequest model
+class AdvanceRequestAdmin(admin.ModelAdmin):
+    list_display = ('id', 'requester', 'requesttype', 'approver', 'operator', 'amount', 'status', 'payment_status', 'retrieve_status', 'created_at')
+    search_fields = ('requester__name', 'approver__name', 'operator__name', 'requesttype__typecode', 'amount')
+    list_filter = ('status', 'payment_status', 'retrieve_status', 'company')
+    ordering = ['-created_at']
+    list_select_related = ('requester', 'approver', 'operator', 'requesttype', 'reason')  # Optimizes queries
+
+    # Optionally, you can add custom actions for batch processing
+    actions = ['mark_as_approved', 'mark_as_rejected']
+
+    def mark_as_approved(self, request, queryset):
+        queryset.update(status='approved')
+    mark_as_approved.short_description = 'Mark selected requests as approved'
+
+    def mark_as_rejected(self, request, queryset):
+        queryset.update(status='rejected')
+    mark_as_rejected.short_description = 'Mark selected requests as rejected'
+
+# Register the models and their custom admin views
+admin.site.register(AdvanceType, AdvanceTypeAdmin)
+admin.site.register(AdvanceReasonType, AdvanceReasonTypeAdmin)
+admin.site.register(AdvanceRequest, AdvanceRequestAdmin)

@@ -34,6 +34,8 @@ from rest_framework.decorators import action
 from pytz import timezone
 from django.contrib.auth.decorators import permission_required
 
+myzone = pytz.timezone('Asia/Ho_Chi_Minh')
+
 def generate_response_json(result:str, message:str, data:dict={}):
     return {"result": result, "message": message, "data": data}
 
@@ -742,6 +744,7 @@ class CompanyOperatorViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'])
     def dilam(self, request, pk=None):
         startDate = request.data.get('startDate',now())
+        employeeCode = request.data.get('employeeCode',None)
         company = request.data.get('company',None)
         cccd_truoc = request.data.get('cccd_truoc',None)
         cccd_sau = request.data.get('cccd_sau',None)
@@ -750,23 +753,32 @@ class CompanyOperatorViewSet(viewsets.ModelViewSet):
         try:
             operator = self.get_object()
             hist=operator_history.objects.filter(operator=operator).order_by('-id')
-            if len(hist)==0:
-                return Response({"detail": f"Nhân viên {operator.ho_ten} chưa đi làm ở công ty nào!"}, status=status.HTTP_400_BAD_REQUEST)
-            ctyNow=hist.first()
-            if startDate < ctyNow.end_date:
-                return Response({"detail": "Ngày đi làm không được nhỏ hơn ngày nghỉ ở công ty cũ!"}, status=status.HTTP_400_BAD_REQUEST)
-            if ctyNow.end_date is None or ctyNow.start_date:
-                return Response({"detail": f"Nhân viên {operator.ho_ten} đang chưa nghỉ làm ở công ty cũ!"}, status=status.HTTP_400_BAD_REQUEST)
-            operator.congty_danglam = None
-            operator_history.objects.create(ma_nhanvien=user_create.ma_nhanvien,operator=user_create,
-                                            customer=qs_cty,supplier=nhachinh,start_date=ngaybatdau)
+            if len(hist)!=0:
+                ctyNow=hist.first()
+                if datetime.strptime(startDate,"%Y-%m-%d").replace(tzinfo=pytz.timezone("Asia/Ho_Chi_Minh")) < ctyNow.end_date:
+                    return Response({"detail": "Ngày đi làm không được nhỏ hơn ngày nghỉ ở công ty cũ!"}, status=status.HTTP_400_BAD_REQUEST)
+                if ctyNow.end_date is None:
+                    return Response({"detail": f"Nhân viên {operator.ho_ten} đang chưa nghỉ làm ở công ty cũ!"}, status=status.HTTP_400_BAD_REQUEST)
+            qs_cty=company_customer.objects.get(id=company)
+            operator.congty_danglam = qs_cty
+            operator.save()
+            nguoituyen = request.data.get('nguoituyen',None)
+            if nguoituyen is not None:
+                qs_nguoituyen=company_staff.objects.get(id=nguoituyen)
+                nguoituyen=qs_nguoituyen
+            else:
+                nguoituyen=operator.nguoituyen
+            operator_history.objects.create(ma_nhanvien=employeeCode,operator=operator,
+                                            nguoituyen=nguoituyen,
+                                            customer=qs_cty,start_date=startDate)
             return Response(CompanyOperatorMoreDetailsSerializer(operator).data, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         
     @action(detail=True, methods=['post'])
     def nghiviec(self, request, pk=None):
-        ngaynghi = request.data.get('ngaynghi',now())
+        ngaynghi = request.data.get('ngayNghi',now())
+        lyDo = request.data.get('lyDo',None)
         try:
             # xóa cty đang làm, cập nhập lịch sử làm việc tại công ty đang làm
             operator = self.get_object()
@@ -774,12 +786,13 @@ class CompanyOperatorViewSet(viewsets.ModelViewSet):
             if len(hist)==0:
                 return Response({"detail": f"Nhân viên {operator.ho_ten} chưa đi làm ở công ty nào!"}, status=status.HTTP_400_BAD_REQUEST)
             ctyNow=hist.first()
-            if ngaynghi < ctyNow.start_date:
+            if datetime.strptime(ngaynghi,"%Y-%m-%d").replace(tzinfo=pytz.timezone("Asia/Ho_Chi_Minh")) < ctyNow.start_date:
                 return Response({"detail": "Ngày nghỉ phải lớn hơn ngày bắt đầu làm!"}, status=status.HTTP_400_BAD_REQUEST)
             if ctyNow.end_date:
                 operator.congty_danglam = None
                 return Response({"detail": f"Nhân viên {operator.ho_ten} đang không đi làm!"}, status=status.HTTP_400_BAD_REQUEST)
             ctyNow.end_date=ngaynghi
+            ctyNow.reason=lyDo
             operator.congty_danglam = None
             ctyNow.save()
             operator.save()
@@ -914,6 +927,48 @@ class CompanySublistViewSet(viewsets.ModelViewSet):
         key = self.request.headers.get('ApplicationKey')
         qs_res=company_staff.objects.get(user__user=user,isActive=True,company__key=key)
         return company.objects.filter(id=qs_res.company.id)
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        queryset = self.filter_queryset(queryset)  # Áp dụng bộ lọc cho queryset
+        page_size = self.request.query_params.get('page_size')
+        if page_size is not None:
+            self.pagination_class.page_size = int(page_size)
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+class AdvanceRequestViewSet(viewsets.ModelViewSet):
+    serializer_class = AdvanceRequestSerializer
+    authentication_classes = [OAuth2Authentication]
+    permission_classes = [IsAuthenticated]
+    pagination_class = StandardResultsSetPagination
+    http_method_names = ['get']
+    
+    @action(methods=['get'], detail=False, url_path='config', url_name='config')
+    def getconfig(self, request):
+        user = self.request.user
+        key = self.request.headers.get('ApplicationKey')
+        qs_res=company_staff.objects.get(user__user=user,isActive=True,company__key=key)
+        company=qs_res.company
+        qs_type=AdvanceType.objects.filter(company=company)
+        qs_reason=AdvanceReasonType.objects.filter(company=company)
+        qs_op = company_operator.objects.filter(
+            Q(nguoituyen=qs_res) | Q(nguoibaocao=qs_res),
+            company=qs_res.company
+        )
+        return Response(data={
+            "phanloai":AdvanceTypeSerializer(qs_type,many=True).data,
+            "lydo":AdvanceReasonTypeSerializer(qs_reason,many=True).data,
+            "nguoilaodong":CompanyOperatorSerializer(qs_op,many=True).data
+        }, status=status.HTTP_200_OK)
+
+    def get_queryset(self):
+        user = self.request.user
+        key = self.request.headers.get('ApplicationKey')
+        qs_res=company_staff.objects.get(user__user=user,isActive=True,company__key=key)
+        return AdvanceRequest.objects.filter(company=qs_res.company)
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
         queryset = self.filter_queryset(queryset)  # Áp dụng bộ lọc cho queryset

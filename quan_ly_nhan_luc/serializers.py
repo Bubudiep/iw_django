@@ -2,7 +2,7 @@ from rest_framework import serializers
 from django.contrib.auth.models import User
 from .models import *
 from django.db import transaction
-from django.db.models import Max,Sum
+from django.db.models import Max,Sum,Q
 from rest_framework.permissions import IsAuthenticated
 from django.utils.functional import cached_property
 import random
@@ -611,3 +611,16 @@ class companySublistSerializer(serializers.ModelSerializer):
         fields = ['id','companyType','custommer','staff',
         'supplier','vendor','created_at']
         
+    
+class AdvanceTypeSerializer(serializers.ModelSerializer):     
+    class Meta:
+        model = AdvanceType
+        fields = '__all__'
+class AdvanceReasonTypeSerializer(serializers.ModelSerializer):     
+    class Meta:
+        model = AdvanceReasonType
+        fields = '__all__'
+class AdvanceRequestSerializer(serializers.ModelSerializer):     
+    class Meta:
+        model = AdvanceRequest
+        fields = '__all__'
