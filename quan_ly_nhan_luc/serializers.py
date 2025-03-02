@@ -447,6 +447,9 @@ class CompanyOperatorMoreDetailsSerializer(serializers.ModelSerializer):
     nhachinh = serializers.SerializerMethodField(read_only=True)
     nhacungcap = serializers.SerializerMethodField(read_only=True)
     thamnien = serializers.SerializerMethodField(read_only=True)
+    baoung = serializers.SerializerMethodField(read_only=True)
+    def get_baoung(self, qs):
+        return None
     def get_thamnien(self, qs):
         return None
     def get_congty_danglam(self, qs):

@@ -15,8 +15,7 @@ class AdvanceType(models.Model): # loại phê duyệt
         return f"{self.id}"
     
 class AdvanceReasonType(models.Model): # phân loại nguyên nhân phê duyệt
-    company = models.ForeignKey(company, on_delete=models.CASCADE,
-                                 null=True,blank=True)
+    company = models.ForeignKey(company, on_delete=models.CASCADE, null=True,blank=True)
     typename = models.CharField(max_length=100, unique=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -68,4 +67,30 @@ class AdvanceRequest(models.Model): # phê duyệt
         ordering = ['-created_at']
 
     def __str__(self):
-        return f"{self.amount} - {self.get_status_display()}"
+        return f"{self.amount} - {self.get_status_display()}"   
+    
+class AdvanceRequestHistory(models.Model): # phân loại nguyên nhân phê duyệt
+    ACTION_CHOICES = [
+        ('update', 'Cập nhập'),
+        ('edit', 'Chỉnh sửa'),
+        ('create', 'Tạo mới'),
+        ('cancel', 'Hủy bỏ'),
+        ('pending', 'Chờ duyệt'),
+        ('approved', 'Đã duyệt'),
+        ('rejected', 'Từ chối'),
+    ]
+    request = models.ForeignKey(AdvanceRequest, on_delete=models.CASCADE, null=True,blank=True)
+    user = models.ForeignKey(company_staff, on_delete=models.SET_NULL,
+                                 null=True,blank=True, 
+                                 related_name="advance_history_approver")
+    action = models.CharField(max_length=10, choices=ACTION_CHOICES, default='pending')
+    old_data = models.JSONField(null=True,blank=True)
+    new_data = models.JSONField(null=True,blank=True)
+    comment = models.TextField(null=True,blank=True,max_length=255)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    class Meta:
+        ordering = ['-created_at']
+    def __str__(self):
+        return f"{self.id}"
+      

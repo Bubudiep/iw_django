@@ -776,6 +776,44 @@ class CompanyOperatorViewSet(viewsets.ModelViewSet):
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         
     @action(detail=True, methods=['post'])
+    def baoung(self, request, pk=None):
+        try:
+            user = self.request.user
+            key = self.request.headers.get('ApplicationKey')
+            operator = self.get_object()
+            qs_com=company.objects.get(key=key)
+            soTien = request.data.get('soTien',None)
+            lyDo = request.data.get('lyDo',None)
+            if not soTien:
+                return Response({"error": "Thiếu thông tin số tiền."}, status=status.HTTP_400_BAD_REQUEST)
+            qs_baoung, _ = AdvanceType.objects.get_or_create(
+                typecode="Báo Ứng",
+                need_operator=True,
+                company=qs_com
+            )
+            qs_res=company_staff.objects.get(user__user=user,isActive=True,company__key=key)
+            create_request=AdvanceRequest.objects.create(company=qs_com,
+                                                         requester=qs_res,
+                                                         requesttype=qs_baoung,
+                                                         operator=operator,
+                                                         amount=soTien,
+                                                         comment=lyDo,
+                                                        )
+            created_data=AdvanceRequestSerializer(create_request).data
+            AdvanceRequestHistory.objects.create(request=create_request,
+                                                user=qs_res,action="create",
+                                                old_data=None,
+                                                new_data=f"{created_data}",
+                                                comment="Khởi tạo")
+            return Response(AdvanceRequestSerializer(created_data).data, status=status.HTTP_200_OK)
+        except company.ObjectDoesNotExist:
+            return Response({"error": "Không tìm thấy công ty tương ứng."}, status=status.HTTP_404_NOT_FOUND)
+        except company_staff.ObjectDoesNotExist:
+            return Response({"error": "Người dùng không thuộc công ty hoặc chưa kích hoạt."}, status=status.HTTP_403_FORBIDDEN)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        
+    @action(detail=True, methods=['post'])
     def nghiviec(self, request, pk=None):
         ngaynghi = request.data.get('ngayNghi',now())
         lyDo = request.data.get('lyDo',None)
