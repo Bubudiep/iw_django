@@ -57,7 +57,8 @@ class AdvanceRequest(models.Model): # phê duyệt
     # lý do
     reason = models.ForeignKey(AdvanceReasonType, on_delete=models.SET_NULL,
                                null=True,blank=True, related_name="advance_reason")
-    comment = models.TextField()
+    request_date = models.DateField(null=True,blank=True)
+    comment = models.TextField(null=True,blank=True)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
     payment_status = models.CharField(max_length=10, choices=PAYMENT_CHOICES, default='unpaid')
     retrieve_status = models.CharField(max_length=15, choices=RETRIEVE_CHOICES, default='not_retrieved')

@@ -784,6 +784,7 @@ class CompanyOperatorViewSet(viewsets.ModelViewSet):
             qs_com=company.objects.get(key=key)
             soTien = request.data.get('soTien',None)
             lyDo = request.data.get('lyDo',None)
+            ngayUng = request.data.get('ngayUng',None)
             if not soTien:
                 return Response({"error": "Thiếu thông tin số tiền."}, status=status.HTTP_400_BAD_REQUEST)
             qs_baoung, _ = AdvanceType.objects.get_or_create(
@@ -798,6 +799,7 @@ class CompanyOperatorViewSet(viewsets.ModelViewSet):
                                                          operator=operator,
                                                          amount=soTien,
                                                          comment=lyDo,
+                                                         request_date=ngayUng
                                                         )
             created_data=AdvanceRequestSerializer(create_request).data
             AdvanceRequestHistory.objects.create(request=create_request,
@@ -805,13 +807,17 @@ class CompanyOperatorViewSet(viewsets.ModelViewSet):
                                                 old_data=None,
                                                 new_data=f"{created_data}",
                                                 comment="Khởi tạo")
-            return Response(AdvanceRequestSerializer(created_data).data, status=status.HTTP_200_OK)
-        except company.ObjectDoesNotExist:
-            return Response({"error": "Không tìm thấy công ty tương ứng."}, status=status.HTTP_404_NOT_FOUND)
-        except company_staff.ObjectDoesNotExist:
-            return Response({"error": "Người dùng không thuộc công ty hoặc chưa kích hoạt."}, status=status.HTTP_403_FORBIDDEN)
+            return Response(CompanyOperatorMoreDetailsSerializer(operator).data, status=status.HTTP_200_OK)
+        except company.DoesNotExist:
+            return Response({"detail": "Không tìm thấy công ty tương ứng."}, status=status.HTTP_404_NOT_FOUND)
+        except company_staff.DoesNotExist:
+            return Response({"detail": "Người dùng không thuộc công ty hoặc chưa kích hoạt."}, status=status.HTTP_403_FORBIDDEN)
         except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            lineno = exc_tb.tb_lineno
+            file_path = exc_tb.tb_frame.f_code.co_filename
+            file_name = os.path.basename(file_path)
+            return Response({"detail": f"[{file_name}_{lineno}] {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
         
     @action(detail=True, methods=['post'])
     def nghiviec(self, request, pk=None):

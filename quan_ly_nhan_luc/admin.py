@@ -236,7 +236,13 @@ class AdvanceReasonTypeAdmin(admin.ModelAdmin):
     search_fields = ('typename', 'company__name')  # You can customize this as needed
     list_filter = ('company',)
     ordering = ['-created_at']
-
+    
+class AdvanceRequestHistoryInline(admin.TabularInline):  
+    model = AdvanceRequestHistory  
+    extra = 0  # Không hiển thị dòng trống
+    readonly_fields = ('user', 'action', 'old_data', 'new_data', 'comment', 'created_at')  
+    can_delete = False  # Không cho phép xóa lịch sử
+    
 # Admin for AdvanceRequest model
 class AdvanceRequestAdmin(admin.ModelAdmin):
     list_display = ('id', 'requester', 'requesttype', 'approver', 'operator', 'amount', 'status', 'payment_status', 'retrieve_status', 'created_at')
@@ -244,14 +250,11 @@ class AdvanceRequestAdmin(admin.ModelAdmin):
     list_filter = ('status', 'payment_status', 'retrieve_status', 'company')
     ordering = ['-created_at']
     list_select_related = ('requester', 'approver', 'operator', 'requesttype', 'reason')  # Optimizes queries
-
-    # Optionally, you can add custom actions for batch processing
     actions = ['mark_as_approved', 'mark_as_rejected']
-
+    inlines = [AdvanceRequestHistoryInline] # Add the inline to the form
     def mark_as_approved(self, request, queryset):
         queryset.update(status='approved')
     mark_as_approved.short_description = 'Mark selected requests as approved'
-
     def mark_as_rejected(self, request, queryset):
         queryset.update(status='rejected')
     mark_as_rejected.short_description = 'Mark selected requests as rejected'
