@@ -575,7 +575,7 @@ class AdvanceRequestHistorySerializer(serializers.ModelSerializer):
         
 class AdvanceRequestSerializer(serializers.ModelSerializer):
     requesttype = AdvanceTypeSerializer()
-    requester = CompanyStaffSerializer(allow_null=True)
+    requester = CompanyStaffSmallSerializer(allow_null=True)
     operator = OperatorSerializer(allow_null=True)
     history = serializers.SerializerMethodField(read_only=True)
     def get_history(self, qs):
