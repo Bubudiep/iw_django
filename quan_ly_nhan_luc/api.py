@@ -795,13 +795,18 @@ class CompanyOperatorViewSet(viewsets.ModelViewSet):
             )
             qs_res=company_staff.objects.get(user__user=user,isActive=True,company__key=key)
             create_request=AdvanceRequest.objects.create(company=qs_com,
-                                                         requester=qs_res,
-                                                         requesttype=qs_baoung,
-                                                         operator=operator,
-                                                         amount=soTien,
-                                                         comment=lyDo,
-                                                         request_date=ngayUng
-                                                        )
+                                requester=qs_res,
+                                requesttype=qs_baoung,
+                                operator=operator,
+                                amount=soTien,
+                                comment=lyDo,
+                                request_date= request.data.get('ngayUng',None),
+                                hinhthucThanhtoan= request.data.get('hinhthucThanhtoan',None),
+                                nguoiThuhuong= request.data.get('nguoiThuhuong',None),
+                                khacCtk= request.data.get('khacCtk',None),
+                                khacNganhang= request.data.get('khacNganhang',None),
+                                khacStk= request.data.get('khacStk',None),
+                            )
             created_data=AdvanceRequestSerializer(create_request).data
             AdvanceRequestHistory.objects.create(request=create_request,
                                                 user=qs_res,action="create",

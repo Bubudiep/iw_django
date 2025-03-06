@@ -336,6 +336,11 @@ class CompanyOperatorSerializer(serializers.ModelSerializer):
         model = company_operator
         fields = '__all__'
             
+class OperatorSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = company_operator
+        fields = ['ho_ten','trangthai']
+            
 class OP_HISTSerializer(serializers.ModelSerializer):
     customer = serializers.SerializerMethodField(read_only=True)
     supplier = serializers.SerializerMethodField(read_only=True)
@@ -562,7 +567,20 @@ class AdvanceReasonTypeSerializer(serializers.ModelSerializer):
     class Meta:
         model = AdvanceReasonType
         fields = '__all__'
-class AdvanceRequestSerializer(serializers.ModelSerializer):     
+        
+class AdvanceRequestHistorySerializer(serializers.ModelSerializer):     
+    class Meta:
+        model = AdvanceRequestHistory
+        fields = '__all__'
+        
+class AdvanceRequestSerializer(serializers.ModelSerializer):
+    requesttype = AdvanceTypeSerializer()
+    requester = CompanyStaffSerializer(allow_null=True)
+    operator = OperatorSerializer(allow_null=True)
+    history = serializers.SerializerMethodField(read_only=True)
+    def get_history(self, qs):
+        qs_his=AdvanceRequestHistory.objects.filter(request=qs)
+        return AdvanceRequestHistorySerializer(qs_his,many=True).data
     class Meta:
         model = AdvanceRequest
         fields = '__all__'

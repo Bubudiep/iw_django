@@ -39,6 +39,14 @@ class AdvanceRequest(models.Model): # phê duyệt
         ('not_retrieved', 'Chưa thu hồi'),
         ('retrieved', 'Đã thu hồi'),
     ]
+    PAY_CHOICES = [
+        ('bank', 'Chuyển khoản'),
+        ('money', 'Tiền mặt'),
+    ]
+    PAYER_CHOICES = [
+        ('other', 'Chuyển khoản'),
+        ('money', 'Tiền mặt'),
+    ]
     company = models.ForeignKey(company, on_delete=models.CASCADE,
                                  null=True,blank=True)
     # người yêu cầu
@@ -57,6 +65,13 @@ class AdvanceRequest(models.Model): # phê duyệt
     # lý do
     reason = models.ForeignKey(AdvanceReasonType, on_delete=models.SET_NULL,
                                null=True,blank=True, related_name="advance_reason")
+    
+    hinhthucThanhtoan = models.CharField(max_length=10, choices=PAY_CHOICES, default='bank')
+    nguoiThuhuong = models.CharField(max_length=10, choices=PAYER_CHOICES, default='pending')
+    khacCtk = models.CharField(max_length=100, null=True,blank=True)
+    khacNganhang = models.CharField(max_length=10, null=True,blank=True)
+    khacStk = models.CharField(max_length=20, null=True,blank=True)
+    
     request_date = models.DateField(null=True,blank=True)
     comment = models.TextField(null=True,blank=True)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
