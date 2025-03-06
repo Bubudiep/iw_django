@@ -33,6 +33,7 @@ from django.db.models import Q,F
 from rest_framework.decorators import action
 from pytz import timezone
 from django.contrib.auth.decorators import permission_required
+from django.core.exceptions import ObjectDoesNotExist
 
 myzone = pytz.timezone('Asia/Ho_Chi_Minh')
 
@@ -857,6 +858,46 @@ class CompanyOperatorViewSet(viewsets.ModelViewSet):
             nguoibaocao=qs_res
         )
         
+    def partial_update(self, request, *args, **kwargs):
+        try:
+            user = self.request.user
+            key = self.request.headers.get('ApplicationKey')
+            instance = self.get_object()
+            qs_res = company_staff.objects.get(
+                user__user=user,
+                isActive=True,
+                company__key=key
+            )
+            if not qs_res:
+                return Response(
+                    {"detail": "Bạn không có quyền!"}, status=status.HTTP_403_FORBIDDEN
+                )
+            if instance.nguoituyen==qs_res or instance.nguoibaocao==qs_res:
+                with transaction.atomic():
+                    updated_instance=super().partial_update(request, *args, **kwargs)
+                    instance.refresh_from_db()
+                    return Response(CompanyOperatorMoreDetailsSerializer(instance).data, 
+                                status=status.HTTP_200_OK)
+            return Response(
+                {"detail": "Bạn không có quyền!"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        except ObjectDoesNotExist:
+            return Response(
+                {"detail": "Không tìm thấy dữ liệu!"}, status=status.HTTP_404_NOT_FOUND
+            )
+        except IntegrityError as e:
+            IntegrityErrorLog.objects.create(
+                models_name="company_operator",
+                api_name="CompanyOperatorViewSet",
+                error_message=str(e),
+                endpoint=request.path,
+                payload=request.data
+            )
+            return Response(
+                {"detail": "Lỗi cập nhập!"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
     def create(self, request, *args, **kwargs):
         try:
             user = self.request.user
