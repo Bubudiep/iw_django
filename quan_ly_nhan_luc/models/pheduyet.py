@@ -5,6 +5,7 @@ class AdvanceType(models.Model): # loại phê duyệt
     typecode = models.CharField(max_length=100, unique=True)
     need_operator = models.BooleanField(default=False) # người thụ hưởng là công nhân
     need_approver = models.BooleanField(default=False) # cần phê duyệt
+    color = models.CharField(max_length=10, null=True,blank=True, default='#999999')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     company = models.ForeignKey(company, on_delete=models.CASCADE,
@@ -32,12 +33,12 @@ class AdvanceRequest(models.Model): # phê duyệt
         ('rejected', 'Từ chối'),
     ]
     PAYMENT_CHOICES = [
-        ('unpaid', 'Chưa thanh toán'),
-        ('paid', 'Đã thanh toán'),
+        ('not', 'Chưa'),
+        ('done', 'Xong'),
     ]
     RETRIEVE_CHOICES = [
-        ('not_retrieved', 'Chưa thu hồi'),
-        ('retrieved', 'Đã thu hồi'),
+        ('not', 'Chưa'),
+        ('done', 'Xong'),
     ]
     PAY_CHOICES = [
         ('bank', 'Chuyển khoản'),
@@ -46,7 +47,7 @@ class AdvanceRequest(models.Model): # phê duyệt
     PAYER_CHOICES = [
         ('other', 'Người khác'),
         ('opertor', 'Người lao động'),
-        ('staff', 'Người tuyển'),
+        ('staff', 'Người tạo yêu cầu'),
     ]
     company = models.ForeignKey(company, on_delete=models.CASCADE,
                                  null=True,blank=True)
@@ -76,13 +77,24 @@ class AdvanceRequest(models.Model): # phê duyệt
     request_date = models.DateField(null=True,blank=True)
     comment = models.TextField(null=True,blank=True)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
-    payment_status = models.CharField(max_length=10, choices=PAYMENT_CHOICES, default='unpaid')
-    retrieve_status = models.CharField(max_length=15, choices=RETRIEVE_CHOICES, default='not_retrieved')
+    payment_status = models.CharField(max_length=10, choices=PAYMENT_CHOICES, default='not')
+    retrieve_status = models.CharField(max_length=15, choices=RETRIEVE_CHOICES, default='not')
+    
+    request_code = models.CharField(max_length=15, unique=True, blank=True, null=True)  # Trường mã yêu cầu
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     class Meta:
         ordering = ['-created_at']
-
+    def generate_request_code(self):
+        """Tạo mã yêu cầu PDOC-[random 10 ký tự]"""
+        return 'PDOC-' + ''.join(random.choices(string.ascii_uppercase + string.digits, k=10))
+    def save(self, *args, **kwargs):
+        if not self.request_code:
+            self.request_code = self.generate_request_code()
+            while AdvanceRequest.objects.filter(request_code=self.request_code).exists():
+                self.request_code = self.generate_request_code()  # Nếu đã tồn tại, tạo lại
+        super().save(*args, **kwargs)
     def __str__(self):
         return f"{self.amount} - {self.get_status_display()}"   
     

@@ -789,7 +789,7 @@ class CompanyOperatorViewSet(viewsets.ModelViewSet):
             if not soTien:
                 return Response({"error": "Thiếu thông tin số tiền."}, status=status.HTTP_400_BAD_REQUEST)
             qs_baoung, _ = AdvanceType.objects.get_or_create(
-                typecode="Báo Ứng",
+                typecode="Báo ứng",
                 need_operator=True,
                 company=qs_com
             )
@@ -1034,7 +1034,7 @@ class AdvanceRequestViewSet(viewsets.ModelViewSet):
     authentication_classes = [OAuth2Authentication]
     permission_classes = [IsAuthenticated]
     pagination_class = StandardResultsSetPagination
-    http_method_names = ['get']
+    http_method_names = ['get','post']
     
     @action(methods=['get'], detail=False, url_path='config', url_name='config')
     def getconfig(self, request):
@@ -1053,7 +1053,81 @@ class AdvanceRequestViewSet(viewsets.ModelViewSet):
             "lydo":AdvanceReasonTypeSerializer(qs_reason,many=True).data,
             "nguoilaodong":CompanyOperatorSerializer(qs_op,many=True).data
         }, status=status.HTTP_200_OK)
-
+    def create(self, request, *args, **kwargs):
+        try:
+            user = self.request.user
+            key = self.request.headers.get('ApplicationKey')
+            qs_res = company_staff.objects.get(user__user=user,isActive=True,company__key=key)
+            rs_type=request.data["reasonType"]
+            if not rs_type:
+                return Response(
+                    {"detail": "Chưa chọn lý do!"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            rs_yeucau=request.data["yeucau"]
+            if not rs_yeucau:
+                return Response(
+                    {"detail": "Chưa chọn lý do!"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            rs_op=request.data.get('nguoilaodong',None)
+            if qs_res and rs_type:
+                try:
+                    qs_rstype=AdvanceReasonType.objects.get(id=rs_type)
+                    qs_type=AdvanceType.objects.get(id=rs_yeucau)
+                    qs_op=None if rs_op==None else company_operator.objects.get(id=rs_op)
+                    with transaction.atomic():
+                        create=AdvanceRequest.objects.create(
+                            company=qs_res.company,
+                            requester=qs_res,
+                            requesttype=qs_type,
+                            reason=qs_rstype,
+                            operator=qs_op,
+                            comment=request.data.get('reason',None),
+                            amount=request.data.get('amount',None),
+                            request_date= request.data.get('date',datetime.now().date()),
+                            hinhthucThanhtoan= request.data.get('payType',None),
+                            nguoiThuhuong= request.data.get('owner',"staff"),
+                            khacCtk= request.data.get('khacCtk',None),
+                            khacNganhang= request.data.get('khacNganhang',None),
+                            khacStk= request.data.get('khacStk',None),
+                        )
+                        created_data=AdvanceRequestSerializer(create).data
+                        AdvanceRequestHistory.objects.create(request=create,
+                                                            user=qs_res,action="create",
+                                                            old_data=None,
+                                                            new_data=f"{created_data}",
+                                                            comment="Khởi tạo")
+                        return Response(created_data, status=status.HTTP_200_OK)
+                except AdvanceReasonType.DoesNotExist:
+                    return Response(
+                        {"detail": "Lý do không hợp lệ!"},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+                except AdvanceType.DoesNotExist:
+                    return Response(
+                        {"detail": "Yêu cầu không hợp lệ!"},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+                except company_operator.DoesNotExist:
+                    return Response(
+                        {"detail": "Người lao động không hợp lệ!"},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+        except IntegrityError as e:
+            print(f"{str(e)}")
+            IntegrityErrorLog.objects.create(
+                models_name="company_operator",
+                api_name="CompanyOperatorViewSet",
+                error_message=str(e),
+                endpoint=request.path,
+                payload=request.data
+            )
+            return Response(
+                {"detail": "Lỗi khởi tạo!"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+                
     def get_queryset(self):
         user = self.request.user
         key = self.request.headers.get('ApplicationKey')

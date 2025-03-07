@@ -1,5 +1,6 @@
 from django.contrib import admin
 from .models import *
+from django import forms
 
 
 @admin.register(image_safe)
@@ -224,8 +225,17 @@ class CompanyPermissionAdmin(admin.ModelAdmin):
     autocomplete_fields = ('company', 'permission', 'assigned_by', 'applicable_staff', 'applicable_departments', 'applicable_positions', 'excluded_staff')
     filter_horizontal = ('applicable_staff', 'applicable_departments', 'applicable_positions', 'excluded_staff')
 
+# Tạo form tùy chỉnh cho model
+class AdvanceTypeForm(forms.ModelForm):
+    class Meta:
+        model = AdvanceType
+        fields = '__all__'
+    color = forms.CharField(
+        widget=forms.TextInput(attrs={'type': 'color', 'style': 'width: 100px; height: 30px;'})
+    )
 class AdvanceTypeAdmin(admin.ModelAdmin):
-    list_display = ('id', 'typecode', 'need_operator', 'need_approver', 'company', 'created_at', 'updated_at')
+    form = AdvanceTypeForm
+    list_display = ('id', 'typecode','color', 'need_operator', 'need_approver', 'company', 'created_at', 'updated_at')
     search_fields = ('typecode', 'company__name')  # You can customize this as needed
     list_filter = ('need_operator', 'need_approver', 'company')
     ordering = ['-created_at']
