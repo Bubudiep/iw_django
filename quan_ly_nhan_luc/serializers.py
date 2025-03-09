@@ -590,7 +590,25 @@ class AdvanceRequestSerializer(serializers.ModelSerializer):
     class Meta:
         model = AdvanceRequest
         fields = '__all__'
-           
+              
+class AdvanceRequestDetailsSerializer(serializers.ModelSerializer):
+    reason = AdvanceReasonTypeSerializer(allow_null=True)
+    requesttype = AdvanceTypeSerializer()
+    requester = CompanyStaffDetailsSerializer(allow_null=True)
+    operator = CompanyOperatorDetailsSerializer(allow_null=True)
+    history = serializers.SerializerMethodField(read_only=True)
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    payment_status_display = serializers.CharField(source='get_payment_status_display', read_only=True)
+    retrieve_status_display = serializers.CharField(source='get_retrieve_status_display', read_only=True)
+    hinhthucThanhtoan_display = serializers.CharField(source='get_hinhthucThanhtoan_display', read_only=True)
+    nguoiThuhuong_display = serializers.CharField(source='get_nguoiThuhuong_display', read_only=True)
+    def get_history(self, qs):
+        qs_his=AdvanceRequestHistory.objects.filter(request=qs)
+        return AdvanceRequestHistorySerializer(qs_his,many=True).data
+    class Meta:
+        model = AdvanceRequest
+        fields = '__all__'
+         
 class CompanyOperatorMoreDetailsSerializer(serializers.ModelSerializer):
     company = serializers.PrimaryKeyRelatedField(read_only=True)
     work = serializers.SerializerMethodField(read_only=True)

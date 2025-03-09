@@ -139,6 +139,7 @@ class company_staff_profile(models.Model):
 
     bank = models.CharField(max_length=200, null=True, blank=True)
     bank_number = models.CharField(max_length=200, null=True, blank=True)
+    bank_name = models.CharField(max_length=200, null=True, blank=True)
     
     zalo_id= models.CharField(max_length=200, null=True, blank=True)
     zalo_number = models.CharField(max_length=200, null=True, blank=True)

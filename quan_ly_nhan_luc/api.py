@@ -1133,6 +1133,32 @@ class AdvanceRequestViewSet(viewsets.ModelViewSet):
         key = self.request.headers.get('ApplicationKey')
         qs_res=company_staff.objects.get(user__user=user,isActive=True,company__key=key)
         return AdvanceRequest.objects.filter(company=qs_res.company)
+
+    @action(detail=True, methods=['post'])
+    def approved(self, request, pk=None):
+        adv=self.get_object()
+        user = self.request.user
+        key = self.request.headers.get('ApplicationKey')
+        qs_res=company_staff.objects.get(user__user=user,isActive=True,company__key=key)
+        comment = request.data.get('comment',None)
+        # kiểm tra quyền
+        try:
+            adv.status="approved"
+            adv.approver=user
+            adv.payment_status="done"
+            adv.save()
+            AdvanceRequestHistory.objects.create(request=adv,user=qs_res,
+                                                action="approved",comment=comment)
+            return Response(AdvanceRequestDetailsSerializer(adv).data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        
+    def retrieve(self, request, *args, **kwargs):
+        """Tùy chỉnh GET /id/ nếu cần"""
+        instance = self.get_object()
+        data = AdvanceRequestDetailsSerializer(instance).data
+        return Response(data, status=status.HTTP_200_OK)
+    
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
         queryset = self.filter_queryset(queryset)  # Áp dụng bộ lọc cho queryset
