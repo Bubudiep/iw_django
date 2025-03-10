@@ -454,6 +454,12 @@ class CompanyViewSet(viewsets.ModelViewSet):
                 instance.wallpaper=create_bg
                 instance.save()
         return super().partial_update(request, *args, **kwargs)
+
+    
+    @action(detail=True, methods=['post'])
+    def start_config(self, request, pk=None):
+        return Response({"detail":"Hoàn tất"},status=status.HTTP_200_OK)
+       
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
         queryset = self.filter_queryset(queryset)  # Áp dụng bộ lọc cho queryset
@@ -1137,6 +1143,10 @@ class AdvanceRequestViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'])
     def approved(self, request, pk=None):
         adv=self.get_object()
+        if adv.status=="approved":
+            return Response({"detail": "Đơn đã được duyệt trước đó"}, status=status.HTTP_400_BAD_REQUEST)
+        if adv.status!="pending":
+            return Response({"detail": "Trạng thái đơn không phải là chờ duyệt"}, status=status.HTTP_400_BAD_REQUEST)
         user = self.request.user
         key = self.request.headers.get('ApplicationKey')
         qs_res=company_staff.objects.get(user__user=user,isActive=True,company__key=key)
@@ -1144,7 +1154,7 @@ class AdvanceRequestViewSet(viewsets.ModelViewSet):
         # kiểm tra quyền
         try:
             adv.status="approved"
-            adv.approver=user
+            adv.approver=qs_res
             adv.payment_status="done"
             adv.save()
             AdvanceRequestHistory.objects.create(request=adv,user=qs_res,
