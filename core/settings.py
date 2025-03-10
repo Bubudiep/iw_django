@@ -65,6 +65,22 @@ OAUTH2_PROVIDER = {
         'write': 'Write access',
     }
 }
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:6500",
+    "https://vieclamvp.vn",
+]
+CORS_ALLOW_HEADERS = [
+    "accept",
+    "accept-encoding",
+    "authorization",
+    "applicationkey",
+    "content-type",
+    "dnt",
+    "origin",
+    "user-agent",
+    "x-csrftoken",
+    "x-requested-with",
+]
 CORS_ALLOWED_ORIGINS = [
     'https://order.lenmon.cloud',
     'https://lenmon.cloud',
