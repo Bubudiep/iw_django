@@ -85,6 +85,7 @@ CORS_ALLOWED_ORIGINS = [
     'zbrowser://h5.zdn.vn',
     'https://h5.zadn.vn',
     'zbrowser://h5.zadn.vn',
+    'https://vieclamvp.vn',
 ]
 ALLOWED_HOSTS = [
     'ipays.vn',
@@ -94,6 +95,7 @@ ALLOWED_HOSTS = [
     'https://hoanglongdjc.cloud',
     'www.order.lenmon.cloud',
     'www.lenmon.cloud',
+    'www.vieclamvp.vn',
     'www.hoanglongdjc.cloud',
     'www.ipays.vn',
     'localhost',
