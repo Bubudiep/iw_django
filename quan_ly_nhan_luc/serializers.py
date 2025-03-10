@@ -568,7 +568,8 @@ class AdvanceReasonTypeSerializer(serializers.ModelSerializer):
         model = AdvanceReasonType
         fields = '__all__'
         
-class AdvanceRequestHistorySerializer(serializers.ModelSerializer):     
+class AdvanceRequestHistorySerializer(serializers.ModelSerializer):
+    user = CompanyStaffDetailsSerializer(allow_null=True)  
     class Meta:
         model = AdvanceRequestHistory
         fields = '__all__'
@@ -594,6 +595,7 @@ class AdvanceRequestSerializer(serializers.ModelSerializer):
 class AdvanceRequestDetailsSerializer(serializers.ModelSerializer):
     reason = AdvanceReasonTypeSerializer(allow_null=True)
     requesttype = AdvanceTypeSerializer()
+    approver = CompanyStaffDetailsSerializer(allow_null=True)
     requester = CompanyStaffDetailsSerializer(allow_null=True)
     operator = CompanyOperatorDetailsSerializer(allow_null=True)
     history = serializers.SerializerMethodField(read_only=True)

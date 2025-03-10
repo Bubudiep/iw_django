@@ -1145,6 +1145,8 @@ class AdvanceRequestViewSet(viewsets.ModelViewSet):
         adv=self.get_object()
         if adv.status=="approved":
             return Response({"detail": "Đơn đã được duyệt trước đó"}, status=status.HTTP_400_BAD_REQUEST)
+        if adv.status=="rejected":
+            return Response({"detail": "Đơn đã được hủy trước đó"}, status=status.HTTP_400_BAD_REQUEST)
         if adv.status!="pending":
             return Response({"detail": "Trạng thái đơn không phải là chờ duyệt"}, status=status.HTTP_400_BAD_REQUEST)
         user = self.request.user
@@ -1159,6 +1161,30 @@ class AdvanceRequestViewSet(viewsets.ModelViewSet):
             adv.save()
             AdvanceRequestHistory.objects.create(request=adv,user=qs_res,
                                                 action="approved",comment=comment)
+            return Response(AdvanceRequestDetailsSerializer(adv).data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        
+    @action(detail=True, methods=['post'])
+    def rejected(self, request, pk=None):
+        adv=self.get_object()
+        if adv.status=="approved":
+            return Response({"detail": "Đơn đã được duyệt trước đó"}, status=status.HTTP_400_BAD_REQUEST)
+        if adv.status=="rejected":
+            return Response({"detail": "Đơn đã được hủy trước đó"}, status=status.HTTP_400_BAD_REQUEST)
+        if adv.status!="pending":
+            return Response({"detail": "Trạng thái đơn không phải là chờ duyệt"}, status=status.HTTP_400_BAD_REQUEST)
+        user = self.request.user
+        key = self.request.headers.get('ApplicationKey')
+        qs_res=company_staff.objects.get(user__user=user,isActive=True,company__key=key)
+        comment = request.data.get('comment',None)
+        # kiểm tra quyền
+        try:
+            adv.status="rejected"
+            adv.approver=qs_res
+            adv.save()
+            AdvanceRequestHistory.objects.create(request=adv,user=qs_res,
+                                                action="rejected",comment=comment)
             return Response(AdvanceRequestDetailsSerializer(adv).data, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
