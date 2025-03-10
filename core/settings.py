@@ -88,6 +88,8 @@ CORS_ALLOWED_ORIGINS = [
     'https://vieclamvp.vn',
 ]
 ALLOWED_HOSTS = [
+    'vieclamvp.vn',
+    'https://vieclamvp.vn',
     'ipays.vn',
     'https://ipays.vn',
     'https://order.lenmon.cloud',
