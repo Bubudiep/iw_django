@@ -209,21 +209,78 @@ class CompanyStaffProfileAdmin(admin.ModelAdmin):
         }),
     )  # Phân nhóm các trường trong form chi tiết
 
+# Admin cho Permission
 @admin.register(Permission)
 class PermissionAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'description', 'min_company_level', 'created_at', 'updated_at')
+    list_display = ('name', 'fullname', 'min_company_level', 'created_at', 'updated_at')
     list_filter = ('min_company_level', 'created_at')
-    search_fields = ('name', 'description')
-    ordering = ('-created_at',)
+    search_fields = ('name', 'fullname', 'description')
+    fieldsets = (
+        (None, {
+            'fields': ('name', 'fullname', 'description', 'min_company_level')
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    readonly_fields = ('created_at', 'updated_at')
 
+# Admin cho PermissionType
+@admin.register(PermissionType)
+class PermissionTypeAdmin(admin.ModelAdmin):
+    list_display = ('name', 'display_name')
+    search_fields = ('name', 'display_name')
+
+# Admin cho TargetType
+@admin.register(TargetType)
+class TargetTypeAdmin(admin.ModelAdmin):
+    list_display = ('name', 'display_name')
+    search_fields = ('name', 'display_name')
+
+# Admin cho CompanyPermission
 @admin.register(CompanyPermission)
 class CompanyPermissionAdmin(admin.ModelAdmin):
-    list_display = ('id', 'company', 'permission', 'is_active', 'assigned_by', 'assigned_at')
-    list_filter = ('is_active', 'company', 'permission')
-    search_fields = ('company__name', 'permission__name')
-    ordering = ('-assigned_at',)
-    autocomplete_fields = ('company', 'permission', 'assigned_by', 'applicable_staff', 'applicable_departments', 'applicable_positions', 'excluded_staff')
-    filter_horizontal = ('applicable_staff', 'applicable_departments', 'applicable_positions', 'excluded_staff')
+    list_display = ('company', 'permission', 'is_active', 'assigned_by', 'assigned_at', 'get_permission_types', 'get_target_types')
+    list_filter = ('is_active', 'company', 'permission', 'assigned_at')
+    search_fields = ('company__name', 'permission__name', 'permission__fullname', 'assigned_by__name')
+    fieldsets = (
+        ('Basic Info', {
+            'fields': ('company', 'permission', 'is_active', 'permission_types', 'target_types')
+        }),
+        ('Assignment Info', {
+            'fields': ('assigned_by', 'assigned_at'),
+            'classes': ('collapse',)
+        }),
+        ('Applicable Entities', {
+            'fields': (
+                'applicable_staff',
+                'applicable_departments',
+                'applicable_positions',
+                'excluded_staff',
+                'excluded_departments'
+            ),
+            'classes': ('collapse',)
+        }),
+    )
+    readonly_fields = ('assigned_at',)
+    filter_horizontal = (
+        'permission_types',
+        'target_types',
+        'applicable_staff',
+        'applicable_departments',
+        'applicable_positions',
+        'excluded_staff',
+        'excluded_departments'
+    )
+
+    def get_permission_types(self, obj):
+        return obj.get_permission_types()
+    get_permission_types.short_description = "Permission Types"
+
+    def get_target_types(self, obj):
+        return obj.get_target_types()
+    get_target_types.short_description = "Target Types"
 
 # Tạo form tùy chỉnh cho model
 class AdvanceTypeForm(forms.ModelForm):
