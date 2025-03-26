@@ -34,6 +34,7 @@ from rest_framework.decorators import action
 from pytz import timezone
 from django.contrib.auth.decorators import permission_required
 from django.core.exceptions import ObjectDoesNotExist
+from django import http
 
 myzone = pytz.timezone('Asia/Ho_Chi_Minh')
 
@@ -41,20 +42,8 @@ def generate_response_json(result:str, message:str, data:dict={}):
     return {"result": result, "message": message, "data": data}
 
 def check_permission(user_a, permission_name):
-    """
-    Kiểm tra xem user_a có quyền cụ thể không.
-    
-    Args:
-        user_a (User): Người dùng cần kiểm tra quyền.
-        permission_name (str): Tên quyền cần kiểm tra.
-    
-    Returns:
-        bool: True nếu có quyền, False nếu không.
-    """
     try:
-        # Lấy thông tin nhân viên từ tài khoản người dùng
         staff = company_staff.objects.get(user__user=user_a)
-        # Lấy tất cả các quyền của công ty liên quan đến nhân viên (bao gồm trực tiếp, bộ phận, chức vụ)
         applicable_permissions = CompanyPermission.objects.filter(
             Q(applicable_staff=staff) |
             Q(applicable_departments=staff.department) |
@@ -63,9 +52,8 @@ def check_permission(user_a, permission_name):
             permission__name=permission_name,
             company=staff.company
         ).exclude(excluded_staff=staff)  # Loại trừ nếu nhân viên nằm trong danh sách bị loại trừ
-        # Nếu có ít nhất một quyền phù hợp
         if applicable_permissions.exists():
-            return True
+            return applicable_permissions
         return False
     except company_staff.DoesNotExist:
         # Nhân viên không tồn tại
@@ -1035,6 +1023,7 @@ class CompanySublistViewSet(viewsets.ModelViewSet):
             return self.get_paginated_response(serializer.data)
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
+    
 class AdvanceRequestViewSet(viewsets.ModelViewSet):
     serializer_class = AdvanceRequestSerializer
     authentication_classes = [OAuth2Authentication]
@@ -1042,6 +1031,17 @@ class AdvanceRequestViewSet(viewsets.ModelViewSet):
     pagination_class = StandardResultsSetPagination
     http_method_names = ['get','post']
     
+    def get_queryset(self):
+        user = self.request.user
+        key = self.request.headers.get('ApplicationKey')
+        method = self.request.method
+        print(f"{method}")
+        qs_res=company_staff.objects.get(user__user=user,isActive=True,company__key=key)
+        if check_permission(user,'pheduyet'):
+            return AdvanceRequest.objects.filter(company=qs_res.company)
+        else:
+            raise http.Http404("Bạn không có quyền truy cập dữ liệu này!")
+        
     @action(methods=['get'], detail=False, url_path='config', url_name='config')
     def getconfig(self, request):
         user = self.request.user
@@ -1133,13 +1133,6 @@ class AdvanceRequestViewSet(viewsets.ModelViewSet):
                 {"detail": "Lỗi khởi tạo!"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
-                
-    def get_queryset(self):
-        user = self.request.user
-        key = self.request.headers.get('ApplicationKey')
-        qs_res=company_staff.objects.get(user__user=user,isActive=True,company__key=key)
-        return AdvanceRequest.objects.filter(company=qs_res.company)
-
     @action(detail=True, methods=['post'])
     def approved(self, request, pk=None):
         adv=self.get_object()
